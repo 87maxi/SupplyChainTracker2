@@ -1,0 +1,21 @@
+# Contrato Deployado - SupplyChainTracker
+
+## Dirección del Contrato
+0x5FbDB2315678afecb367f032d93F642f64180aa3
+
+## Roles Asignados (Dirección del Administrador)
+DEFAULT_ADMIN_ROLE: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+FABRICANTE_ROLE: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+AUDITOR_HW_ROLE: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+TECNICO_SW_ROLE: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+ESCUELA_ROLE: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+
+## Red de Desarrollo
+Anvil (Local)
+
+## Fecha de Deploy
+2025-12-16
+
+## Notas
+Este contrato fue deployado con el script Deploy.s.sol usando la primera dirección de Anvil.
+Todos los roles fueron asignados al administrador por defecto para pruebas.
