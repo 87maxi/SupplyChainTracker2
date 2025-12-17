@@ -1,52 +1,53 @@
-# Documentación Funcional del Código
+# SupplyChainTracker Contract Functionality
 
-Este documento proporciona una descripción detallada de todas las funcionalidades implementadas en el sistema SupplyChainTracker, incluyendo tanto el contrato inteligente como la interfaz frontend.
+## Overview
 
-## 1. Contrato Inteligente (SupplyChainTracker.sol)
+The SupplyChainTracker contract is a blockchain-based solution for tracking the lifecycle of netbooks through a supply chain, from manufacturing to final distribution to students. It uses OpenZeppelin's AccessControl to manage permissions for different roles in the supply chain.
 
-### 1.1 Arquitectura General
+## Contract Structure
 
-El contrato `SupplyChainTracker` es un sistema de trazabilidad para netbooks que utiliza un patrón de máquina de estados con control de acceso basado en roles (RBAC). Cada netbook avanza secuencialmente a través de cuatro estados:
+The contract implements a state machine pattern with four distinct states for each netbook:
 
-1. **FABRICADA**: Estado inicial cuando se registra una nueva netbook
-2. **HW_APROBADO**: Después de la auditoría de hardware
-3. **SW_VALIDADO**: Después de la validación del software
-4. **DISTRIBUIDA**: Cuando se asigna a un estudiante final
+1. **FABRICADA**: Initial state when the netbook is manufactured
+2. **HW_APROBADO**: State after hardware audit is completed
+3. **SW_VALIDADO**: State after software validation is completed
+4. **DISTRIBUIDA**: Final state when the netbook is assigned to a student
 
-### 1.2 Roles y Permisos
+## Roles
 
-El contrato implementa un sistema de autorización basado en roles utilizando OpenZeppelin AccessControl:
+The contract defines four specialized roles with specific permissions:
 
-| Rol | Función | Requiere Estado Previo |
-|-----|--------|-------------------|
-| `DEFAULT_ADMIN_ROLE` | Gobernanza: otorgar/revocar otros roles | N/A |
-| `FABRICANTE_ROLE` | Registrar nuevas netbooks | N/A |
-| `AUDITOR_HW_ROLE` | Auditar hardware | `FABRICADA` |
-| `TECNICO_SW_ROLE` | Validar software | `HW_APROBADO` |
-| `ESCUELA_ROLE` | Asignar a estudiante | `SW_VALIDADO` |
+- **FABRICANTE_ROLE**: Can register new netbooks
+- **AUDITOR_HW_ROLE**: Can audit hardware and update hardware status
+- **TECNICO_SW_ROLE**: Can validate software and update software status
+- **ESCUELA_ROLE**: Can assign netbooks to students
 
-### 1.3 Estructura de Datos
+Additionally, the contract uses the default admin role from AccessControl for administrative functions.
 
-La estructura `Netbook` almacena todos los datos relevantes del ciclo de vida:
+## Data Structures
+
+### Netbook Struct
+
+Each netbook is tracked using the following structure:
 
 ```solidity
 struct Netbook {
-    // Datos de Origen
+    // A. Datos de Origen
     string serialNumber;
     string batchId;
     string initialModelSpecs;
 
-    // Datos de Hardware
+    // B. Datos de Hardware
     address hwAuditor;
     bool hwIntegrityPassed;
     bytes32 hwReportHash;
 
-    // Datos de Software
+    // C. Datos de Software
     address swTechnician;
     string osVersion;
     bool swValidationPassed;
 
-    // Datos de Destino
+    // D. Datos de Destino
     bytes32 destinationSchoolHash;
     bytes32 studentIdHash;
     uint distributionTimestamp;
@@ -56,154 +57,91 @@ struct Netbook {
 }
 ```
 
-### 1.4 Funciones Principales
+## Functions
 
-#### Funciones de Escritura (Transacciones)
+### Write Functions (Privileged)
 
-- **`registerNetbooks`**: Registra múltiples netbooks a la vez con sus datos iniciales
-- **`auditHardware`**: Registra los resultados de la auditoría de hardware
-- **`validateSoftware`**: Valida el software instalado en la netbook
-- **`assignToStudent`**: Asigna la netbook finalizada a un estudiante
+#### `registerNetbooks`
+- **Role**: FABRICANTE_ROLE
+- **Purpose**: Registers multiple netbooks at once with initial manufacturing data
+- **Parameters**: Arrays of serial numbers, batch IDs, and model specifications
+- **Process**: Creates new Netbook entries with initial state FABRICADA
+- **Event**: Emits `NetbookRegistered`
 
-#### Funciones de Lectura (Consultas)
+#### `auditHardware`
+- **Role**: AUDITOR_HW_ROLE
+- **Purpose**: Records the results of hardware inspection
+- **Parameters**: Serial number, pass/fail status, and hash of the audit report
+- **Prerequisites**: Netbook must exist and be in FABRICADA state
+- **Process**: Updates hardware fields and transitions state to HW_APROBADO
+- **Event**: Emits `HardwareAudited`
 
-- **`getNetbookState`**: Obtiene el estado actual de una netbook
-- **`getNetbookReport`**: Obtiene el reporte completo de trazabilidad
+#### `validateSoftware`
+- **Role**: TECNICO_SW_ROLE
+- **Purpose**: Records software validation results
+- **Parameters**: Serial number, OS version, and pass/fail status
+- **Prerequisites**: Netbook must exist and be in HW_APROBADO state
+- **Process**: Updates software fields and transitions state to SW_VALIDADO
+- **Event**: Emits `SoftwareValidated`
 
-### 1.5 Eventos
+#### `assignToStudent`
+- **Role**: ESCUELA_ROLE
+- **Purpose**: Assigns a netbook to a specific student
+- **Parameters**: Serial number, hashed school identifier, and hashed student identifier
+- **Prerequisites**: Netbook must exist and be in SW_VALIDADO state
+- **Process**: Updates destination fields, sets distribution timestamp, and transitions state to DISTRIBUIDA
+- **Event**: Emits `AssignedToStudent`
 
-El contrato emite eventos para cada transición importante:
+### Read Functions (Public)
 
-- `NetbookRegistered`: Cuando se registra una nueva netbook
-- `HardwareAudited`: Cuando se completa la auditoría de hardware
-- `SoftwareValidated`: Cuando se valida el software
-- `AssignedToStudent`: Cuando se asigna a un estudiante
+#### `getNetbookState`
+- **Purpose**: Retrieves the current state of a netbook
+- **Parameters**: Serial number
+- **Returns**: Current state as a State enum value
 
-## 2. Interfaz Frontend
+#### `getNetbookReport`
+- **Purpose**: Retrieves the complete record for a netbook
+- **Parameters**: Serial number
+- **Returns**: Full Netbook struct with all stored data
 
-### 2.1 Arquitectura del Cliente
+## Security Features
 
-La interfaz frontend está construida con Next.js y sigue una arquitectura modular:
+1. **Role-based access control**: Each function that modifies state requires a specific role
+2. **State validation**: Functions can only be called when the netbook is in the expected state
+3. **Input validation**: Serial numbers are validated for non-empty strings
+4. **Duplicate prevention**: Netbooks cannot be registered twice with the same serial number
 
-```
-web/
-├── src/
-│   ├── app/
-│   ├── components/
-│   ├── contexts/
-│   ├── contracts/
-│   ├── hooks/
-│   ├── lib/
-│   ├── services/
-│   └── types/
-```
+## Events
 
-### 2.2 Servicios de Web3
+The contract emits events for key state transitions:
 
-#### Web3Service (web/src/services/Web3Service.ts)
+- **NetbookRegistered**: When a netbook is initially registered
+- **HardwareAudited**: When hardware audit is completed
+- **SoftwareValidated**: When software validation is completed
+- **AssignedToStudent**: When a netbook is assigned to a student
 
-Servicio base que maneja la conexión con la blockchain:
+## AccessControl Integration
 
-- Inicializa el proveedor Ethereum desde el navegador
-- Gestiona la conexión con la wallet del usuario
-- Proporciona acceso al proveedor, signer y contrato
-- Implementa funciones de utilidad para red y balance
+The contract inherits from OpenZeppelin's AccessControl contract, which provides:
 
-#### SupplyChainService (web/src/services/SupplyChainService.ts)
+- Role assignment and management
+- Hierarchical roles (via DEFAULT_ADMIN_ROLE)
+- ERC165 interface support
 
-Servicio especializado para interactuar con SupplyChainTracker:
+The contract uses a custom modifier `_checkRoleCustom` that wraps AccessControl's `hasRole` function to provide custom error messages.
 
-- Wrapper tipo-safe alrededor de Web3Service
-- Métodos para todas las funciones del contrato
-- Manejo de errores y logging
-- Funciones de utilidad para conectividad y cuenta actual
+## Design Patterns
 
-### 2.3 Componentes Principales
+1. **State Machine**: Netbooks progress through a linear series of states
+2. **Batch Operations**: Registration supports multiple netbooks in a single transaction
+3. **Hash-based Privacy**: School and student identifiers are stored as hashes to protect sensitive information
+4. **Data Integrity**: Audit reports are stored as hashes, allowing verification of document integrity without storing the full document
 
-#### Dashboard
+## Potential Improvements
 
-- **`ManagerDashboard`**: Componente principal que muestra métricas clave
-  - Tarjetas de resumen con conteos por estado
-  - Lista de seguimiento de netbooks
-  - Diseño responsive con Tailwind CSS
-
-#### UI/UX
-
-- Uso de shadcn/ui para componentes modernos y accesibles
-- Diseño completamente responsive
-- Iconos SVG integrados para indicadores de estado
-- Estilo coherente con Tailwind CSS
-
-## 3. Configuración y Despliegue
-
-### 3.1 Variables de Entorno
-
-```env
-# RPC URL para conexión con Anvil
-NEXT_PUBLIC_ANVIL_RPC_URL=http://127.0.0.1:8545
-
-# Dirección del contrato desplegado
-NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS=0x5FbDB2315678afecb367f032d93F642f64180aa3
-```
-
-### 3.2 Arquitectura de Contratos
-
-```
-sc/
-├── src/
-│   ├── SupplyChainTracker.sol
-│   └── Counter.sol
-├── lib/
-│   ├── forge-std
-│   └── openzeppelin-contracts
-```
-
-## 4. Diagramas
-
-### 4.1 Diagrama de Flujo de Estado
-
-```plaintext
-      +------------+
-      |  FABRICADA |
-      +------------+
-           |
-           | auditHardware()
-           ↓
-+-------------------+
-|   HW_APROBADO     |
-+-------------------+
-           |
-           | validateSoftware()
-           ↓
-+-------------------+
-|   SW_VALIDADO     |
-+-------------------+
-           |
-           | assignToStudent()
-           ↓
-+-------------------+
-|   DISTRIBUIDA     |
-+-------------------+
-```
-
-### 4.2 Diagrama de Arquitectura del Sistema
-
-```plaintext
-+----------------+     +---------------------+     +-----------------------+
-|                |     |                     |     |                       |
-|   Navegador    |<--->|   Aplicación Web    |<--->|   Blockchain (Anvil)  |
-|   (Frontend)   |     |   (Next.js + Web3)  |     |   (SupplyChainTracker) |
-|                |     |                     |     |                       |
-+----------------+     +---------------------+     +-----------------------+
-```
-
-## 5. Consideraciones de Seguridad
-
-- Validación exhaustiva de roles antes de cada operación
-- Chequeo de estado previo para garantizar flujos de trabajo correctos
-- Uso de hashes criptográficos para proteger datos sensibles
-- Inmutabilidad del historial de trazabilidad
-- Auditoría pública de todo el ciclo de vida
-
-# Generated with [Continue](https://continue.dev)
-Co-Authored-By: Continue <noreply@continue.dev>
+1. Add timestamp for each state transition to track processing times
+2. Implement role revocation functions for security management
+3. Add event for initial role setup
+4. Consider using enums for role constants to improve type safety
+5. Add input validation for batch ID and model specifications
+6. Implement a function to retrieve multiple netbooks at once for reporting purposes

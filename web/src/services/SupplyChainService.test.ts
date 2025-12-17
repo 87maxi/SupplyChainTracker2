@@ -162,4 +162,7 @@ describe('SupplyChainService', () => {
       
       const account = await SupplyChainService.getCurrentAccount();
       
-      expect(account).toBe('0x1234567890123456789012
+      expect(account).toBe('0x1234567890123456789012345678901234567890');
+    });
+  });
+});

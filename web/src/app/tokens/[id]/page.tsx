@@ -1,11 +1,12 @@
 "use client";
 
-import { useWeb3 } from '@/contexts/Web3Context';
+import { useWeb3 } from '@/hooks/useWeb3';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { SupplyChainService } from '@/services/SupplyChainService';
-import { useParams, useRouter } from 'next/navigation';
+  import { useParams, useRouter } from 'next/navigation';
+  import { State } from '@/types/contract';
 import { useState, useEffect } from 'react';
 import { Netbook } from '@/types/contract';
 
@@ -22,14 +23,14 @@ export default function NetbookDetailsPage() {
     1: 'HW_APROBADO',
     2: 'SW_VALIDADO',
     3: 'DISTRIBUIDA'
-  };
+  } as const;
 
   const stateColors = {
     0: 'bg-gray-100 text-gray-800',
     1: 'bg-blue-100 text-blue-800',
     2: 'bg-yellow-100 text-yellow-800',
     3: 'bg-green-100 text-green-800'
-  };
+  } as const;
 
   useEffect(() => {
     const fetchNetbook = async () => {
@@ -46,7 +47,7 @@ export default function NetbookDetailsPage() {
         setNetbook({
           ...report,
           serialNumber: serial,
-          currentState: state
+          currentState: state as State
         });
       } catch (err) {
         console.error('Error fetching netbook:', err);
@@ -121,8 +122,8 @@ export default function NetbookDetailsPage() {
         <CardHeader>
           <CardTitle>{netbook?.serialNumber}</CardTitle>
           <CardDescription>
-            <span className={`px-2 py-1 rounded text-xs ${stateColors[netbook?.currentState || 0]}`}>
-              {stateLabels[netbook?.currentState || 0]}
+            <span className={`px-2 py-1 rounded text-xs ${stateColors[netbook?.currentState as keyof typeof stateColors || 0]}`}>
+              {stateLabels[netbook?.currentState as keyof typeof stateLabels || 0]}
             </span>
           </CardDescription>
         </CardHeader>

@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { ethers } from 'ethers';
+import { getProvider, getSigner } from '@/lib/web3';
 
 interface Web3ContextType {
   provider: ethers.BrowserProvider | null;
@@ -50,17 +51,17 @@ export const Web3Provider = ({ children }: Web3ProviderProps) => {
   const connect = async () => {
     if (typeof window !== 'undefined' && (window as any).ethereum) {
       try {
-        const provider = new ethers.BrowserProvider((window as any).ethereum);
-        const accounts = await provider.send('eth_requestAccounts', []);
-        const signer = await provider.getSigner();
+        const provider = await getProvider();
+        const signer = await getSigner();
+        const address = await (await signer).getAddress();
         
         setProvider(provider);
         setSigner(signer);
-        setAddress(accounts[0]);
+        setAddress(address);
         setIsConnected(true);
         
         // Save to localStorage
-        localStorage.setItem('walletAddress', accounts[0]);
+        localStorage.setItem('walletAddress', address);
       } catch (error) {
         console.error('Error connecting to wallet:', error);
       }

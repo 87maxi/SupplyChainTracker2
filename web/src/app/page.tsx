@@ -1,12 +1,12 @@
 "use client";
 
-import { useWeb3 } from '@/contexts/Web3Context';
+import { useWeb3 } from '@/hooks/useWeb3';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 export default function Home() {
-  const { isConnected, address, connect, disconnect } = useWeb3();
+  const { address, isConnected } = useWeb3();
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -28,18 +28,14 @@ export default function Home() {
                 <p className="text-sm text-muted-foreground">
                   Conectado como: <span className="font-mono">{address}</span>
                 </p>
-                <Button variant="outline" onClick={disconnect} className="w-full">
-                  Desconectar Wallet
-                </Button>
+                {/* Button removed since ConnectButton handles disconnect */}
               </div>
             ) : (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
                   Conecta tu wallet para comenzar a interactuar con el sistema de trazabilidad.
                 </p>
-                <Button onClick={connect} className="w-full">
-                  Conectar Wallet
-                </Button>
+                {/* Button removed since ConnectButton handles connect */}
               </div>
             )}
           </CardContent>

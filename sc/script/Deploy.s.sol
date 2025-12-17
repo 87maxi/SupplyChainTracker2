@@ -10,14 +10,13 @@ contract DeploySupplyChainTracker is Script {
 
         SupplyChainTracker tracker = new SupplyChainTracker();
         
-        // Grant roles to default broadcaster (anvil first address)
-        // Use the default broadcaster address (first anvil account)
-        address defaultAdmin = 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266;
-        tracker.grantRole(tracker.DEFAULT_ADMIN_ROLE(), defaultAdmin);
-        tracker.grantRole(tracker.FABRICANTE_ROLE(), defaultAdmin);
-        tracker.grantRole(tracker.AUDITOR_HW_ROLE(), defaultAdmin);
-        tracker.grantRole(tracker.TECNICO_SW_ROLE(), defaultAdmin);
-        tracker.grantRole(tracker.ESCUELA_ROLE(), defaultAdmin);
+        // Grant roles to the transaction sender
+        address deployer = msg.sender;
+        tracker.grantRole(tracker.DEFAULT_ADMIN_ROLE(), deployer);
+        tracker.grantRole(tracker.FABRICANTE_ROLE(), deployer);
+        tracker.grantRole(tracker.AUDITOR_HW_ROLE(), deployer);
+        tracker.grantRole(tracker.TECNICO_SW_ROLE(), deployer);
+        tracker.grantRole(tracker.ESCUELA_ROLE(), deployer);
 
         vm.stopBroadcast();
         return tracker;

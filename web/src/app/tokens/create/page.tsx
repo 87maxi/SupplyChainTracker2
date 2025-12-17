@@ -1,6 +1,6 @@
 "use client";
 
-import { useWeb3 } from '@/contexts/Web3Context';
+import { useWeb3 } from '@/hooks/useWeb3';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';

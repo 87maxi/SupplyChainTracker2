@@ -61,6 +61,7 @@ invokable: false
 ## Herramientas que se utilizan 
  - para la interacion con solidity se utiliza anvil
  - utiliza anvil para crear el **ABI en el directorio contracts**
+ - ejecuta el comando ubicado en el directorio ./sc **forge inspect src/{smartcontract_name}.sol abi --json > ../web/src/contracts/abi/{smartcontract_name}.json**, el objetivo es diponibilizarlos a la interfaz web
  - utiliza siempre cuentas de anvil, en la definicion del .env.local
  - utiliza las herramientas que se utilizan con foundry
  - analiza los abi que estan  utiliza como gia, para la implementacion de las funcionalidades

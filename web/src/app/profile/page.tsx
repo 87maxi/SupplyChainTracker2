@@ -1,8 +1,9 @@
 "use client";
 
-import { useWeb3 } from '@/contexts/Web3Context';
+import { useWeb3 } from '@/hooks/useWeb3';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
 import { SupplyChainService } from '@/services/SupplyChainService';
 import { useState, useEffect } from 'react';
 import { State } from '@/types/contract';
@@ -20,7 +21,7 @@ export default function ProfilePage() {
     '0xd25c992a48858314113753611945045859423533313842771219981911994373': 'TECNICO_SW_ROLE',
     '0x8a56fd3344097613215665977667319753531132276132611988941251823874': 'ESCUELA_ROLE',
     '0x0000000000000000000000000000000000000000000000000000000000000000': 'DEFAULT_ADMIN_ROLE'
-  };
+  } as const;
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -41,7 +42,7 @@ export default function ProfilePage() {
         for (const roleKey of roleKeys) {
           const hasRole = await SupplyChainService.hasRole(roleKey, address);
           if (hasRole) {
-            userRoles.push(rolesMap[roleKey]);
+            userRoles.push(rolesMap[roleKey as keyof typeof rolesMap]);
           }
         }
         

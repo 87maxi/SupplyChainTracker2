@@ -1,139 +1,119 @@
-# SupplyChainTracker - Documentación de Arquitectura
+# System Architecture
 
-Este documento describe la arquitectura, diseño y funcionalidad del contrato inteligente `SupplyChainTracker`, desarrollado para garantizar la trazabilidad y seguridad en la cadena de suministro de netbooks.
+## Component Overview
 
-## 1. Visión General
+The SupplyChainTracker system consists of two main components:
 
-El sistema `SupplyChainTracker` es un contrato inteligente basado en blockchain que registra de forma inmutable e inmutable el ciclo de vida de una netbook, desde su fabricación hasta su distribución final a un estudiante. Utiliza principios de **Control de Acceso Basado en Roles (RBAC)** y **Máquina de Estados (State Machine)** para asegurar integridad, autenticidad y privacidad.
+1. **Smart Contract** - Deployed on the blockchain, handling business logic and state management
+2. **Web Application** - Frontend interface for users to interact with the contract
 
----
+## Smart Contract Architecture
 
-## 2. Arquitectura de Diseño
+### Core Components
 
-### 2.1 Patrones de Diseño Clave
+- **SupplyChainTracker.sol**: Main contract implementing the supply chain tracking logic
+- **AccessControl.sol**: OpenZeppelin contract providing role-based access control
 
-#### 2.1.1 Control de Acceso Basado en Roles (RBAC)
+### Contract Inheritance
 
-Se implementa utilizando la biblioteca `AccessControl` de OpenZeppelin. Cada acción crítica está restringida a un rol específico:
-
-| Rol | Descripción |
-|---|---|
-| `DEFAULT_ADMIN_ROLE` | Gobernanza: puede otorgar y revocar cualquier rol. |
-| `FABRICANTE_ROLE` | Puede registrar nuevas netbooks. |
-| `AUDITOR_HW_ROLE` | Puede aprobar el hardware verificado. |
-| `TECNICO_SW_ROLE` | Puede validar el software instalado. |
-| `ESCUELA_ROLE` | Puede asignar la netbook a un estudiante final. |
-
-#### 2.1.2 Máquina de Estados
-
-Cada netbook avanza secuencialmente a través de los siguientes estados, sin permitir retrocesos o saltos:
-
-1. `FABRICADA` → (auditoría) → 2. `HW_APROBADO` → (validación SW) → 3. `SW_VALIDADO` → (distribución) → 4. **`DISTRIBUIDA`**
-
-
-Cada transición requiere el estado previo correcto, garantizando un flujo de trabajo coherente.
-
-### 2.2 Diagrama UML de Clases
-
-```plaintext
-┌─────────────────────────────────────────────────────────────┐
-│                     SupplyChainTracker                      │
-├─────────────────────────────────────────────────────────────┤
-│ - netbooks: mapping(string => Netbook)                      │
-│ - allSerialNumbers: string[]                                │
-├──────────────────────────────────┬──────────────────────────┤
-│   // Roles                        │                          │
-│   FABRICANTE_ROLE                │   DEFAULT_ADMIN_ROLE     │
-│   AUDITOR_HW_ROLE                │   ESCUELA_ROLE           │
-│   TECNICO_SW_ROLE                │                          │
-├──────────────────────────────────┴──────────────────────────┤
-│   // Estado de la Netbook                                    │
-│   enum State { FABRICADA, HW_APROBADO, SW_VALIDADO, ... }    │
-├─────────────────────────────────────────────────────────────┤
-│   // Reporte de la Netbook                                     │
-│   struct Netbook {                                           │
-│       serialNumber, batchId, initialModelSpecs              │
-│       hwAuditor, hwIntegrityPassed, hwReportHash            │
-│       swTechnician, osVersion, swValidationPassed           │
-│       destinationSchoolHash, studentIdHash, ...            │
-│   }                                                        │
-├─────────────────────────────────────────────────────────────┤
-│   // Eventos Públicos                                         │
-│   event NetbookRegistered(string serial);                   │
-│   event HardwareAudited(string serial);                     │
-│   event SoftwareValidated(string serial);                   │
-│   event AssignedToStudent(string serial);                   │
-├─────────────────────────────────────────────────────────────┤
-│   // Funciones (Módulo de Gobernanza)                        │
-│   + grantRole(role, account)                                │
-│   + revokeRole(role, account)                               │
-├─────────────────────────────────────────────────────────────┤
-│   // Funciones (Módulo de Trazabilidad)                      │
-│   + registerNetbooks(serials, batches, specs)               │
-│   + auditHardware(serial, passed, reportHash)               │
-│   + validateSoftware(serial, version, passed)               │
-│   + assignToStudent(serial, schoolHash, studentHash)        │
-├─────────────────────────────────────────────────────────────┤
-│   // Funciones (Módulo de Reporte)                           │
-│   + getNetbookState(serial): State                         │
-│   + getNetbookReport(serial): Netbook                      │
-└─────────────────────────────────────────────────────────────┘
+```
+SupplyChainTracker
+    └── AccessControl
+        └── IAccessControl
+        └── Context
+        └── ERC165
 ```
 
----
+### Data Flow
 
-## 3. Funcionalidad Detallada
+```
+External Call → Modifier Validation → State Check → Data Update → Event Emission
+```
 
-### 3.1 Módulo de Gobernanza
+## Web Application Architecture
 
-- `grantRole(role, account)`: Permite al administrador otorgar un rol.
-- `revokeRole(role, account)`: Permite al administrador revocar un rol.
-- **Acceso**: Restringido solo a `DEFAULT_ADMIN_ROLE`.
+### Project Structure
 
-### 3.2 Módulo de Trazabilidad (Escritura)
+```
+web/
+├── public/
+├── src/
+│   ├── app/
+│   │   ├── admin/
+│   │   ├── api/
+│   │   ├── profile/
+│   │   └── tokens/
+│   ├── components/
+│   ├── contexts/
+│   ├── contracts/
+│   ├── hooks/
+│   ├── lib/
+│   ├── services/
+│   └── types/
+├── .env.local
+├── next.config.js
+├── package.json
+└── tailwind.config.js
+```
 
+### Service Layer
 
-| Método | Rol Requerido | Precondición de Estado |
-|---|---|---|
-| `registerNetbooks` | `FABRICANTE_ROLE` | Ninguna | 
-| `auditHardware` | `AUDITOR_HW_ROLE` | `FABRICADA` |
-| `validateSoftware` | `TECNICO_SW_ROLE` | `HW_APROBADO` |
-| `assignToStudent` | `ESCUELA_ROLE` | `SW_VALIDADO` |
+The application uses a service-oriented architecture with two main service classes:
 
-### 3.3 Módulo de Reporte (Lectura)
+#### Web3Service
+- Handles connection to Ethereum provider
+- Manages wallet connectivity
+- Provides access to provider, signer, and contract instances
+- Implements utilities for network and balance information
 
+#### SupplyChainService
+- Specialized wrapper around Web3Service
+- Type-safe methods for all contract functions
+- Error handling and logging
+- Connectivity and account status utilities
 
-- `getNetbookState(serial)`: Devuelve el estado actual (eficiente para verificaciones rápidas).
-- `getNetbookReport(serial)`: Devuelve el estado completo del reporte de trazabilidad.
+## Interaction Flow
 
----
+### User Interaction Sequence
 
-## 4. Consideraciones de Seguridad y Privacidad
+1. User connects wallet through frontend interface
+2. Web3Service establishes connection to Ethereum provider
+3. SupplyChainService creates contract instance with signer
+4. User performs actions through UI components
+5. Service methods call contract functions
+6. Blockchain processes transaction
+7. Events are emitted and UI updates accordingly
 
-- **Validación de Estado**: Se asegura de que las transiciones sean válidas usando modificadores `stateExpected`.
-- **Validación de Rol**: Se utiliza `_checkRoleCustom` y `AccessControl` para autenticar al llamador.
-- **Privacidad de Datos PII**: `studentIdHash` y `destinationSchoolHash` almacenan hashes criptográficos, no datos sensibles.
-- **Inmutabilidad**: Una vez registrada una netbook, su historial no puede modificarse ni borrarse.
-- **Auditoría Pública**: Cualquier entidad puede consultar el historial completo usando `getNetbookReport`.
+### Data Flow Diagram
 
----
+```
++----------------+     +---------------------+     +-----------------------+
+|                |     |                     |     |                       |
+|   Navegador    |<--->|   Aplicación Web    |<--->|   Blockchain (Anvil)  |
+|   (Frontend)   |     |   (Next.js + Web3)  |     |   (SupplyChainTracker) |
+|                |     |                     |     |                       |
++----------------+     +---------------------+     +-----------------------+
+```
 
-## 5. Entidades de Datos
+## Environment Configuration
 
-La estrucutura `Netbook` contiene:
+### Environment Variables
 
-- **Datos de Origen**: Registrados por el `FABRICANTE_ROLE`.
-- **Datos de Hardware**: Registrados por el `AUDITOR_HW_ROLE`.
-- **Datos de Software**: Registrados por el `TECNICO_SW_ROLE`.
-- **Datos de Destino**: Registrados por el `ESCUELA_ROLE`.
+```
+# RPC URL for Anvil connection
+NEXT_PUBLIC_ANVIL_RPC_URL=http://127.0.0.1:8545
 
----
+# Deployed contract address
+NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS=0x5FbDB2315678afecb367f032d93F642f64180aa3
+```
 
-## 6. Despliegue y Variables
+## Security Considerations
 
-Para detalles sobre direcciones, roles, y claves de despliegue, ver el archivo `variables.txt`.
-
----
+- Role-based access control with exhaustive validation
+- State validation to ensure correct workflow progression
+- Cryptographic hashing to protect sensitive data
+- Immutable audit trail of entire lifecycle
+- Public auditability of all supply chain events
 
 # Generated with [Continue](https://continue.dev)
 Co-Authored-By: Continue <noreply@continue.dev>

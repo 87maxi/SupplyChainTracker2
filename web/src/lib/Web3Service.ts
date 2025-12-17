@@ -2,12 +2,19 @@ import { ethers } from 'ethers';
 import { Signer } from 'ethers';
 import SupplyChainTrackerABI from '@/contracts/abi/SupplyChainTracker.json';
 
-const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '0x5FbDB2315678afecb367f032d93F642f64180aa3'; // Default Anvil address
+const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS;
+
+if (!CONTRACT_ADDRESS) {
+  console.warn('NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS is not set');
+}
 
 export class Web3Service {
   private contract: ethers.Contract;
 
   constructor(signer: Signer) {
+    if (!CONTRACT_ADDRESS) {
+      throw new Error('Contract address not configured');
+    }
     this.contract = new ethers.Contract(CONTRACT_ADDRESS, SupplyChainTrackerABI, signer);
   }
 
@@ -47,16 +54,7 @@ export class Web3Service {
     return tx;
   }
 
-  // Read Functions
-  async getNetbookReport(serial: string) {
-    return await this.contract.getNetbookReport(serial);
-  }
-
-  async getNetbookState(serial: string) {
-    return await this.contract.getNetbookState(serial);
-  }
-
-  // Role Constants (retrieved from contract)
+  // Write-only functions (these require signer access)
   async getRoles() {
     const roles = {
       DEFAULT_ADMIN_ROLE: await this.contract.DEFAULT_ADMIN_ROLE(),
