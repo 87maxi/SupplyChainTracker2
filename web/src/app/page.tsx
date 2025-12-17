@@ -4,6 +4,7 @@ import { useWeb3 } from '@/lib/web3';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { WalletConnectButton } from '@/components/WalletConnectButton';
+import { RoleRequestButton } from '@/components/RoleRequestButton';
 
 export default function Home() {
   const { isConnected, address, connect, disconnect } = useWeb3();
@@ -25,12 +26,15 @@ export default function Home() {
           <CardContent className="space-y-4">
             {isConnected ? (
               <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  Conectado como: <span className="font-mono">{address}</span>
-                </p>
-                <Button variant="outline" onClick={disconnect} className="w-full">
-                  Desconectar Wallet
-                </Button>
+                <>
+                  <p className="text-sm text-muted-foreground">
+                    Conectado como: <span className="font-mono">{address}</span>
+                  </p>
+                  <RoleRequestButton />
+                  <Button variant="outline" onClick={disconnect} className="w-full">
+                    Desconectar Wallet
+                  </Button>
+                </>
               </div>
             ) : (
               <div className="space-y-4">
