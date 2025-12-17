@@ -72,7 +72,7 @@ const NavigationMenuTrigger = React.forwardRef<
       className={cn(navigationMenuTriggerStyle(), "group", className)}
       {...props}
     >
-      {children} 
+      {children}
     </Comp>
   )
 })
@@ -80,7 +80,7 @@ NavigationMenuTrigger.displayName = "NavigationMenuTrigger"
 
 const NavigationMenuLink = React.forwardRef<
   HTMLAnchorElement,
-  React.ComponentPropsWithoutRef<"a" > & { asChild?: boolean }
+  React.ComponentPropsWithoutRef<"a"> & { asChild?: boolean }
 >(({ className, asChild = false, ...props }, ref) => {
   const Comp = asChild ? Slot : "a"
   return (
@@ -100,7 +100,7 @@ const NavigationMenuViewport = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "origin-top-center relative mt-1.5 h-[var(--radix-navigation-menu-viewport-height)] w-full overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-top md:w-[var(--radix-navigation-menu-viewport-width)]",
+      "origin-top-center relative mt-1.5 h-[var(--radix-navigation-menu-viewport-height)] w-full overflow-hidden rounded-xl border border-white/10 bg-popover/95 text-popover-foreground shadow-2xl backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-top md:w-[var(--radix-navigation-menu-viewport-width)]",
       className
     )}
     {...props}
