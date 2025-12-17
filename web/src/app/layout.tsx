@@ -22,9 +22,6 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// Create a client
-const queryClient = new QueryClient();
-
 // Create wagmi config
 const config = createWagmiConfig();
 
