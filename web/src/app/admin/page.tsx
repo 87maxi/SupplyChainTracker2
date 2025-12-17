@@ -38,8 +38,8 @@ export default function AdminPage() {
     setSuccess('');
 
     try {
-              const tx = await SupplyChainService.grantRole(selectedRole, account);
-        await tx.wait();
+      const tx = await SupplyChainService.grantRole(selectedRole, account);
+      await tx.wait();
       setSuccess('Rol asignado correctamente!');
       setSelectedRole('');
       setAccount('');
@@ -64,8 +64,8 @@ export default function AdminPage() {
     setSuccess('');
 
     try {
-              const tx = await SupplyChainService.revokeRole(selectedRole, account);
-        await tx.wait();
+      const tx = await SupplyChainService.revokeRole(selectedRole, account);
+      await tx.wait();
       setSuccess('Rol revocado correctamente!');
       setSelectedRole('');
       setAccount('');

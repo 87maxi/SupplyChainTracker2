@@ -52,7 +52,11 @@ export class SupplyChainService {
 
   static async grantRole(roleHash: string, account: string): Promise<any> {
     try {
-      return await Web3Service.getContract().grantRole(roleHash, account);
+      const contract = Web3Service.getContract();
+      if (!contract) {
+        throw new Error('Contract not initialized');
+      }
+      return await contract.grantRole(roleHash, account);
     } catch (error) {
       console.error('Error granting role:', error);
       throw error;
@@ -61,7 +65,11 @@ export class SupplyChainService {
 
   static async revokeRole(roleHash: string, account: string): Promise<any> {
     try {
-      return await Web3Service.getContract().revokeRole(roleHash, account);
+      const contract = Web3Service.getContract();
+      if (!contract) {
+        throw new Error('Contract not initialized');
+      }
+      return await contract.revokeRole(roleHash, account);
     } catch (error) {
       console.error('Error revoking role:', error);
       throw error;
