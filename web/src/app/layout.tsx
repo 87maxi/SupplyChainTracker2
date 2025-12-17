@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Header } from '@/components/layout/Header';
 import { WagmiProvider } from 'wagmi';
-import { QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RainbowKitProviderWrapper } from '@/components/RainbowKitProviderWrapper';
 import { createWagmiConfig } from '@/lib/wagmi';
 
