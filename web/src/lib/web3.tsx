@@ -44,6 +44,11 @@ export const connectWallet = async (): Promise<ethers.Signer> => {
   try {
     const provider = await getProvider();
     const accounts = await provider.send('eth_requestAccounts', []);
+    
+    if (!accounts || accounts.length === 0) {
+      throw new Error('No accounts found');
+    }
+    
     const signer = await provider.getSigner();
     const address = accounts[0];
     
