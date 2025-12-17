@@ -1,188 +1,214 @@
-import { Header } from '@/components/layout/Header';
-import { useWeb3 } from '@/contexts/Web3Context';
+"use client";
+
+import { useWeb3 } from '@/hooks/useWeb3';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import Link from 'next/link';
-import { useContract } from '@/hooks/useContract';
-import { useQuery } from '@tanstack/react-query';
-import { formatDistanceToNow } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { State } from '@/types/contract';
+import { SupplyChainService } from '@/services/SupplyChainService';
+import { useEffect, useState } from 'react';
+import { Netbook } from '@/types/contract';
 
-export default function Dashboard() {
-  const { isConnected } = useWeb3();
-  const contract = useContract();
+// Reusable Status Badge Component
+function StatusBadge({ status }: { status: string }) {
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'En fabricación':
+        return 'bg-gray-100 text-gray-800';
+      case 'Hardware aprobado':
+        return 'bg-blue-100 text-blue-800';
+      case 'Software validado':
+        return 'bg-green-100 text-green-800';
+      case 'Entregada':
+        return 'bg-purple-100 text-purple-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
 
-  const { data: stats, isLoading } = useQuery({
-    queryKey: ['dashboard-stats'],
-    queryFn: async () => {
-      if (!contract) return null;
-      
-      // Estos son datos simulados, en producción se obtendrían del contrato
-      return {
-        total: 1234,
-        manufacturing: 589,
-        readyForDelivery: 412,
-        delivered: 233
-      };
-    },
-    enabled: isConnected && !!contract,
+  return (
+    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
+      {status}
+    </span>
+  );
+}
+
+// Summary Card Component
+function SummaryCard({ title, count, description }: { title: string, count: number, description: string }) {
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-sm font-medium">{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="text-2xl font-bold">{count}</div>
+        <p className="text-xs text-muted-foreground">{description}</p>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Tracking Card Component
+function TrackingCard({ netbook }: { netbook: Netbook }) {
+  const getStatusText = (state: number) => {
+    switch (state) {
+      case 0:
+        return 'En fabricación';
+      case 1:
+        return 'Hardware aprobado';
+      case 2:
+        return 'Software validado';
+      case 3:
+        return 'Entregada';
+      default:
+        return 'Desconocido';
+    }
+  };
+
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between">
+          <div className="font-medium">{netbook.serialNumber}</div>
+          <StatusBadge status={getStatusText(netbook.currentState)} />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export default function ManagerDashboard() {
+  const { address, isConnected, connect } = useWeb3();
+  const [serialNumbers, setSerialNumbers] = useState<string[]>([]);
+  const [netbooks, setNetbooks] = useState<Netbook[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [summary, setSummary] = useState({
+    fabricacion: 0,
+    hwAprobado: 0,
+    swValidado: 0,
+    entregadas: 0
   });
 
-  const { data: recentActivity, isLoading: isActivityLoading } = useQuery({
-    queryKey: ['recent-activity'],
-    queryFn: async () => {
-      // Simular datos de actividad reciente
-      return [
-        {
-          id: 1,
-          action: 'Registro de 25 netbooks',
-          timestamp: '2024-01-15T10:30:00Z',
-          actor: '0x1234...5678',
-          status: 'success'
-        },
-        {
-          id: 2,
-          action: 'Auditoría de hardware completada',
-          timestamp: '2024-01-15T07:15:00Z',
-          actor: '0x9abc...def0',
-          status: 'success'
-        },
-        {
-          id: 3,
-          action: 'Validación de software iniciada',
-          timestamp: '2024-01-15T06:00:00Z',
-          actor: '0x1111...2222',
-          status: 'pending'
-        }
-      ];
-    },
-    enabled: isConnected,
-  });
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      if (!isConnected) {
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      try {
+        // Get all serial numbers
+        const serials = await SupplyChainService.getAllSerialNumbers();
+        setSerialNumbers(serials);
+
+        // Get detailed data for each netbook
+        const netbookData = await Promise.all(
+          serials.map(async (serial) => {
+            try {
+              const report = await SupplyChainService.getNetbookReport(serial);
+              return report;
+            } catch (error) {
+              console.error(`Error fetching data for ${serial}:`, error);
+              return null;
+            }
+          })
+        );
+
+        // Filter out null results
+        const validNetbooks = netbookData.filter((netbook): netbook is Netbook => netbook !== null);
+        setNetbooks(validNetbooks);
+
+        // Calculate summary counts
+        const fabricacion = validNetbooks.filter(n => n.currentState === 0).length;
+        const hwAprobado = validNetbooks.filter(n => n.currentState === 1).length;
+        const swValidado = validNetbooks.filter(n => n.currentState === 2).length;
+        const entregadas = validNetbooks.filter(n => n.currentState === 3).length;
+
+        setSummary({
+          fabricacion,
+          hwAprobado,
+          swValidado,
+          entregadas
+        });
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [isConnected]);
 
   if (!isConnected) {
     return (
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold mb-8">Inicio</h1>
         <Card>
-          <CardHeader>
-            <CardTitle>Acceso Restringido</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>Debes conectar tu wallet para acceder al dashboard.</p>
-            <Button asChild className="mt-4">
-              <Link href="/">Conectar Wallet</Link>
-            </Button>
+          <CardContent className="flex flex-col items-center justify-center py-12 space-y-4">
+            <p className="text-lg text-center">Por favor, conecta tu wallet para ver el estado de las netbooks.</p>
+            <Button onClick={connect}>Conectar Wallet</Button>
           </CardContent>
         </Card>
       </div>
     );
   }
 
-      return (
-      <>
-        <div className="container mx-auto px-4 py-12">
-          <div className="flex flex-col space-y-8">
-            <div className="flex justify-between items-center">
-              <div>
-                <h1 className="text-3xl font-bold">Dashboard</h1>
-                <p className="text-muted-foreground">Resumen del sistema de trazabilidad</p>
-              </div>
-              <Button asChild>
-                <Link href="/tokens/create">Registrar Netbooks</Link>
-              </Button>
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Netbooks Totales</CardTitle>
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" class="h-4 w-4 text-muted-foreground">
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-                  </svg>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats?.total || '0'}</div>
-                  <p className="text-xs text-muted-foreground">+20.1% respecto al mes pasado</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">En Fabricación</CardTitle>
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" class="h-4 w-4 text-muted-foreground">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                    <line x1="3" y1="9" x2="21" y2="9" />
-                    <line x1="9" y1="21" x2="9" y2="9" />
-                  </svg>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats?.manufacturing || '0'}</div>
-                  <p className="text-xs text-muted-foreground">+18.6% respecto al mes pasado</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Listas para Entrega</CardTitle>
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" class="h-4 w-4 text-muted-foreground">
-                    <path d="M20 10c0 4.993-5.539 10.1-13 10.1h-3" />
-                    <path d="M15 9.344V4a3 3 0 0 0-3-3v0a3 3 0 0 0-3 3v5.344" />
-                    <line x1="4.22" y1="10.22" x2="5.64" y2="11.64" />
-                    <line x1="9.78" y1="14.89" x2="8.36" y2="16.31" />
-                  </svg>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats?.readyForDelivery || '0'}</div>
-                  <p className="text-xs text-muted-foreground">+19.3% respecto al mes pasado</p>
-                </CardContent>
-              </Card>
-
-                        <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Entregadas</CardTitle>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" class="h-4 w-4 text-muted-foreground">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                  <polyline points="22 4 12 12 2 4" />
-                  </svg>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats?.delivered || '0'}</div>
-                  <p className="text-xs text-muted-foreground">+23.1% respecto al mes pasado</p>
-                </CardContent>
-              </Card>
-
-              <div className='mt-6'>
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Actividad Reciente</CardTitle>
-                    <CardDescription>Últimas acciones en el sistema</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-8">
-                      {isActivityLoading ? (
-                        <div>Cargando actividad...</div>
-                      ) : (
-                        recentActivity?.map((activity) => (
-                          <div key={activity.id} className="flex items-center">
-                            <div className={`flex h-2 w-2 rounded-full ${activity.status === 'success' ? 'bg-success' : activity.status === 'pending' ? 'bg-yellow-400' : 'bg-destructive'}`} />
-                            <div className="ml-4 space-y-1">
-                              <p className="text-sm font-medium leading-none">{activity.action}</p>
-                              <p className="text-sm text-muted-foreground">
-                                por {activity.actor} • {formatDistanceToNow(new Date(activity.timestamp), { locale: es, addSuffix: true })}
-                              </p>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </div>
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-8">Inicio</h1>
+      
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <p className="text-lg">Cargando...</p>
         </div>
-      </>
-    );
-  }
+      ) : (
+        <>
+          {/* Summary Cards */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+            <SummaryCard 
+              title="En fabricación" 
+              count={summary.fabricacion} 
+              description="Netbooks recién fabricadas" 
+            />
+            <SummaryCard 
+              title="Hardware aprobado" 
+              count={summary.hwAprobado} 
+              description="Netbooks con hardware auditado" 
+            />
+            <SummaryCard 
+              title="Software validado" 
+              count={summary.swValidado} 
+              description="Netbooks con software validado" 
+            />
+            <SummaryCard 
+              title="Entregadas" 
+              count={summary.entregadas} 
+              description="Netbooks distribuidas" 
+            />
+          </div>
+          
+          {/* Tracking List */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Estado de las Netbooks</CardTitle>
+              <CardDescription>Seguimiento del estado actual de todas las netbooks</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {netbooks.length > 0 ? (
+                <div className="space-y-2">
+                  {netbooks.map((netbook) => (
+                    <TrackingCard key={netbook.serialNumber} netbook={netbook} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  No hay netbooks registradas aún.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
+    </div>
+  );
+}
