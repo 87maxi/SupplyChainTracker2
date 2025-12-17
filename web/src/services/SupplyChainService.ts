@@ -27,6 +27,8 @@ Web3Service.setContract(contractConfig);
 
 // Type-safe service for SupplyChainTracker contract
 export class SupplyChainService {
+  public static readonly FABRICANTE_ROLE = '0xc9d9e6b172513355070360451450413840810234077175348639291479838649';
+
   // Read functions
   static async getNetbookState(serial: string): Promise<number> {
     try {
@@ -141,6 +143,16 @@ export class SupplyChainService {
     } catch (error) {
       console.error('Error checking role:', error);
       throw error;
+    }
+  }
+
+  static async isAdmin(account: string): Promise<boolean> {
+    try {
+      const DEFAULT_ADMIN_ROLE = '0x0000000000000000000000000000000000000000000000000000000000000000';
+      return await this.hasRole(DEFAULT_ADMIN_ROLE, account);
+    } catch (error) {
+      console.error('Error checking admin role:', error);
+      return false;
     }
   }
 

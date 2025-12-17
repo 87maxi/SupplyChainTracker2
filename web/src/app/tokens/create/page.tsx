@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SupplyChainService } from '@/services/SupplyChainService';
 
 export default function CreateTokensPage() {
@@ -61,6 +61,27 @@ export default function CreateTokensPage() {
     }
   };
 
+  const [isManufacturer, setIsManufacturer] = useState(false);
+  const [checkingRole, setCheckingRole] = useState(true);
+
+  useEffect(() => {
+    const checkRole = async () => {
+      if (isConnected && address) {
+        try {
+          const hasRole = await SupplyChainService.hasRole(SupplyChainService.FABRICANTE_ROLE, address);
+          setIsManufacturer(hasRole);
+        } catch (err) {
+          console.error("Failed to check manufacturer role", err);
+          setIsManufacturer(false);
+        }
+      } else {
+        setIsManufacturer(false);
+      }
+      setCheckingRole(false);
+    };
+    checkRole();
+  }, [isConnected, address]);
+
   if (!isConnected) {
     return (
       <div className="container mx-auto px-4 py-12">
@@ -68,6 +89,36 @@ export default function CreateTokensPage() {
           <CardContent className="flex flex-col items-center justify-center py-12">
             <p className="text-lg mb-4">Por favor, conecta tu wallet para crear NFTs de netbooks.</p>
             <Button onClick={() => window.location.reload()}>Conectar Wallet</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (checkingRole) {
+    return (
+      <div className="container mx-auto px-4 py-12">
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <p>Verificando permisos...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!isManufacturer) {
+    return (
+      <div className="container mx-auto px-4 py-12">
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="h-12 w-12 rounded-full bg-red-500/10 flex items-center justify-center mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500"><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+            </div>
+            <h3 className="text-lg font-semibold mb-2">Acceso Restringido</h3>
+            <p className="text-muted-foreground max-w-md">
+              Solo los usuarios con el rol de <strong>Fabricante</strong> pueden registrar nuevos netbooks.
+            </p>
           </CardContent>
         </Card>
       </div>

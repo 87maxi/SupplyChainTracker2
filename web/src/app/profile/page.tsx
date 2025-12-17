@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { SupplyChainService } from '@/services/SupplyChainService';
+import { RoleRequestService, RoleRequest } from '@/services/RoleRequestService';
 import { useState, useEffect } from 'react';
 import { State } from '@/types/contract';
 
@@ -22,6 +23,8 @@ export default function ProfilePage() {
     '0x8a56fd3344097613215665977667319753531132276132611988941251823874': 'ESCUELA_ROLE',
     '0x0000000000000000000000000000000000000000000000000000000000000000': 'DEFAULT_ADMIN_ROLE'
   };
+
+  const [requestStatus, setRequestStatus] = useState<RoleRequest | null>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -47,6 +50,12 @@ export default function ProfilePage() {
         }
 
         setRoles(userRoles);
+
+        // Check for existing request
+        const existingRequest = RoleRequestService.getRequestByAddress(address);
+        if (existingRequest) {
+          setRequestStatus(existingRequest);
+        }
       } catch (err) {
         console.error('Error fetching profile:', err);
         setError('Failed to load profile information');
@@ -57,6 +66,12 @@ export default function ProfilePage() {
 
     fetchProfile();
   }, [isConnected, address]);
+
+  const handleRequestRole = (role: string, roleName: string) => {
+    if (!address) return;
+    RoleRequestService.addRequest(address, role, roleName);
+    setRequestStatus(RoleRequestService.getRequestByAddress(address) || null);
+  };
 
   if (!isConnected) {
     return (
@@ -123,6 +138,47 @@ export default function ProfilePage() {
                 <span className="text-muted-foreground text-sm">No tienes roles asignados</span>
               )}
             </div>
+          </div>
+
+          <div className="border-t pt-6">
+            <h3 className="text-lg font-semibold mb-4">Solicitar Nuevo Rol</h3>
+            <div className="flex gap-4 items-end">
+              <div className="w-full space-y-2">
+                <Label htmlFor="roleRequest">Seleccionar Rol</Label>
+                <select
+                  id="roleRequest"
+                  className="w-full p-2 border rounded-md bg-background"
+                  onChange={(e) => {
+                    const selected = e.target.value;
+                    if (selected) {
+                      const roleName = Object.entries(rolesMap).find(([key]) => key === selected)?.[1] || '';
+                      handleRequestRole(selected, roleName);
+                    }
+                  }}
+                  value=""
+                >
+                  <option value="">Seleccionar un rol para solicitar...</option>
+                  {Object.entries(rolesMap)
+                    .filter(([key]) => key !== '0x0000000000000000000000000000000000000000000000000000000000000000') // Exclude Admin
+                    .map(([key, label]) => (
+                      <option key={key} value={key}>{label}</option>
+                    ))}
+                </select>
+              </div>
+            </div>
+            {requestStatus && (
+              <div className={`mt-4 p-4 rounded-md ${requestStatus.status === 'pending' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' :
+                requestStatus.status === 'approved' ? 'bg-green-500/10 text-green-500 border-green-500/20' :
+                  'bg-red-500/10 text-red-500 border-red-500/20'
+                } border`}>
+                <p className="font-medium">
+                  Estado de solicitud ({requestStatus.roleName}): {
+                    requestStatus.status === 'pending' ? 'Pendiente de aprobación' :
+                      requestStatus.status === 'approved' ? 'Aprobado' : 'Rechazado'
+                  }
+                </p>
+              </div>
+            )}
           </div>
 
           <Button variant="outline" onClick={disconnect} className="mt-4">
