@@ -1,6 +1,6 @@
 "use client";
 
-import { useWeb3 } from '@/contexts/Web3Context';
+import { useWeb3 } from '@/lib/web3';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
@@ -34,15 +34,15 @@ export default function NetbookDetailsPage() {
   useEffect(() => {
     const fetchNetbook = async () => {
       if (!isConnected || !id || typeof id !== 'string') return;
-      
+
       setLoading(true);
       setError('');
-      
+
       try {
         const serial = id;
         const state = await SupplyChainService.getNetbookState(serial);
         const report = await SupplyChainService.getNetbookReport(serial);
-        
+
         setNetbook({
           ...report,
           serialNumber: serial,
@@ -55,7 +55,7 @@ export default function NetbookDetailsPage() {
         setLoading(false);
       }
     };
-    
+
     fetchNetbook();
   }, [isConnected, id]);
 
@@ -116,13 +116,13 @@ export default function NetbookDetailsPage() {
         <h1 className="text-3xl font-bold">Detalles del Netbook</h1>
         <Button onClick={() => router.push('/tokens')}>Volver a la lista</Button>
       </div>
-      
+
       <Card>
         <CardHeader>
           <CardTitle>{netbook?.serialNumber}</CardTitle>
           <CardDescription>
-            <span className={`px-2 py-1 rounded text-xs ${stateColors[netbook?.currentState || 0]}`}>
-              {stateLabels[netbook?.currentState || 0]}
+            <span className={`px-2 py-1 rounded text-xs ${stateColors[(netbook?.currentState || 0) as keyof typeof stateColors]}`}>
+              {stateLabels[(netbook?.currentState || 0) as keyof typeof stateLabels]}
             </span>
           </CardDescription>
         </CardHeader>
@@ -145,7 +145,7 @@ export default function NetbookDetailsPage() {
                 </div>
               </div>
             </div>
-            
+
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Estado del Ciclo de Vida</h3>
               <div className="space-y-2">
@@ -168,19 +168,19 @@ export default function NetbookDetailsPage() {
               </div>
             </div>
           </div>
-          
+
           <div className="border-t pt-6">
             <h3 className="text-lg font-semibold mb-4">Historial de Transiciones</h3>
             <div className="space-y-2">
               <p className="text-muted-foreground">El historial de transiciones se puede ver en los eventos del contrato.</p>
             </div>
           </div>
-          
+
           <div className="flex justify-between pt-6 border-t">
             <Button variant="outline" asChild>
               <Link href={`/tokens/${netbook?.serialNumber}/transfer`}>Transferir Netbook</Link>
             </Button>
-            
+
             <Button asChild>
               <Link href="/tokens">Volver a la lista</Link>
             </Button>

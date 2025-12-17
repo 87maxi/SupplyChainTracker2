@@ -1,6 +1,7 @@
 import Web3Service from '@/services/Web3Service';
 import SupplyChainTrackerABI from '@/contracts/abi/SupplyChainTracker.json';
 import { Netbook } from '@/types/contract';
+import { ethers } from 'ethers';
 
 // Get contract address from environment variables
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS;
@@ -50,11 +51,11 @@ export class SupplyChainService {
       const contract = Web3Service.getContract();
       const count = await contract.allSerialNumbers.length;
       const serials: string[] = [];
-      
+
       for (let i = 0; i < count; i++) {
         serials.push(await contract.allSerialNumbers(i));
       }
-      
+
       return serials;
     } catch (error) {
       console.error('Error getting all serial numbers:', error);
@@ -64,10 +65,10 @@ export class SupplyChainService {
 
   // Write functions
   static async registerNetbooks(
-    serials: string[], 
-    batches: string[], 
+    serials: string[],
+    batches: string[],
     modelSpecs: string[]
-  ): Promise<ethers.ContractTransaction> {
+  ): Promise<ethers.ContractTransactionResponse> {
     try {
       const contract = Web3Service.getContract();
       return await contract.registerNetbooks(serials, batches, modelSpecs);
@@ -81,7 +82,7 @@ export class SupplyChainService {
     serial: string,
     passed: boolean,
     reportHash: string
-  ): Promise<ethers.ContractTransaction> {
+  ): Promise<ethers.ContractTransactionResponse> {
     try {
       return await Web3Service.getContract().auditHardware(serial, passed, reportHash);
     } catch (error) {
@@ -94,7 +95,7 @@ export class SupplyChainService {
     serial: string,
     version: string,
     passed: boolean
-  ): Promise<ethers.ContractTransaction> {
+  ): Promise<ethers.ContractTransactionResponse> {
     try {
       return await Web3Service.getContract().validateSoftware(serial, version, passed);
     } catch (error) {
@@ -107,11 +108,38 @@ export class SupplyChainService {
     serial: string,
     schoolHash: string,
     studentHash: string
-  ): Promise<ethers.ContractTransaction> {
+  ): Promise<ethers.ContractTransactionResponse> {
     try {
       return await Web3Service.getContract().assignToStudent(serial, schoolHash, studentHash);
     } catch (error) {
       console.error('Error assigning to student:', error);
+      throw error;
+    }
+  }
+
+  static async grantRole(role: string, account: string): Promise<ethers.ContractTransaction> {
+    try {
+      return await Web3Service.getContract().grantRole(role, account);
+    } catch (error) {
+      console.error('Error granting role:', error);
+      throw error;
+    }
+  }
+
+  static async revokeRole(role: string, account: string): Promise<ethers.ContractTransaction> {
+    try {
+      return await Web3Service.getContract().revokeRole(role, account);
+    } catch (error) {
+      console.error('Error revoking role:', error);
+      throw error;
+    }
+  }
+
+  static async hasRole(role: string, account: string): Promise<boolean> {
+    try {
+      return await Web3Service.getContract().hasRole(role, account);
+    } catch (error) {
+      console.error('Error checking role:', error);
       throw error;
     }
   }

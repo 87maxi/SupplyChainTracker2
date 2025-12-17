@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { ethers } from 'ethers';
+import Web3Service from '@/services/Web3Service';
 
 // Define the context type
 interface Web3ContextType {
@@ -7,8 +8,8 @@ interface Web3ContextType {
   signer: ethers.Signer | null;
   address: string | null;
   isConnected: boolean;
-  connectWallet: () => Promise<void>;
-  disconnectWallet: () => void;
+  connect: () => Promise<void>;
+  disconnect: () => void;
 }
 
 // Create the context with default values
@@ -17,8 +18,8 @@ const Web3Context = createContext<Web3ContextType>({
   signer: null,
   address: null,
   isConnected: false,
-  connectWallet: async () => {},
-  disconnectWallet: () => {},
+  connect: async () => { },
+  disconnect: () => { },
 });
 
 // Props interface for the provider component
@@ -47,6 +48,10 @@ export const Web3Provider = ({ children }: Web3ProviderProps) => {
             setSigner(s);
             setAddress(savedAddress);
             setIsConnected(true);
+
+            // Sync with Web3Service (Note: Web3Service manages its own provider, but we can help it)
+            // Ideally Web3Service should be the source of truth or just a helper.
+            // For now, let's just ensure the service can connect if needed.
           } catch (error) {
             console.error('Failed to restore wallet connection:', error);
             localStorage.removeItem('walletAddress');
@@ -57,8 +62,27 @@ export const Web3Provider = ({ children }: Web3ProviderProps) => {
     loadProvider();
   }, []);
 
-  const connectWallet = async () => {
+  const connect = async () => {
+    if (!provider && typeof window !== 'undefined' && (window as any).ethereum) {
+      // If provider is not set yet (e.g. first load), set it
+      const p = new ethers.BrowserProvider((window as any).ethereum);
+      setProvider(p);
+      try {
+        const accounts = await p.send('eth_requestAccounts', []);
+        const acc = Array.isArray(accounts) ? accounts[0] : accounts;
+        const s = await p.getSigner();
+        setSigner(s);
+        setAddress(acc);
+        setIsConnected(true);
+        localStorage.setItem('walletAddress', acc);
+      } catch (error) {
+        console.error('Wallet connection failed:', error);
+      }
+      return;
+    }
+
     if (!provider) return;
+
     try {
       const accounts = await provider.send('eth_requestAccounts', []);
       const acc = Array.isArray(accounts) ? accounts[0] : accounts;
@@ -72,7 +96,7 @@ export const Web3Provider = ({ children }: Web3ProviderProps) => {
     }
   };
 
-  const disconnectWallet = () => {
+  const disconnect = () => {
     setSigner(null);
     setAddress(null);
     setIsConnected(false);
@@ -80,7 +104,7 @@ export const Web3Provider = ({ children }: Web3ProviderProps) => {
   };
 
   return (
-    <Web3Context.Provider value={{ provider, signer, address, isConnected, connectWallet, disconnectWallet }}>
+    <Web3Context.Provider value={{ provider, signer, address, isConnected, connect, disconnect }}>
       {children}
     </Web3Context.Provider>
   );

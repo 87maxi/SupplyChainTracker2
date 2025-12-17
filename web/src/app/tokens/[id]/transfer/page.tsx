@@ -1,6 +1,6 @@
 "use client";
 
-import { useWeb3 } from '@/contexts/Web3Context';
+import { useWeb3 } from '@/lib/web3';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -18,7 +18,7 @@ export default function TransferTokenPage() {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [netbookState, setNetbookState] = useState<number | null>(null);
-  
+
   useEffect(() => {
     if (id && typeof id === 'string') {
       setSerial(id);
@@ -44,7 +44,7 @@ export default function TransferTokenPage() {
       // Check if the netbook exists and get its current state
       const state = await SupplyChainService.getNetbookState(serial);
       setNetbookState(state);
-      
+
       // Check if the netbook is in a state that allows transfer (DISTRIBUIDA)
       // Assuming state 3 is DISTRIBUIDA (as per the state machine in the requirements)
       if (state !== 3) {
@@ -83,7 +83,7 @@ export default function TransferTokenPage() {
   return (
     <div className="container mx-auto px-4 py-12">
       <h1 className="text-3xl font-bold mb-8">Transferir Netbook</h1>
-      
+
       <Card>
         <CardHeader>
           <CardTitle>Transferir Netbook {serial}</CardTitle>
@@ -100,7 +100,7 @@ export default function TransferTokenPage() {
                 readOnly
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="toAddress">Dirección de la Institución</Label>
               <Input
@@ -111,7 +111,7 @@ export default function TransferTokenPage() {
                 placeholder="0x..."
               />
             </div>
-            
+
             {netbookState !== null && (
               <div className="p-4 bg-gray-50 rounded-md">
                 <p className="font-medium">Estado actual: {netbookState === 0 ? 'FABRICADA' : netbookState === 1 ? 'HW_APROBADO' : netbookState === 2 ? 'SW_VALIDADO' : netbookState === 3 ? 'DISTRIBUIDA' : 'Desconocido'}</p>
@@ -121,12 +121,12 @@ export default function TransferTokenPage() {
               </div>
             )}
           </div>
-          
+
           {error && <div className="text-red-500 p-4 rounded-md bg-red-50">{error}</div>}
           {success && <div className="text-green-500 p-4 rounded-md bg-green-50">{success}</div>}
-          
-          <Button 
-            onClick={handleTransfer} 
+
+          <Button
+            onClick={handleTransfer}
             disabled={loading}
             className="w-full"
           >

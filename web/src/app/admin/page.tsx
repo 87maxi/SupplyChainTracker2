@@ -1,6 +1,6 @@
 "use client";
 
-import { useWeb3 } from '@/contexts/Web3Context';
+import { useWeb3 } from '@/lib/web3';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -77,19 +77,19 @@ export default function AdminPage() {
   return (
     <div className="container mx-auto px-4 py-12">
       <h1 className="text-3xl font-bold mb-8">Administración del Sistema</h1>
-      
+
       {isConnected ? (
         <div className="space-y-8">
           <div className="flex justify-between items-center">
             <p className="text-muted-foreground">Conectado como: <span className="font-mono">{address}</span></p>
           </div>
-          
+
           <Tabs defaultValue="roles" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="roles">Gestión de Roles</TabsTrigger>
               <TabsTrigger value="tokens">Gestión de Tokens</TabsTrigger>
             </TabsList>
-            
+
             <TabsContent value="roles" className="space-y-6">
               <Card>
                 <CardHeader>
@@ -114,7 +114,7 @@ export default function AdminPage() {
                         ))}
                       </select>
                     </div>
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="account">Dirección</Label>
                       <Input
@@ -125,7 +125,7 @@ export default function AdminPage() {
                         placeholder="0x..."
                       />
                     </div>
-                    
+
                     <div className="flex items-end space-x-2">
                       <Button onClick={handleGrantRole} className="w-full">
                         Asignar Rol
@@ -135,13 +135,13 @@ export default function AdminPage() {
                       </Button>
                     </div>
                   </div>
-                  
+
                   {error && <div className="text-red-500 p-4 rounded-md bg-red-50">{error}</div>}
                   {success && <div className="text-green-500 p-4 rounded-md bg-green-50">{success}</div>}
                 </CardContent>
               </Card>
             </TabsContent>
-            
+
             <TabsContent value="tokens" className="space-y-6">
               <Card>
                 <CardHeader>

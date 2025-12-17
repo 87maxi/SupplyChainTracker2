@@ -1,6 +1,6 @@
 "use client";
 
-import { useWeb3 } from '@/contexts/Web3Context';
+import { useWeb3 } from '@/lib/web3';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,23 +19,23 @@ export function Header() {
 
   return (
     <header className="border-b">
-      <div className="container flex h-16 items-center justify-between px-4">
+      <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-8">
           <Link href="/" className="font-bold text-xl">
             SupplyChainTracker
           </Link>
-          
+
           {isConnected && (
             <NavigationMenu>
               <NavigationMenuList>
                 <NavigationMenuItem>
-                  <Link href="/dashboard" legacyBehavior passHref>
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                  <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                    <Link href="/dashboard">
                       Dashboard
-                    </NavigationMenuLink>
-                  </Link>
+                    </Link>
+                  </NavigationMenuLink>
                 </NavigationMenuItem>
-                
+
                 <NavigationMenuItem>
                   <NavigationMenuTrigger>Netbooks</NavigationMenuTrigger>
                   <NavigationMenuContent>
@@ -54,58 +54,58 @@ export function Header() {
                         </Link>
                       </li>
                       <li>
-                        <Link href="/tokens/create" legacyBehavior passHref>
-                          <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                        <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                          <Link href="/tokens/create">
                             Registrar Netbooks
-                          </NavigationMenuLink>
-                        </Link>
+                          </Link>
+                        </NavigationMenuLink>
                       </li>
                       <li>
-                        <Link href="/tokens" legacyBehavior passHref>
-                          <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                        <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                          <Link href="/tokens">
                             Listado de Netbooks
-                          </NavigationMenuLink>
-                        </Link>
+                          </Link>
+                        </NavigationMenuLink>
                       </li>
                     </ul>
                   </NavigationMenuContent>
                 </NavigationMenuItem>
-                
+
                 <NavigationMenuItem>
-                  <Link href="/transfers" legacyBehavior passHref>
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                  <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                    <Link href="/transfers">
                       Transferencias
-                    </NavigationMenuLink>
-                  </Link>
+                    </Link>
+                  </NavigationMenuLink>
                 </NavigationMenuItem>
-                
+
                 <NavigationMenuItem>
-                  <Link href="/profile" legacyBehavior passHref>
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                  <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                    <Link href="/profile">
                       Perfil
-                    </NavigationMenuLink>
-                  </Link>
+                    </Link>
+                  </NavigationMenuLink>
                 </NavigationMenuItem>
-                
+
                 {window.location.hostname === 'localhost' && (
                   <NavigationMenuItem>
                     <NavigationMenuTrigger>Admin</NavigationMenuTrigger>
                     <NavigationMenuContent>
                       <ul className="grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
-                        <Link href="/admin" legacyBehavior passHref>
-                          <li>
-                            <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                        <li>
+                          <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                            <Link href="/admin">
                               Panel Admin
-                            </NavigationMenuLink>
-                          </li>
-                        </Link>
-                        <Link href="/admin/users" legacyBehavior passHref>
-                          <li>
-                            <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                            </Link>
+                          </NavigationMenuLink>
+                        </li>
+                        <li>
+                          <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                            <Link href="/admin/users">
                               Gestión de Usuarios
-                            </NavigationMenuLink>
-                          </li>
-                        </Link>
+                            </Link>
+                          </NavigationMenuLink>
+                        </li>
                       </ul>
                     </NavigationMenuContent>
                   </NavigationMenuItem>
@@ -114,7 +114,7 @@ export function Header() {
             </NavigationMenu>
           )}
         </div>
-        
+
         <WalletConnectButton />
       </div>
     </header>

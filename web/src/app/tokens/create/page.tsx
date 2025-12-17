@@ -1,6 +1,6 @@
 "use client";
 
-import { useWeb3 } from '@/contexts/Web3Context';
+import { useWeb3 } from '@/lib/web3';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -77,7 +77,7 @@ export default function CreateTokensPage() {
   return (
     <div className="container mx-auto px-4 py-12">
       <h1 className="text-3xl font-bold mb-8">Crear NFTs de Netbooks</h1>
-      
+
       <Card>
         <CardHeader>
           <CardTitle>Registrar Nuevos Netbooks</CardTitle>
@@ -95,7 +95,7 @@ export default function CreateTokensPage() {
                 placeholder="S12345,S67890,S11223,..."
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="batches">Lotes (separados por comas)</Label>
               <Input
@@ -106,7 +106,7 @@ export default function CreateTokensPage() {
                 placeholder="Lote1,Lote2,Lote3,..."
               />
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="modelSpecs">Especificaciones del Modelo (separadas por comas)</Label>
               <Input
@@ -118,12 +118,12 @@ export default function CreateTokensPage() {
               />
             </div>
           </div>
-          
+
           {error && <div className="text-red-500 p-4 rounded-md bg-red-50">{error}</div>}
           {success && <div className="text-green-500 p-4 rounded-md bg-green-50">{success}</div>}
-          
-          <Button 
-            onClick={handleRegisterNetbooks} 
+
+          <Button
+            onClick={handleRegisterNetbooks}
             disabled={loading}
             className="w-full"
           >

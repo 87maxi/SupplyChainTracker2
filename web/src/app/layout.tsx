@@ -1,7 +1,22 @@
 "use client";
 
+import "./globals.css";
+
 import { Web3Provider } from '@/lib/web3';
+
 import { Header } from '@/components/layout/Header';
+
+import { Geist, Geist_Mono } from "next/font/google";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
 
 export default function RootLayout({
   children,
@@ -10,10 +25,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}>
         <Web3Provider>
           <Header />
-          <main>{children}</main>
+          <main className="flex-1">{children}</main>
         </Web3Provider>
       </body>
     </html>

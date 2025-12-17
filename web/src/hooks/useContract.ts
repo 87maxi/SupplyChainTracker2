@@ -1,6 +1,6 @@
 "use client";
 
-import { useWeb3 } from '@/contexts/Web3Context';
+import { useWeb3 } from '@/lib/web3';
 import { useEffect, useState } from 'react';
 
 export function useContract() {
@@ -9,11 +9,11 @@ export function useContract() {
 
   useEffect(() => {
     if (!provider || !address) return;
-    
+
     // Aquí se inicializaría el contrato con ethers.js
     // Por ahora retorna null como placeholder
     console.log('Inicializando contrato con provider:', provider, 'y address:', address);
-    
+
     // Placeholder - en implementación real se crearía instancia del contrato
     setContract({
       // Métodos del contrato se añadirían aquí

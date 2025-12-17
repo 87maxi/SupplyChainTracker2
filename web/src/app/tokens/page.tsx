@@ -1,6 +1,6 @@
 "use client";
 
-import { useWeb3 } from '@/contexts/Web3Context';
+import { useWeb3 } from '@/lib/web3';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -11,7 +11,7 @@ import { Netbook, State } from '@/types/contract';
 
 export default function TokensPage() {
   const { isConnected } = useWeb3();
-  const [netbooks, setNetbooks] = useState<Array<{serialNumber: string, currentState: State, hwAuditor: string, swTechnician: string}>>([]);
+  const [netbooks, setNetbooks] = useState<Array<{ serialNumber: string, currentState: State, hwAuditor: string, swTechnician: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -32,27 +32,27 @@ export default function TokensPage() {
   useEffect(() => {
     const fetchNetbooks = async () => {
       if (!isConnected) return;
-      
+
       setLoading(true);
       setError('');
-      
+
       try {
         const serials = await SupplyChainService.getAllSerialNumbers();
-        
+
         const netbooksData = await Promise.all(
           serials.map(async (serial) => {
-                    const state = await SupplyChainService.getNetbookState(serial);
-        const report = await SupplyChainService.getNetbookReport(serial);
-        
-        return { 
-          serialNumber: serial, 
-          currentState: state,
-          hwAuditor: report.hwAuditor,
-          swTechnician: report.swTechnician
-        };
+            const state = await SupplyChainService.getNetbookState(serial);
+            const report = await SupplyChainService.getNetbookReport(serial);
+
+            return {
+              serialNumber: serial,
+              currentState: state as unknown as State,
+              hwAuditor: report.hwAuditor,
+              swTechnician: report.swTechnician
+            };
           })
         );
-        
+
         setNetbooks(netbooksData);
       } catch (err) {
         console.error('Error fetching netbooks:', err);
@@ -61,7 +61,7 @@ export default function TokensPage() {
         setLoading(false);
       }
     };
-    
+
     fetchNetbooks();
   }, [isConnected]);
 
@@ -93,18 +93,18 @@ export default function TokensPage() {
   return (
     <div className="container mx-auto px-4 py-12">
       <h1 className="text-3xl font-bold mb-8">Gestión de Netbooks</h1>
-      
+
       <div className="flex justify-between items-center mb-6">
         <p className="text-muted-foreground">Total: {netbooks.length} netbooks registrados</p>
         <Button asChild>
           <Link href="/tokens/create">Registrar Nuevos Netbooks</Link>
         </Button>
       </div>
-      
+
       <Card>
         <CardContent>
           {error && <div className="text-red-500 p-4 rounded-md bg-red-50 mb-4">{error}</div>}
-          
+
           {netbooks.length > 0 ? (
             <Table>
               <TableHeader>
@@ -120,9 +120,9 @@ export default function TokensPage() {
                   <TableRow key={index}>
                     <TableCell className="font-mono">{netbook.serialNumber}</TableCell>
                     <TableCell>
-                                          <span className={`px-2 py-1 rounded text-xs ${stateColors[netbook.currentState]}`}>
-                      {stateLabels[netbook.currentState]}
-                    </span>
+                      <span className={`px-2 py-1 rounded text-xs ${stateColors[netbook.currentState]}`}>
+                        {stateLabels[netbook.currentState]}
+                      </span>
                     </TableCell>
                     <TableCell>
                       {netbook.hwAuditor !== '0x0000000000000000000000000000000000000000' ? 'HW Audited' : 'Pending'}

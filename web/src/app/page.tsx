@@ -1,9 +1,9 @@
 "use client";
 
-import { useWeb3 } from '@/contexts/Web3Context';
+import { useWeb3 } from '@/lib/web3';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
+import { WalletConnectButton } from '@/components/WalletConnectButton';
 
 export default function Home() {
   const { isConnected, address, connect, disconnect } = useWeb3();
@@ -11,9 +11,9 @@ export default function Home() {
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="flex justify-end mb-8">
-        <ConnectButton />
+        <WalletConnectButton />
       </div>
-      
+
       <div className="flex flex-col items-center justify-center space-y-8">
         <Card className="w-full max-w-md">
           <CardHeader>
@@ -44,7 +44,7 @@ export default function Home() {
             )}
           </CardContent>
         </Card>
-        
+
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <Card>
             <CardHeader>
@@ -56,7 +56,7 @@ export default function Home() {
               </p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
               <CardTitle>Auditoría HW</CardTitle>
@@ -67,7 +67,7 @@ export default function Home() {
               </p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
               <CardTitle>Validación SW</CardTitle>
@@ -78,7 +78,7 @@ export default function Home() {
               </p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
               <CardTitle>Distribución</CardTitle>
@@ -89,7 +89,7 @@ export default function Home() {
               </p>
             </CardContent>
           </Card>
-          
+
           <Card className="md:col-span-2 lg:col-span-1">
             <CardHeader>
               <CardTitle>Administración</CardTitle>
@@ -100,7 +100,7 @@ export default function Home() {
               </p>
             </CardContent>
           </Card>
-          
+
           <Card className="md:col-span-2 lg:col-span-1">
             <CardHeader>
               <CardTitle>Trazabilidad</CardTitle>
