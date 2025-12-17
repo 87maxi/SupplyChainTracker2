@@ -134,9 +134,9 @@ export default function AdminPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value={SupplyChainService.FABRICANTE_ROLE}>Fabricante</SelectItem>
-            <SelectItem value={SupplyChainService.AUDITOR_HW_ROLE}>Auditor HW</SelectItem>
-            <SelectItem value={SupplyChainService.TECNICO_SW_ROLE}>Técnico SW</SelectItem>
-            <SelectItem value={SupplyChainService.ESCUELA_ROLE}>Escuela</SelectItem>
+                      <SelectItem value={SupplyChainService.AUDITOR_HW_ROLE}>Auditor HW</SelectItem>
+                      <SelectItem value={SupplyChainService.TECNICO_SW_ROLE}>Técnico SW</SelectItem>
+                      <SelectItem value={SupplyChainService.ESCUELA_ROLE}>Escuela</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

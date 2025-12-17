@@ -137,7 +137,8 @@ export default function TokensPage() {
                   <TableRow key={index}>
                     <TableCell className="font-mono">{netbook.serialNumber}</TableCell>
                     <TableCell>
-                                          <span className={`px-2 py-1 rounded text-xs ${stateColors[netbook.currentState]}`}>                                             {stateLabels[netbook.currentState]}
+                      <span className={`px-2 py-1 rounded text-xs ${stateColors[netbook.currentState]}`}>
+                        {stateLabels[netbook.currentState]}
                       </span>
                     </TableCell>
                     <TableCell>
