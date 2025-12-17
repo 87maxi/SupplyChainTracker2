@@ -37,7 +37,7 @@ export default function RootLayout({
     <html lang="es" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body>
         <WagmiProvider config={config}>
-          <QueryClientProvider client={queryClient}>
+          <QueryClientProvider client={new QueryClient()}>
             <RainbowKitProviderWrapper>
               <div className="min-h-screen bg-background font-sans antialiased">
                 <Header />
