@@ -1,6 +1,13 @@
 // Este archivo se ejecuta antes de cada prueba
 import '@testing-library/jest-dom';
 
+// Polyfill para Node.js environment
+if (typeof global.TextEncoder === 'undefined') {
+  const { TextEncoder, TextDecoder } = require('util');
+  global.TextEncoder = TextEncoder;
+  global.TextDecoder = TextDecoder;
+}
+
 // Mock para APIs del navegador
 if (typeof window !== 'undefined') {
   // Mock para window.matchMedia

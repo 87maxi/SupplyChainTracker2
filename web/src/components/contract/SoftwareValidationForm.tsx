@@ -1,0 +1,126 @@
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
+import { SupplyChainContract } from '@/lib/contracts/SupplyChainContract';
+
+interface SoftwareValidationFormProps {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  onComplete: () => void;
+}
+
+export function SoftwareValidationForm({ isOpen, onOpenChange, onComplete }: SoftwareValidationFormProps) {
+  const [serial, setSerial] = useState('');
+  const [version, setVersion] = useState('');
+  const [passed, setPassed] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleValidate = async () => {
+    if (!serial || !version) {
+      toast({
+        title: "Error",
+        description: "Por favor complete todos los campos",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      const tx = await SupplyChainContract.validateSoftware(serial, version, passed);
+      await tx.wait();
+      
+      toast({
+        title: "Éxito",
+        description: `Validación de software ${passed ? 'aprobada' : 'rechazada'} para netbook ${serial}`,
+      });
+      
+      // Reset form
+      setSerial('');
+      setVersion('');
+      setPassed(true);
+      
+      onComplete();
+      onOpenChange(false);
+    } catch (error: any) {
+      console.error('Error validating software:', error);
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo validar el software",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Validación de Software</DialogTitle>
+          <DialogDescription>
+            Registre los resultados de la validación del software instalado en una netbook.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="serial" className="text-right">
+              Serial
+            </Label>
+            <Input
+              id="serial"
+              value={serial}
+              onChange={(e) => setSerial(e.target.value)}
+              className="col-span-3"
+              placeholder="NB-001"
+            />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="version" className="text-right">
+              Versión OS
+            </Label>
+            <Input
+              id="version"
+              value={version}
+              onChange={(e) => setVersion(e.target.value)}
+              className="col-span-3"
+              placeholder="Ubuntu 22.04 LTS"
+            />
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="passed" 
+              checked={passed} 
+              onCheckedChange={(checked: boolean) => setPassed(checked)} 
+            />
+            <label
+              htmlFor="passed"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              Validación Aprobada
+            </label>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button type="submit" onClick={handleValidate} disabled={loading}>
+            {loading ? 'Registrando...' : 'Registrar Validación'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

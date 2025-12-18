@@ -4,6 +4,7 @@ import "./globals.css";
 import { Header } from '@/components/layout/Header';
 import { Web3Providers } from '@/components/Web3Providers';
 
+
 export const metadata: Metadata = {
   title: "Supply Chain Tracker",
   description: "Sistema de trazabilidad de netbooks educativas",
@@ -27,7 +28,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={`${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="es" className={`dark ${geistSans.variable} ${geistMono.variable}`}>
       <body>
         <Web3Providers>
           <div className="min-h-screen bg-background font-sans antialiased">

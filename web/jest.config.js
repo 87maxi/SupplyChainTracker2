@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   testEnvironment: 'jsdom',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   moduleNameMapper: {
@@ -15,4 +15,13 @@ module.exports = {
     '!src/app/layout.tsx',
     '!src/app/globals.css',
   ],
+  transformIgnorePatterns: [
+    'node_modules/(?!(wagmi|viem|@wagmi|@tanstack|@radix-ui)/)',
+  ],
+  // Fallback transformer for ESM modules
+  transform: {
+    '^.+\.(js|jsx|ts|tsx)$': ['babel-jest', { presets: ['next/babel'] }],
+    // Transform any problematic ESM modules
+    'node_modules/(?!.*\.mjs$)': 'babel-jest',
+  },
 };

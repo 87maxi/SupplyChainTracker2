@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useWeb3 } from '@/contexts/Web3Context';
-import { serverRpc } from '@/lib/serverRpc';
-import { SupplyChainService } from '@/services/SupplyChainService';
+import { useWeb3 } from '@/hooks/useWeb3';
+import { ROLES, ROLE_LABELS } from '@/lib/constants';
+import * as SupplyChainService from '@/services/SupplyChainService';
 
 interface UserRoles {
   isAdmin: boolean;
@@ -36,13 +36,13 @@ export const useUserRoles = () => {
 
       try {
         setRoles(prev => ({ ...prev, isLoading: true }));
-        
-        const isAdmin = await serverRpc.hasRole(SupplyChainService.DEFAULT_ADMIN_ROLE, address);
-        const isManufacturer = await serverRpc.hasRole(SupplyChainService.FABRICANTE_ROLE, address);
-        const isHardwareAuditor = await serverRpc.hasRole(SupplyChainService.AUDITOR_HW_ROLE, address);
-        const isSoftwareTechnician = await serverRpc.hasRole(SupplyChainService.TECNICO_SW_ROLE, address);
-        const isSchool = await serverRpc.hasRole(SupplyChainService.ESCUELA_ROLE, address);
-        
+
+        const isAdmin = await SupplyChainService.hasRole('0x0000000000000000000000000000000000000000000000000000000000000000', address);
+        const isManufacturer = await SupplyChainService.hasRole(ROLES.FABRICANTE.hash, address);
+        const isHardwareAuditor = await SupplyChainService.hasRole(ROLES.AUDITOR_HW.hash, address);
+        const isSoftwareTechnician = await SupplyChainService.hasRole(ROLES.TECNICO_SW.hash, address);
+        const isSchool = await SupplyChainService.hasRole(ROLES.ESCUELA.hash, address);
+
         setRoles({
           isAdmin,
           isManufacturer,
@@ -63,7 +63,7 @@ export const useUserRoles = () => {
   }, [address, isConnected]);
 
   // Función para verificar roles por nombre
-  const hasRole = (roleName: string) => {
+  const checkRole = (roleName: string) => {
     switch (roleName) {
       case 'DEFAULT_ADMIN_ROLE':
         return roles.isAdmin;
@@ -83,17 +83,17 @@ export const useUserRoles = () => {
   // Función para obtener roles activos como array de hashes
   const getActiveRoles = () => {
     const activeRoles: string[] = [];
-    if (roles.isAdmin) activeRoles.push(SupplyChainService.DEFAULT_ADMIN_ROLE);
-    if (roles.isManufacturer) activeRoles.push(SupplyChainService.FABRICANTE_ROLE);
-    if (roles.isHardwareAuditor) activeRoles.push(SupplyChainService.AUDITOR_HW_ROLE);
-    if (roles.isSoftwareTechnician) activeRoles.push(SupplyChainService.TECNICO_SW_ROLE);
-    if (roles.isSchool) activeRoles.push(SupplyChainService.ESCUELA_ROLE);
+    if (roles.isAdmin) activeRoles.push(ROLES.ADMIN.hash);
+    if (roles.isManufacturer) activeRoles.push(ROLES.FABRICANTE.hash);
+    if (roles.isHardwareAuditor) activeRoles.push(ROLES.AUDITOR_HW.hash);
+    if (roles.isSoftwareTechnician) activeRoles.push(ROLES.TECNICO_SW.hash);
+    if (roles.isSchool) activeRoles.push(ROLES.ESCUELA.hash);
     return activeRoles;
   };
 
   return {
     ...roles,
-    hasRole,
+    hasRole: checkRole,
     roles: getActiveRoles(),
   };
 };

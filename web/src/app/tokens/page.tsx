@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Link from 'next/link';
-import { SupplyChainService } from '@/services/SupplyChainService';
+import { getAllSerialNumbers, getNetbookState, getNetbookReport } from '@/services/SupplyChainService';
 import { useState, useEffect } from 'react';
 import { Netbook, State } from '@/types/contract';
 import { Laptop, Plus } from 'lucide-react';
@@ -38,12 +38,12 @@ export default function TokensPage() {
       setError('');
       
       try {
-        const serials = await SupplyChainService.getAllSerialNumbers();
+        const serials = await getAllSerialNumbers();
         
         const netbooksData = await Promise.all(
           serials.map(async (serial) => {
-                    const state = await SupplyChainService.getNetbookState(serial);
-        const report = await SupplyChainService.getNetbookReport(serial);
+                    const state = await getNetbookState(serial);
+        const report = await getNetbookReport(serial);
         
         return { 
           serialNumber: serial, 

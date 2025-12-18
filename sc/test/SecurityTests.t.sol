@@ -182,4 +182,6 @@ contract SecurityTests is Test {
         
         // Test getting report of non-existent netbook
         vm.expectRevert("Serial no valido");
-        tracker
+        tracker.getNetbookReport("NON_EXISTENT");
+    }
+}

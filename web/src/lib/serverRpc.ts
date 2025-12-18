@@ -1,82 +1,66 @@
-// Using native fetch (available in Node.js 18+)
+import { Netbook } from '@/types/contract';
+import { SupplyChainContract } from '@/lib/contracts/SupplyChainContract';
 
-// Get the base URL based on the environment
-const getBaseUrl = () => {
-  if (typeof window !== 'undefined') {
-    // Browser environment - use relative URL
-    return '';
-  }
-  
-  // Server environment - use absolute URL
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`;
-  }
-  
-  // Default to localhost for development
-  return 'http://localhost:3000';
-};
-
-const RPC_ENDPOINT = `${getBaseUrl()}/api/rpc`;
-
-interface RpcRequest {
-  method: string;
-  params: Record<string, any>;
-}
-
-interface RpcResponse<T = any> {
-  data: T | null;
-  error: string | null;
-}
-
-async function rpcCall<T>(method: string, params: Record<string, any>): Promise<T> {
-  try {
-    const response = await fetch(RPC_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ method, params }),
-    });
-
-    // Check if response is successful and content-type is JSON
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`HTTP error ${response.status}: ${errorText}`);
-    }
-
-    const contentType = response.headers.get('content-type');
-    if (!contentType || !contentType.includes('application/json')) {
-      const errorText = await response.text();
-      throw new Error(`Expected JSON response but got: ${contentType}. Response: ${errorText.substring(0, 200)}`);
-    }
-
-    const result = await response.json() as RpcResponse<T>;
-    
-    if (result.error) {
-      throw new Error(result.error);
-    }
-    
-    return result.data as T;
-  } catch (error) {
-    console.error(`RPC call failed for method ${method}:`, error);
-    throw error;
-  }
-}
-
-export const serverRpc = {
+// Server-side RPC calls that interact with the blockchain contract
+class ServerRpc {
   async getNetbookState(serial: string): Promise<string> {
-    return rpcCall<string>('getNetbookState', { serial });
-  },
-  
-  async getNetbookReport(serial: string): Promise<any> {
-    return rpcCall<any>('getNetbookReport', { serial });
-  },
-  
-  async getAllSerialNumbers(): Promise<string[]> {
-    return rpcCall<string[]>('getAllSerialNumbers', {});
-  },
-  
-  async hasRole(roleHash: string, address: string): Promise<boolean> {
-    return rpcCall<boolean>('hasRole', { roleHash, address });
+    console.log('Server RPC: getNetbookState', serial);
+    try {
+      const state = await SupplyChainContract.getNetbookState(serial);
+      return state.toString();
+    } catch (error) {
+      console.error('Error getting netbook state:', error);
+      return '0'; // Default to FABRICADA on error
+    }
   }
-};
+
+  async getNetbookReport(serial: string): Promise<Netbook> {
+    console.log('Server RPC: getNetbookReport', serial);
+    try {
+      const report = await SupplyChainContract.getNetbookReport(serial);
+      return report as Netbook;
+    } catch (error) {
+      console.error('Error getting netbook report:', error);
+      // Return empty report on error
+      return {
+        serialNumber: serial,
+        batchId: '',
+        initialModelSpecs: '',
+        hwAuditor: '0x0000000000000000000000000000000000000000',
+        hwIntegrityPassed: false,
+        hwReportHash: '0x0000000000000000000000000000000000000000000000000000000000000000',
+        swTechnician: '0x0000000000000000000000000000000000000000',
+        osVersion: '',
+        swValidationPassed: false,
+        destinationSchoolHash: '0x0000000000000000000000000000000000000000000000000000000000000000',
+        studentIdHash: '0x0000000000000000000000000000000000000000000000000000000000000000',
+        distributionTimestamp: '0',
+        currentState: 0 as any
+      };
+    }
+  }
+
+  async getAllSerialNumbers(): Promise<string[]> {
+    console.log('Server RPC: getAllSerialNumbers');
+    try {
+      // This would typically come from an indexed database or subgraph
+      // For now, return empty array - will be populated by contract events
+      return [];
+    } catch (error) {
+      console.error('Error getting serial numbers:', error);
+      return [];
+    }
+  }
+
+  async hasRole(roleHash: string, address: string): Promise<boolean> {
+    console.log('Server RPC: hasRole', { roleHash, address });
+    try {
+      return await SupplyChainContract.hasRole(roleHash, address);
+    } catch (error) {
+      console.error('Error checking role:', error);
+      return false;
+    }
+  }
+}
+
+export const serverRpc = new ServerRpc();

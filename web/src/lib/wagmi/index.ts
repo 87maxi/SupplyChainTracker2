@@ -1,1 +1,1 @@
-export { createWagmiConfig } from './config';
+export { createWagmiConfig, config } from './config';

@@ -4,35 +4,35 @@ import { useWeb3 } from '@/hooks/useWeb3';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { SupplyChainService } from '@/services/SupplyChainService';
+import * as SupplyChainService from '@/services/SupplyChainService';
 import { useState, useEffect } from 'react';
 
 export default function TransfersPage() {
   const { address, isConnected } = useWeb3();
-  const [transfers, setTransfers] = useState<Array<{serial: string, from: string, to: string, status: string}>>([]);
+  const [transfers, setTransfers] = useState<Array<{ serial: string, from: string, to: string, status: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchTransfers = async () => {
       if (!isConnected) return;
-      
+
       setLoading(true);
       setError('');
-      
+
       try {
         // Get all serial numbers
         const serials = await SupplyChainService.getAllSerialNumbers();
-        
+
         // Filter for transfers that are pending approval
         // In a real implementation, we'd have a pending transfers mapping in the contract
         // For now, we'll simulate pending transfers based on state transitions
-        
-        const pendingTransfers: Array<{serial: string, from: string, to: string, status: string}> = [];
-        
+
+        const pendingTransfers: Array<{ serial: string, from: string, to: string, status: string }> = [];
+
         for (const serial of serials) {
           const state = await SupplyChainService.getNetbookState(serial);
-          
+
           // In our state machine, transfers happen when moving from SW_VALIDADO to DISTRIBUIDA
           // We'll consider these as "pending" until confirmed
           if (state === 3) { // DISTRIBUIDA
@@ -47,7 +47,7 @@ export default function TransfersPage() {
             });
           }
         }
-        
+
         setTransfers(pendingTransfers);
       } catch (err) {
         console.error('Error fetching transfers:', err);
@@ -56,7 +56,7 @@ export default function TransfersPage() {
         setLoading(false);
       }
     };
-    
+
     fetchTransfers();
   }, [isConnected]);
 
@@ -88,7 +88,7 @@ export default function TransfersPage() {
   return (
     <div className="container mx-auto px-4 py-12">
       <h1 className="text-3xl font-bold mb-8">Transferencias Pendientes</h1>
-      
+
       <Card>
         <CardHeader>
           <CardTitle>Transferencias de Netbooks</CardTitle>
@@ -96,7 +96,7 @@ export default function TransfersPage() {
         </CardHeader>
         <CardContent>
           {error && <div className="text-red-500 p-4 rounded-md bg-red-50 mb-4">{error}</div>}
-          
+
           {transfers.length > 0 ? (
             <Table>
               <TableHeader>
@@ -115,11 +115,10 @@ export default function TransfersPage() {
                     <TableCell>{transfer.from}</TableCell>
                     <TableCell>{transfer.to}</TableCell>
                     <TableCell>
-                      <span className={`px-2 py-1 rounded text-xs ${
-                        transfer.status === 'Completado' ? 'bg-green-100 text-green-800' :
-                        transfer.status === 'Pendiente' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
+                      <span className={`px-2 py-1 rounded text-xs ${transfer.status === 'Completado' ? 'bg-green-100 text-green-800' :
+                          transfer.status === 'Pendiente' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-gray-100 text-gray-800'
+                        }`}>
                         {transfer.status}
                       </span>
                     </TableCell>

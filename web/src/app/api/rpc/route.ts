@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { SupplyChainService } from '@/services/SupplyChainService';
+import * as SupplyChainService from '@/services/SupplyChainService';
 
 // Handler for POST requests to /api/rpc
 export async function POST(request: NextRequest) {
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('RPC API error:', error);
-    
+
     if (error instanceof Error) {
       return NextResponse.json(
         { error: error.message },

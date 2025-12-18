@@ -5,11 +5,11 @@ import { usePathname } from 'next/navigation';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { ROLES } from '@/lib/constants';
 import { cn } from '@/lib/utils';
-import { 
-  BarChart3, 
-  Laptop, 
-  Settings, 
-  User 
+import {
+  BarChart3,
+  Laptop,
+  Settings,
+  User
 } from 'lucide-react';
 
 const navigationItems = [
@@ -57,7 +57,7 @@ export const Navigation = () => {
     );
   }
 
-  const filteredItems = navigationItems.filter(item => 
+  const filteredItems = navigationItems.filter(item =>
     item.roles.some(role => roles.includes(role))
   );
 
@@ -71,11 +71,11 @@ export const Navigation = () => {
             key={item.href}
             href={item.href}
             className={cn(
-              "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
-              "h-9 px-3 gap-2",
+              "relative inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium transition-all duration-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
+              "h-10 px-4 gap-2.5",
               isActive
-                ? "bg-primary text-primary-foreground shadow hover:bg-primary/90"
-                : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                ? "bg-primary/10 text-primary shadow-[0_0_20px_rgba(59,130,246,0.1)] after:absolute after:bottom-0 after:left-2 after:right-2 after:h-0.5 after:bg-primary after:rounded-full"
+                : "text-muted-foreground hover:text-foreground hover:bg-white/5"
             )}
             title={item.description}
           >

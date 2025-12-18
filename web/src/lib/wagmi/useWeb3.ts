@@ -1,4 +1,4 @@
 // Este archivo ha sido eliminado para evitar conflictos
-// Usar el contexto de Web3 desde '@/contexts/Web3Context' en su lugar
+// Usar el hook useWeb3 desde '@/hooks/useWeb3' en su lugar
 
 export {};
