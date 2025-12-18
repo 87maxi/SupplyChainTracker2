@@ -1,0 +1,1 @@
+export { createWagmiConfig } from './config';

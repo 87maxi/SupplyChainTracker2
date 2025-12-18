@@ -20,9 +20,7 @@ describe('SupplyChainService', () => {
     auditHardware: jest.fn(),
     validateSoftware: jest.fn(),
     assignToStudent: jest.fn(),
-    allSerialNumbers: {
-      length: jest.fn(),
-    },
+    allSerialNumbers: jest.fn(),
   };
 
   beforeEach(() => {
@@ -55,17 +53,12 @@ describe('SupplyChainService', () => {
     });
 
     it('should get all serial numbers', async () => {
-      mockContract.allSerialNumbers.length.mockResolvedValue(3);
-      mockContract.allSerialNumbers
-        .mockResolvedValueOnce('NB-001')
-        .mockResolvedValueOnce('NB-002')
-        .mockResolvedValueOnce('NB-003');
+      mockContract.allSerialNumbers.mockResolvedValue(['NB-001', 'NB-002', 'NB-003']);
       
       const serials = await SupplyChainService.getAllSerialNumbers();
       
       expect(serials).toEqual(['NB-001', 'NB-002', 'NB-003']);
-      expect(mockContract.allSerialNumbers.length).toHaveBeenCalled();
-      expect(mockContract.allSerialNumbers).toHaveBeenCalledTimes(4); // length + 3 calls
+      expect(mockContract.allSerialNumbers).toHaveBeenCalled();
     });
   });
 

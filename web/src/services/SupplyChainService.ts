@@ -2,6 +2,16 @@ import { Netbook } from '@/types/contract';
 import { serverRpc } from '@/lib/serverRpc';
 import Web3Service from '@/services/Web3Service';
 
+// Helper function to handle Web3 service errors
+function handleWeb3Error(error: any): any {
+  if (error.message.includes('server environment')) {
+    console.warn('Web3Service not available in server environment');
+    return null;
+  }
+  console.error('Web3 operation failed:', error);
+  throw error;
+}
+
 // Get contract address from environment variables
 const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS;
 
@@ -57,9 +67,8 @@ export class SupplyChainService {
         throw new Error('Contract not initialized');
       }
       return await contract.grantRole(roleHash, account);
-    } catch (error) {
-      console.error('Error granting role:', error);
-      throw error;
+    } catch (error: any) {
+      return handleWeb3Error(error);
     }
   }
 
@@ -70,7 +79,11 @@ export class SupplyChainService {
         throw new Error('Contract not initialized');
       }
       return await contract.revokeRole(roleHash, account);
-    } catch (error) {
+    } catch (error: any) {
+      if (error.message.includes('server environment')) {
+        console.warn('Web3Service not available in server environment');
+        return null;
+      }
       console.error('Error revoking role:', error);
       throw error;
     }
@@ -85,7 +98,11 @@ export class SupplyChainService {
     try {
       const contract = Web3Service.getContract();
       return await contract.registerNetbooks(serials, batches, modelSpecs);
-    } catch (error) {
+    } catch (error: any) {
+      if (error.message.includes('server environment')) {
+        console.warn('Web3Service not available in server environment');
+        return null;
+      }
       console.error('Error registering netbooks:', error);
       throw error;
     }

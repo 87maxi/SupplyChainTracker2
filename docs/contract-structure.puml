@@ -1,0 +1,110 @@
+@startuml
+' SupplyChainTracker Contract UML Diagram
+
+' Enums
+enum State {
+    FABRICADA
+    HW_APROBADO
+    SW_VALIDADO
+    DISTRIBUIDA
+}
+
+' Structs
+class Netbook {
+    +serialNumber: string
+    +batchId: string
+    +initialModelSpecs: string
+    +hwAuditor: address
+    +hwIntegrityPassed: bool
+    +hwReportHash: bytes32
+    +swTechnician: address
+    +osVersion: string
+    +swValidationPassed: bool
+    +destinationSchoolHash: bytes32
+    +studentIdHash: bytes32
+    +distributionTimestamp: uint
+    +currentState: State
+}
+
+' Roles
+class Roles {
+    +DEFAULT_ADMIN_ROLE: bytes32
+    +FABRICANTE_ROLE: bytes32
+    +AUDITOR_HW_ROLE: bytes32
+    +TECNICO_SW_ROLE: bytes32
+    +ESCUELA_ROLE: bytes32
+}
+
+' Main Contract
+class SupplyChainTracker {
+    -netbooks: mapping(string => Netbook)
+    -allSerialNumbers: string[]
+}
+
+' Inheritance
+SupplyChainTracker --|> AccessControl
+AccessControl --|> IAccessControl
+AccessControl --|> Context
+AccessControl --|> ERC165
+
+' Composition
+SupplyChainTracker o-- Netbook
+SupplyChainTracker o-- State
+SupplyChainTracker o-- Roles
+
+' Events
+class Events {
+    +NetbookRegistered(serialNumber: string)
+    +HardwareAudited(serialNumber: string)
+    +SoftwareValidated(serialNumber: string)
+    +AssignedToStudent(serialNumber: string)
+}
+
+SupplyChainTracker ..> Events : emits
+
+' Write Functions
+package "Write Functions" {
+    class WriteFunctions {
+        +registerNetbooks(serials[], batches[], specs[]) : void
+        +auditHardware(serial, passed, reportHash) : void
+        +validateSoftware(serial, version, passed) : void
+        +assignToStudent(serial, schoolHash, studentHash) : void
+    }
+}
+
+SupplyChainTracker ..> WriteFunctions : contains
+
+' Read Functions
+package "Read Functions" {
+    class ReadFunctions {
+        +getNetbookState(serial) : State
+        +getNetbookReport(serial) : Netbook
+    }
+}
+
+SupplyChainTracker ..> ReadFunctions : contains
+
+' Modifiers
+package "Modifiers" {
+    class Modifiers {
+        +validSerial(serial)
+        +stateExpected(serial, expectedState)
+        +_checkRoleCustom(role)
+    }
+}
+
+SupplyChainTracker ..> Modifiers : uses
+
+' State Transitions
+State --> State : FABRICADA → HW_APROBADO
+State --> State : HW_APROBADO → SW_VALIDADO
+State --> State : SW_VALIDADO → DISTRIBUIDA
+
+title SupplyChainTracker Contract Structure
+' Skin parameters for better visualization
+skinparam class {
+    BackgroundColor White
+    BorderColor Gray
+    ArrowColor Blue
+}
+@enduml

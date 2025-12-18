@@ -10,9 +10,14 @@ class Web3Service {
   private signer: ethers.Signer | null = null;
   private contract: ethers.Contract | null = null;
   private contractConfig: ContractConfig | null = null;
+  private isInitialized: boolean = false;
 
   constructor() {
-    this.initializeProvider();
+    // Initialize only in browser environment
+    if (typeof window !== 'undefined') {
+      this.initializeProvider();
+      this.isInitialized = true;
+    }
   }
 
   private initializeProvider() {
@@ -24,6 +29,10 @@ class Web3Service {
   }
 
   async connectWallet(): Promise<string> {
+    if (!this.isInitialized) {
+      throw new Error('Web3Service not initialized in server environment');
+    }
+    
     if (!this.provider) {
       throw new Error('Web3 provider not available');
     }
@@ -39,6 +48,10 @@ class Web3Service {
   }
 
   setContract(config: ContractConfig) {
+    if (!this.isInitialized) {
+      throw new Error('Web3Service not initialized in server environment');
+    }
+    
     this.contractConfig = config;
     
     if (this.signer && this.contractConfig) {
@@ -51,6 +64,10 @@ class Web3Service {
   }
 
   getSigner(): ethers.Signer {
+    if (!this.isInitialized) {
+      throw new Error('Web3Service not initialized in server environment');
+    }
+    
     if (!this.signer) {
       throw new Error('Wallet not connected');
     }
@@ -58,6 +75,10 @@ class Web3Service {
   }
 
   getProvider(): ethers.BrowserProvider {
+    if (!this.isInitialized) {
+      throw new Error('Web3Service not initialized in server environment');
+    }
+    
     if (!this.provider) {
       throw new Error('Web3 provider not available');
     }
@@ -65,6 +86,10 @@ class Web3Service {
   }
 
   getContract(): ethers.Contract {
+    if (!this.isInitialized) {
+      throw new Error('Web3Service not initialized in server environment');
+    }
+    
     if (!this.contract) {
       throw new Error('Contract not initialized');
     }
@@ -72,10 +97,17 @@ class Web3Service {
   }
 
   isWalletConnected(): boolean {
+    if (!this.isInitialized) {
+      return false;
+    }
     return this.signer !== null;
   }
 
   async getNetwork() {
+    if (!this.isInitialized) {
+      throw new Error('Web3Service not initialized in server environment');
+    }
+    
     if (!this.provider) {
       throw new Error('Web3 provider not available');
     }
@@ -83,6 +115,10 @@ class Web3Service {
   }
 
   async getBalance(address: string): Promise<string> {
+    if (!this.isInitialized) {
+      throw new Error('Web3Service not initialized in server environment');
+    }
+    
     if (!this.provider) {
       throw new Error('Web3 provider not available');
     }
