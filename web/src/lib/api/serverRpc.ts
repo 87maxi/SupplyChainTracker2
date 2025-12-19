@@ -9,7 +9,15 @@ const cache = new Map();
 const CACHE_KEY = 'supply-chain-data';
 const ROLE_CACHE_KEY = 'role-members';
 
-// Server-only RPC functions
+/**
+ * Server-only RPC functions for interacting with the SupplyChain smart contract.
+ * These functions run on the server side and use caching for performance.
+ */
+
+/**
+ * Get all serial numbers from the contract
+ * @returns Array of serial numbers
+ */
 export async function getAllSerialNumbers() {
   // Use cache for performance
   if (cache.has(CACHE_KEY)) {
@@ -30,6 +38,11 @@ export async function getAllSerialNumbers() {
   }
 }
 
+/**
+ * Get detailed netbook report by serial number
+ * @param serial - The netbook serial number
+ * @returns Netbook report with all details
+ */
 export async function getNetbookReport(serial: string) {
   try {
     return await SupplyChainContract.getNetbookReport(serial);
@@ -39,6 +52,11 @@ export async function getNetbookReport(serial: string) {
   }
 }
 
+/**
+ * Get the current state of a netbook
+ * @param serial - The netbook serial number
+ * @returns Current state (0=FABRICADA, 1=HW_APROBADO, 2=SW_VALIDADO, 3=DISTRIBUIDA)
+ */
 export async function getNetbookState(serial: string) {
   console.log(`Getting state for serial: ${serial}`);
 
@@ -50,6 +68,11 @@ export async function getNetbookState(serial: string) {
   }
 }
 
+/**
+ * Get all netbooks in a specific state
+ * @param state - State number (0=FABRICADA, 1=HW_APROBADO, 2=SW_VALIDADO, 3=DISTRIBUIDA)
+ * @returns Array of serial numbers in that state
+ */
 export async function getNetbooksByState(state: number): Promise<string[]> {
   try {
     return await SupplyChainContract.getNetbooksByState(state);
@@ -59,6 +82,11 @@ export async function getNetbooksByState(state: number): Promise<string[]> {
   }
 }
 
+/**
+ * Get all members of a specific role
+ * @param roleHash - The keccak256 hash of the role name
+ * @returns Array of addresses with that role
+ */
 export async function getRoleMembers(roleHash: string): Promise<string[]> {
   try {
     return await SupplyChainContract.getAllMembers(roleHash);
@@ -68,6 +96,11 @@ export async function getRoleMembers(roleHash: string): Promise<string[]> {
   }
 }
 
+/**
+ * Get the count of members in a specific role
+ * @param roleHash - The keccak256 hash of the role name
+ * @returns Number of members with that role
+ */
 export async function getRoleMemberCount(roleHash: string): Promise<number> {
   try {
     const count = await SupplyChainContract.getRoleMemberCount(roleHash);
@@ -78,24 +111,39 @@ export async function getRoleMemberCount(roleHash: string): Promise<number> {
   }
 }
 
+/**
+ * Check if an address has a specific role
+ * @param roleHash - The keccak256 hash of the role name
+ * @param address - The address to check
+ * @returns True if the address has the role, false otherwise
+ */
+export async function hasRole(roleHash: string, address: string): Promise<boolean> {
+  console.log('Server RPC: hasRole', { roleHash, address });
+  try {
+    return await SupplyChainContract.hasRole(roleHash, address);
+  } catch (error) {
+    console.error('Error checking role:', error);
+    return false;
+  }
+}
+
+/**
+ * Revalidate all cached data and Next.js cache tags
+ * Call this after making changes to the contract state
+ * 
+ * Uses 'max' profile for stale-while-revalidate (SWR) semantics:
+ * - Users get stale content immediately
+ * - Fresh data is fetched in the background
+ * - New data is served on subsequent requests
+ */
 export async function revalidateAll() {
   cache.clear();
-  revalidateTag('dashboard-data', 'page');
-  revalidateTag('netbook-state', 'page');
-  revalidateTag('serial-numbers', 'page');
-  revalidateTag('role-members', 'page');
+  revalidateTag('dashboard-data', 'max');
+  revalidateTag('netbook-state', 'max');
+  revalidateTag('serial-numbers', 'max');
+  revalidateTag('role-members', 'max');
   console.log('All cache tags revalidated');
 }
 
-// Keep the object for backward compatibility if needed, but individual exports are preferred
-export const serverRpc = {
-  getAllSerialNumbers,
-  getNetbookReport,
-  getNetbookState,
-  getNetbooksByState,
-  getRoleMembers,
-  getRoleMemberCount,
-  revalidate: {
-    all: revalidateAll
-  }
-};
+// serverRpc object export removed to comply with Next.js Server Actions rules
+// Use named exports instead

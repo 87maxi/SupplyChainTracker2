@@ -23,7 +23,12 @@ import { NetbookStatusChart } from './charts/NetbookStatusChart';
 import { UserRolesChart } from './charts/UserRolesChart';
 import { AnalyticsChart } from './charts/AnalyticsChart';
 import { useWeb3 } from '@/hooks/useWeb3';
-import { serverRpc } from '@/lib/api/serverRpc';
+import {
+  getRoleMembers,
+  getRoleMemberCount,
+  getNetbooksByState,
+  revalidateAll
+} from '@/lib/api/serverRpc';
 import { useToast } from '@/hooks/use-toast';
 import { DashboardSkeleton } from './skeletons/DashboardSkeleton';
 import { TransactionConfirmation } from '@/components/contract/TransactionConfirmation';
@@ -112,11 +117,11 @@ export function DashboardOverview({ stats: initialStats }: { stats: DashboardSta
 
       const [adminMembers, fabricanteMembers, auditorHwMembers, tecnicoSwMembers, escuelaMembers] =
         await Promise.all([
-          serverRpc.getRoleMembers(ADMIN.hash).catch(() => []),
-          serverRpc.getRoleMembers(FABRICANTE.hash).catch(() => []),
-          serverRpc.getRoleMembers(AUDITOR_HW.hash).catch(() => []),
-          serverRpc.getRoleMembers(TECNICO_SW.hash).catch(() => []),
-          serverRpc.getRoleMembers(ESCUELA.hash).catch(() => [])
+          getRoleMembers(ADMIN.hash).catch(() => []),
+          getRoleMembers(FABRICANTE.hash).catch(() => []),
+          getRoleMembers(AUDITOR_HW.hash).catch(() => []),
+          getRoleMembers(TECNICO_SW.hash).catch(() => []),
+          getRoleMembers(ESCUELA.hash).catch(() => [])
         ]);
 
       const allUserRoles: UserRoleData[] = [];
@@ -185,14 +190,14 @@ export function DashboardOverview({ stats: initialStats }: { stats: DashboardSta
         fabricanteCount, auditorHwCount, tecnicoSwCount, escuelaCount,
         fabricadas, hwAprobadas, swValidadas, distribuidas
       ] = await Promise.all([
-        serverRpc.getRoleMemberCount(ROLES.FABRICANTE.hash).catch(() => 0),
-        serverRpc.getRoleMemberCount(ROLES.AUDITOR_HW.hash).catch(() => 0),
-        serverRpc.getRoleMemberCount(ROLES.TECNICO_SW.hash).catch(() => 0),
-        serverRpc.getRoleMemberCount(ROLES.ESCUELA.hash).catch(() => 0),
-        serverRpc.getNetbooksByState(State.FABRICADA).catch(() => []),
-        serverRpc.getNetbooksByState(State.HW_APROBADO).catch(() => []),
-        serverRpc.getNetbooksByState(State.SW_VALIDADO).catch(() => []),
-        serverRpc.getNetbooksByState(State.DISTRIBUIDA).catch(() => [])
+        getRoleMemberCount(ROLES.FABRICANTE.hash).catch(() => 0),
+        getRoleMemberCount(ROLES.AUDITOR_HW.hash).catch(() => 0),
+        getRoleMemberCount(ROLES.TECNICO_SW.hash).catch(() => 0),
+        getRoleMemberCount(ROLES.ESCUELA.hash).catch(() => 0),
+        getNetbooksByState(State.FABRICADA).catch(() => []),
+        getNetbooksByState(State.HW_APROBADO).catch(() => []),
+        getNetbooksByState(State.SW_VALIDADO).catch(() => []),
+        getNetbooksByState(State.DISTRIBUIDA).catch(() => [])
       ]);
 
       setStats({
@@ -213,7 +218,7 @@ export function DashboardOverview({ stats: initialStats }: { stats: DashboardSta
         });
       }
 
-      serverRpc.revalidate.all();
+      revalidateAll();
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       if (!silent) {
@@ -261,6 +266,18 @@ export function DashboardOverview({ stats: initialStats }: { stats: DashboardSta
 
   const handleApproveRequest = async (request: RoleRequest) => {
     try {
+      if (!address) {
+        throw new Error("No hay una billetera conectada");
+      }
+
+      // Verify if current user is admin
+      const adminRole = await SupplyChainContract.getDefaultAdminRole();
+      const isAdmin = await SupplyChainContract.hasRole(adminRole, address);
+
+      if (!isAdmin) {
+        throw new Error("No tienes permisos de administrador (AccessControl)");
+      }
+
       let roleBytes32: string;
       switch (request.role) {
         case 'fabricante': roleBytes32 = ROLES.FABRICANTE.hash; break;
@@ -282,9 +299,15 @@ export function DashboardOverview({ stats: initialStats }: { stats: DashboardSta
       });
     } catch (error: any) {
       console.error('Error approving request:', error);
+
+      let errorMessage = error.message || "No se pudo aprobar la solicitud";
+      if (error.message?.includes("AccessControl")) {
+        errorMessage = "No tienes permisos de administrador para realizar esta acción.";
+      }
+
       toast({
         title: "Error",
-        description: error.message || "No se pudo aprobar la solicitud",
+        description: errorMessage,
         variant: "destructive"
       });
     }

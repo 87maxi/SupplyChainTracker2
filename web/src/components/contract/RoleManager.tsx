@@ -1,15 +1,16 @@
 import { useState } from 'react';
+import { useWeb3 } from '@/hooks/useWeb3';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { 
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -27,13 +28,14 @@ interface RoleManagerProps {
 }
 
 export function RoleManager({ isOpen, onOpenChange, onComplete }: RoleManagerProps) {
-  const [address, setAddress] = useState('');
+  const { address } = useWeb3();
+  const [targetAddress, setTargetAddress] = useState('');
   const [role, setRole] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   const handleGrantRole = async () => {
-    if (!address || !role) {
+    if (!targetAddress || !role) {
       toast({
         title: "Error",
         description: "Por favor complete todos los campos",
@@ -44,8 +46,21 @@ export function RoleManager({ isOpen, onOpenChange, onComplete }: RoleManagerPro
 
     try {
       setLoading(true);
+
+      if (!address) {
+        throw new Error("No hay una billetera conectada");
+      }
+
+      // Verify if current user is admin
+      const adminRole = await SupplyChainContract.getDefaultAdminRole();
+      const isAdmin = await SupplyChainContract.hasRole(adminRole, address);
+
+      if (!isAdmin) {
+        throw new Error("No tienes permisos de administrador (AccessControl)");
+      }
+
       let roleBytes32: string;
-      
+
       switch (role) {
         case 'admin':
           roleBytes32 = await SupplyChainContract.getDefaultAdminRole();
@@ -66,23 +81,30 @@ export function RoleManager({ isOpen, onOpenChange, onComplete }: RoleManagerPro
           throw new Error('Rol inválido');
       }
 
-      const tx = await SupplyChainContract.grantRole(roleBytes32, address);
+      const tx = await SupplyChainContract.grantRole(roleBytes32, targetAddress);
       await tx.wait();
-      
+
       toast({
         title: "Éxito",
-        description: `Rol asignado correctamente a ${address}`,
+        description: `Rol asignado correctamente a ${targetAddress}`,
       });
-      
-      setAddress('');
+
+      setTargetAddress('');
       setRole('');
       onComplete();
       onOpenChange(false);
     } catch (error: any) {
       console.error('Error granting role:', error);
+
+      // Better error message for permissions
+      let errorMessage = error.message || "No se pudo asignar el rol";
+      if (error.message?.includes("AccessControl")) {
+        errorMessage = "No tienes permisos de administrador para realizar esta acción.";
+      }
+
       toast({
         title: "Error",
-        description: error.message || "No se pudo asignar el rol",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -106,8 +128,8 @@ export function RoleManager({ isOpen, onOpenChange, onComplete }: RoleManagerPro
             </Label>
             <Input
               id="address"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
+              value={targetAddress}
+              onChange={(e) => setTargetAddress(e.target.value)}
               className="col-span-3"
               placeholder="0x..."
             />

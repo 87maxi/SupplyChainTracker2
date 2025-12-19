@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import "../src/SupplyChainTracker.sol";
+import {SupplyChainTracker} from "../src/SupplyChainTracker.sol";
 
 contract MaliciousContract {
     SupplyChainTracker public tracker;

@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, Shield } from 'lucide-react';
-import { serverRpc } from '@/lib/api/serverRpc';
+import { getRoleMembers } from '@/lib/api/serverRpc';
 import { ROLES } from '@/lib/constants';
 import { useWeb3 } from '@/hooks/useWeb3';
 import { useEffect, useState } from 'react';
@@ -53,11 +53,11 @@ export function UsersList() {
       // Fetch members for each role concurrently
       const [adminMembers, fabricanteMembers, auditorHwMembers, tecnicoSwMembers, escuelaMembers] =
         await Promise.all([
-          serverRpc.getRoleMembers(ADMIN.hash).catch(() => []),
-          serverRpc.getRoleMembers(FABRICANTE.hash).catch(() => []),
-          serverRpc.getRoleMembers(AUDITOR_HW.hash).catch(() => []),
-          serverRpc.getRoleMembers(TECNICO_SW.hash).catch(() => []),
-          serverRpc.getRoleMembers(ESCUELA.hash).catch(() => [])
+          getRoleMembers(ADMIN.hash).catch(() => []),
+          getRoleMembers(FABRICANTE.hash).catch(() => []),
+          getRoleMembers(AUDITOR_HW.hash).catch(() => []),
+          getRoleMembers(TECNICO_SW.hash).catch(() => []),
+          getRoleMembers(ESCUELA.hash).catch(() => [])
         ]);
 
       // Transform to UserRoleData format

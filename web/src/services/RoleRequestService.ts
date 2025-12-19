@@ -54,7 +54,7 @@ export async function submitRoleRequest(address: string, role: string, signature
     writeRequests(requests);
 
     console.log('Role request submitted and saved:', newRequest);
-    revalidateTag('role-requests', 'page');
+    revalidateTag('role-requests', 'max');
     return newRequest;
 }
 
@@ -70,7 +70,7 @@ export async function updateRoleRequestStatus(id: string, status: 'approved' | '
     if (index !== -1) {
         requests[index].status = status;
         writeRequests(requests);
-        revalidateTag('role-requests', 'page');
+        revalidateTag('role-requests', 'max');
     }
 }
 
@@ -80,6 +80,6 @@ export async function deleteRoleRequest(id: string) {
     requests = requests.filter(req => req.id !== id);
     if (requests.length !== initialLength) {
         writeRequests(requests);
-        revalidateTag('role-requests', 'page');
+        revalidateTag('role-requests', 'max');
     }
 }

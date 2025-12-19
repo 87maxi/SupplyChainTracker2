@@ -1,7 +1,7 @@
 'use client';
 
 import { ROLES } from '@/lib/constants';
-import { readContract, writeContract, waitForTransaction, getBalance } from '@wagmi/core';
+import { readContract, writeContract, waitForTransactionReceipt, getBalance } from '@wagmi/core';
 import { config } from '@/lib/wagmi/config';
 import { parseUnits } from 'viem';
 import { formatUnits, ethers } from 'ethers';
@@ -169,7 +169,7 @@ export const registerNetbook = async (serial: string, batchId: string, specs: st
     });
 
     // Wait for transaction to be confirmed
-    const receipt = await waitForTransaction(config, { hash });
+    const receipt = await waitForTransactionReceipt(config, { hash });
     return receipt;
   } catch (error) {
     console.error('Error registering netbook:', error);
@@ -187,7 +187,7 @@ export const registerNetbooks = async (serials: string[], batches: string[], spe
       args: [serials, batches, specs]
     });
 
-    const receipt = await waitForTransaction(config, { hash });
+    const receipt = await waitForTransactionReceipt(config, { hash });
     return receipt;
   } catch (error) {
     console.error('Error registering netbooks:', error);
@@ -205,7 +205,7 @@ export const auditHardware = async (serial: string, passed: boolean, reportHash:
       args: [serial, passed, reportHash as `0x${string}`]
     });
 
-    const receipt = await waitForTransaction(config, { hash });
+    const receipt = await waitForTransactionReceipt(config, { hash });
     return receipt;
   } catch (error) {
     console.error('Error auditing hardware:', error);
@@ -223,7 +223,7 @@ export const validateSoftware = async (serial: string, osVersion: string, passed
       args: [serial, osVersion, passed]
     });
 
-    const receipt = await waitForTransaction(config, { hash });
+    const receipt = await waitForTransactionReceipt(config, { hash });
     return receipt;
   } catch (error) {
     console.error('Error validating software:', error);
@@ -241,7 +241,7 @@ export const assignToStudent = async (serial: string, schoolHash: string, studen
       args: [serial, schoolHash as `0x${string}`, studentHash as `0x${string}`]
     });
 
-    const receipt = await waitForTransaction(config, { hash });
+    const receipt = await waitForTransactionReceipt(config, { hash });
     return receipt;
   } catch (error) {
     console.error('Error assigning to student:', error);
@@ -259,7 +259,7 @@ export const grantRole = async (role: string, userAddress: string) => {
       args: [role, userAddress]
     });
 
-    const receipt = await waitForTransaction(config, { hash });
+    const receipt = await waitForTransactionReceipt(config, { hash });
     return receipt;
   } catch (error) {
     console.error('Error granting role:', error);
@@ -277,7 +277,7 @@ export const revokeRole = async (role: string, userAddress: string) => {
       args: [role, userAddress]
     });
 
-    const receipt = await waitForTransaction(config, { hash });
+    const receipt = await waitForTransactionReceipt(config, { hash });
     return receipt;
   } catch (error) {
     console.error('Error revoking role:', error);
