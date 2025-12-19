@@ -1,17 +1,12 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { ethers } from 'ethers';
-import { createWagmiConfig } from '@/lib/wagmi/config';
-import { createConfig, useAccount, useConnect, useDisconnect } from 'wagmi';
-import { useSwitchChain } from 'wagmi';
-import { mainnet, polygon, bscTestnet } from 'wagmi/chains';
+import { createContext, useContext, ReactNode } from 'react';
+import { useAccount, useConnect, useDisconnect, useSwitchChain } from 'wagmi';
 
 // Types
 interface Web3ContextType {
   address: string | null;
   isConnected: boolean;
-  provider: ethers.BrowserProvider | null;
   chain: { id: number; name: string } | null;
   connect: () => void;
   disconnect: () => void;
@@ -33,16 +28,7 @@ export function Web3Provider({ children }: Web3ProviderProps) {
   const { disconnect: wagmiDisconnect } = useDisconnect();
   const { switchChain } = useSwitchChain();
 
-  // Initialize provider
-  const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && window.ethereum) {
-      setProvider(new ethers.BrowserProvider(window.ethereum));
-    }
-  }, []);
-
-  // Connect wallet
+  // Connect wallet (MetaMask by default if available)
   const connect = () => {
     const connector = connectors[0];
     if (connector) {
@@ -63,7 +49,6 @@ export function Web3Provider({ children }: Web3ProviderProps) {
   const value = {
     address: address || null,
     isConnected,
-    provider,
     chain: chain ? { id: chain.id, name: chain.name } : null,
     connect,
     disconnect,

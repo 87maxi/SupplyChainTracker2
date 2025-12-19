@@ -1,5 +1,5 @@
 import { getContract } from '@/lib/web3';
-import { NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS } from '@/lib/env';
+import { NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS, NEXT_PUBLIC_RPC_URL } from '@/lib/env';
 import SupplyChainTrackerABI from '@/contracts/abi/SupplyChainTracker.json';
 import { ethers } from 'ethers';
 
@@ -13,8 +13,8 @@ if (!contractAddress) {
 // Create contract instance
 export const getSupplyChainContract = async () => {
   if (typeof window === 'undefined') {
-    // Server-side: use a JSON-RPC provider (Anvil default)
-    const provider = new ethers.JsonRpcProvider('http://127.0.0.1:8545');
+    // Server-side: use a JSON-RPC provider
+    const provider = new ethers.JsonRpcProvider(NEXT_PUBLIC_RPC_URL);
     return new ethers.Contract(contractAddress, SupplyChainTrackerABI, provider);
   }
 
@@ -87,6 +87,11 @@ export const SupplyChainContract = {
   async getAllSerialNumbers() {
     const contract = await getSupplyChainContract();
     return await contract.getAllSerialNumbers();
+  },
+
+  async getNetbooksByState(state: number) {
+    const contract = await getSupplyChainContract();
+    return await contract.getNetbooksByState(state);
   },
 
   async getAllMembers(roleHash: string) {

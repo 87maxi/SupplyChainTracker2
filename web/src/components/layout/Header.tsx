@@ -5,9 +5,15 @@ import { Navigation } from './Navigation';
 import { useUserRoles } from '@/hooks/useUserRoles';
 import { Badge } from '@/components/ui/badge';
 import { ROLE_LABELS } from '@/lib/constants';
+import { Button } from '@/components/ui/button';
+import { RoleRequestModal } from '@/components/contract/RoleRequestModal';
+import { useState } from 'react';
+import { useWeb3 } from '@/hooks/useWeb3';
 
 export const Header = () => {
   const { roles } = useUserRoles();
+  const { isConnected } = useWeb3();
+  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/60 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
@@ -20,6 +26,16 @@ export const Header = () => {
         </div>
 
         <div className="flex items-center space-x-6">
+          {isConnected && roles.length === 0 && (
+            <Button
+              variant="gradient"
+              size="sm"
+              onClick={() => setIsRequestModalOpen(true)}
+            >
+              Solicitar Rol
+            </Button>
+          )}
+
           {roles.length > 0 && (
             <div className="hidden lg:flex items-center space-x-3 text-sm">
               <span className="text-muted-foreground font-medium">Roles:</span>
@@ -39,6 +55,10 @@ export const Header = () => {
           <ConnectButton />
         </div>
       </div>
+      <RoleRequestModal
+        isOpen={isRequestModalOpen}
+        onOpenChange={setIsRequestModalOpen}
+      />
     </header>
   );
 };

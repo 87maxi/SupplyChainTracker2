@@ -18,47 +18,24 @@ export async function getDashboardData() {
       serverRpc.getRoleMemberCount(ROLES.ESCUELA.hash)
     ]);
 
-    // Initialize counters
-    const stats = {
+    // Get netbook counts by state
+    const [fabricadaSerials, hwAprobadaSerials, swValidadaSerials, distribuidaSerials] = await Promise.all([
+      serverRpc.getNetbooksByState(0),
+      serverRpc.getNetbooksByState(1),
+      serverRpc.getNetbooksByState(2),
+      serverRpc.getNetbooksByState(3)
+    ]);
+
+    return {
       fabricanteCount,
       auditorHwCount,
       tecnicoSwCount,
       escuelaCount,
-      totalFabricadas: 0,
-      totalHwAprobadas: 0,
-      totalSwValidadas: 0,
-      totalDistribuidas: 0
+      totalFabricadas: fabricadaSerials.length,
+      totalHwAprobadas: hwAprobadaSerials.length,
+      totalSwValidadas: swValidadaSerials.length,
+      totalDistribuidas: distribuidaSerials.length
     };
-
-    // Process each netbook state
-    const stateStats = [];
-    for (const serial of serialNumbers) {
-      stateStats.push(
-        serverRpc.getNetbookState(serial).then(state => {
-          switch (state) {
-            case 0: // FABRICADA
-              stats.totalFabricadas++;
-              break;
-            case 1: // HW_APROBADO
-              stats.totalHwAprobadas++;
-              break;
-            case 2: // SW_VALIDADO
-              stats.totalSwValidadas++;
-              break;
-            case 3: // DISTRIBUIDA
-              stats.totalDistribuidas++;
-              break;
-          }
-        }).catch(() => {
-          // Ignore errors for individual netbooks
-        })
-      );
-    }
-
-    // Wait for all state fetches
-    await Promise.all(stateStats);
-
-    return stats;
   } catch (error) {
     console.error('Error fetching dashboard data:', error);
     return {

@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import * as SupplyChainService from '@/services/SupplyChainService';
 import { useState, useEffect } from 'react';
 import { State } from '@/types/contract';
+import { ROLES } from '@/lib/constants';
 
 export default function AdminUsersPage() {
   const { address, isConnected } = useWeb3();
@@ -15,11 +16,11 @@ export default function AdminUsersPage() {
   const [error, setError] = useState('');
 
   const rolesMap = {
-    '0xc9d9e6b172513355070360451450413840810234077175348639291479838649': 'FABRICANTE_ROLE',
-    '0x69abb1d469219997098950756a29849743111a44297561274841978723934425': 'AUDITOR_HW_ROLE',
-    '0xd25c992a48858314113753611945045859423533313842771219981911994373': 'TECNICO_SW_ROLE',
-    '0x8a56fd3344097613215665977667319753531132276132611988941251823874': 'ESCUELA_ROLE',
-    '0x0000000000000000000000000000000000000000000000000000000000000000': 'DEFAULT_ADMIN_ROLE'
+    [ROLES.FABRICANTE.hash]: ROLES.FABRICANTE.label,
+    [ROLES.AUDITOR_HW.hash]: ROLES.AUDITOR_HW.label,
+    [ROLES.TECNICO_SW.hash]: ROLES.TECNICO_SW.label,
+    [ROLES.ESCUELA.hash]: ROLES.ESCUELA.label,
+    [ROLES.ADMIN.hash]: ROLES.ADMIN.label
   };
 
   useEffect(() => {

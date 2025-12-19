@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {AccessControl} from "openzeppelin-contracts/contracts/access/AccessControl.sol";
+import {AccessControlEnumerable} from "openzeppelin-contracts/contracts/access/extensions/AccessControlEnumerable.sol";
 
-contract SupplyChainTracker is AccessControl {
+contract SupplyChainTracker is AccessControlEnumerable {
     // --- Roles ---
     bytes32 public constant FABRICANTE_ROLE = keccak256("FABRICANTE_ROLE");
     bytes32 public constant AUDITOR_HW_ROLE = keccak256("AUDITOR_HW_ROLE");
@@ -38,25 +38,133 @@ contract SupplyChainTracker is AccessControl {
         // D. Datos de Destino
         bytes32 destinationSchoolHash;
         bytes32 studentIdHash;
-        uint distributionTimestamp;
+        uint256 distributionTimestamp;
 
         // Estado actual
         State currentState;
+        bool exists;
     }
 
     // --- Almacenamiento ---
     mapping(string => Netbook) private netbooks;
     string[] public allSerialNumbers;
 
-    // Eventos y modificadores omitidos por brevedad...
-    
-    // --- Funciones de Soporte de Roles ---
-    
-    /**
-     * @dev Retorna todos los miembros de un rol específico.
-     * @param role El rol del cual obtener los miembros.
-     * @return address[] Un array con todas las direcciones que tienen el rol.
-     */
+    // --- Eventos ---
+    event NetbookRegistered(string serialNumber, string batchId, address manufacturer);
+    event HardwareAudited(string serialNumber, address auditor, bool passed);
+    event SoftwareValidated(string serialNumber, address technician, string osVersion);
+    event NetbookAssigned(string serialNumber, bytes32 schoolHash, bytes32 studentHash);
+
+    constructor() {
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    }
+
+    // --- Funciones de Escritura ---
+
+    function registerNetbooks(
+        string[] calldata serials,
+        string[] calldata batches,
+        string[] calldata specs
+    ) external {
+        require(hasRole(FABRICANTE_ROLE, msg.sender), "Acceso denegado: rol requerido");
+        require(serials.length == batches.length && serials.length == specs.length, "Longitud de arrays no coincide");
+        
+        for (uint256 i = 0; i < serials.length; i++) {
+            require(bytes(serials[i]).length > 0, "Serial no valido");
+            require(!netbooks[serials[i]].exists, "Netbook ya registrada");
+
+            netbooks[serials[i]] = Netbook({
+                serialNumber: serials[i],
+                batchId: batches[i],
+                initialModelSpecs: specs[i],
+                hwAuditor: address(0),
+                hwIntegrityPassed: false,
+                hwReportHash: bytes32(0),
+                swTechnician: address(0),
+                osVersion: "",
+                swValidationPassed: false,
+                destinationSchoolHash: bytes32(0),
+                studentIdHash: bytes32(0),
+                distributionTimestamp: 0,
+                currentState: State.FABRICADA,
+                exists: true
+            });
+
+            allSerialNumbers.push(serials[i]);
+            emit NetbookRegistered(serials[i], batches[i], msg.sender);
+        }
+    }
+
+    function auditHardware(
+        string calldata serial,
+        bool passed,
+        bytes32 reportHash
+    ) external {
+        require(hasRole(AUDITOR_HW_ROLE, msg.sender), "Acceso denegado: rol requerido");
+        Netbook storage nb = netbooks[serial];
+        require(nb.exists, "Serial no valido");
+        require(nb.currentState == State.FABRICADA, "Estado incorrecto para esta accion");
+
+        nb.hwAuditor = msg.sender;
+        nb.hwIntegrityPassed = passed;
+        nb.hwReportHash = reportHash;
+        nb.currentState = State.HW_APROBADO;
+
+        emit HardwareAudited(serial, msg.sender, passed);
+    }
+
+    function validateSoftware(
+        string calldata serial,
+        string calldata osVersion,
+        bool passed
+    ) external {
+        require(hasRole(TECNICO_SW_ROLE, msg.sender), "Acceso denegado: rol requerido");
+        Netbook storage nb = netbooks[serial];
+        require(nb.exists, "Serial no valido");
+        require(nb.currentState == State.HW_APROBADO, "Estado incorrecto para esta accion");
+
+        nb.swTechnician = msg.sender;
+        nb.osVersion = osVersion;
+        nb.swValidationPassed = passed;
+        nb.currentState = State.SW_VALIDADO;
+
+        emit SoftwareValidated(serial, msg.sender, osVersion);
+    }
+
+    function assignToStudent(
+        string calldata serial,
+        bytes32 schoolHash,
+        bytes32 studentHash
+    ) external {
+        require(hasRole(ESCUELA_ROLE, msg.sender), "Acceso denegado: rol requerido");
+        Netbook storage nb = netbooks[serial];
+        require(nb.exists, "Serial no valido");
+        require(nb.currentState == State.SW_VALIDADO, "Estado incorrecto para esta accion");
+
+        nb.destinationSchoolHash = schoolHash;
+        nb.studentIdHash = studentHash;
+        nb.distributionTimestamp = block.timestamp;
+        nb.currentState = State.DISTRIBUIDA;
+
+        emit NetbookAssigned(serial, schoolHash, studentHash);
+    }
+
+    // --- Funciones de Lectura ---
+
+    function getNetbookState(string calldata serial) external view returns (State) {
+        require(netbooks[serial].exists, "Serial no valido");
+        return netbooks[serial].currentState;
+    }
+
+    function getNetbookReport(string calldata serial) external view returns (Netbook memory) {
+        require(netbooks[serial].exists, "Serial no valido");
+        return netbooks[serial];
+    }
+
+    function getAllSerialNumbers() external view returns (string[] memory) {
+        return allSerialNumbers;
+    }
+
     function getAllMembers(bytes32 role) public view returns (address[] memory) {
         uint256 count = getRoleMemberCount(role);
         address[] memory members = new address[](count);
@@ -67,25 +175,28 @@ contract SupplyChainTracker is AccessControl {
         
         return members;
     }
-    
-    /**
-     * @dev Retorna el número de miembros en un rol específico.
-     * @param role El rol del cual obtener el conteo.
-     * @return uint256 El número de miembros en el rol.
-     */
-    function getRoleMemberCount(bytes32 role) public view returns (uint256) {
-        return getRoleMemberCount(role);
+
+    function totalNetbooks() external view returns (uint256) {
+        return allSerialNumbers.length;
     }
 
-    /**
-     * @dev Verifica si una dirección tiene un rol específico.
-     * @param role El rol a verificar.
-     * @param account La dirección a verificar.
-     * @return bool Verdadero si la cuenta tiene el rol.
-     */
-    function hasRole(bytes32 role, address account) public view override returns (bool) {
-        return super.hasRole(role, account);
+    function getNetbooksByState(State state) external view returns (string[] memory) {
+        uint256 count = 0;
+        for (uint256 i = 0; i < allSerialNumbers.length; i++) {
+            if (netbooks[allSerialNumbers[i]].currentState == state) {
+                count++;
+            }
+        }
+        
+        string[] memory result = new string[](count);
+        uint256 index = 0;
+        for (uint256 i = 0; i < allSerialNumbers.length; i++) {
+            if (netbooks[allSerialNumbers[i]].currentState == state) {
+                result[index] = allSerialNumbers[i];
+                index++;
+            }
+        }
+        return result;
     }
 
-    // Resto del contrato...
 }

@@ -4,7 +4,7 @@ import { ROLES } from '@/lib/constants';
 import { readContract, writeContract, waitForTransaction, getBalance } from '@wagmi/core';
 import { config } from '@/lib/wagmi/config';
 import { parseUnits } from 'viem';
-import { formatUnits } from 'ethers';
+import { formatUnits, ethers } from 'ethers';
 
 // Import contract ABI and address
 import SupplyChainTrackerABI from '@/contracts/abi/SupplyChainTracker.json';
@@ -57,25 +57,30 @@ export const getTotalNetbooks = async () => {
   }
 };
 
-// Fetch netbook by DNS
-export const getNetbookByDns = async (dns: string) => {
+// Fetch netbook by serial number
+export const getNetbookBySerial = async (serial: string) => {
   try {
     const result = await readContract(config, {
       address: contractAddress,
       abi,
-      functionName: 'netbooks',
-      args: [dns]
-    }) as any[];
+      functionName: 'getNetbookReport',
+      args: [serial]
+    }) as any;
 
     return {
-      dns: result[0],
-      fabricante: result[1],
-      estado: Number(result[2]),
-      auditorHw: result[3],
-      tecnicoSw: result[4],
-      escuela: result[5],
-      owner: result[6],
-      assignedTo: result[7]
+      serialNumber: result.serialNumber,
+      batchId: result.batchId,
+      initialModelSpecs: result.initialModelSpecs,
+      hwAuditor: result.hwAuditor,
+      hwIntegrityPassed: result.hwIntegrityPassed,
+      hwReportHash: result.hwReportHash,
+      swTechnician: result.swTechnician,
+      osVersion: result.osVersion,
+      swValidationPassed: result.swValidationPassed,
+      destinationSchoolHash: result.destinationSchoolHash,
+      studentIdHash: result.studentIdHash,
+      distributionTimestamp: result.distributionTimestamp.toString(),
+      currentState: Number(result.currentState)
     };
   } catch (error) {
     console.error('Error fetching netbook:', error);
@@ -91,44 +96,36 @@ export const getStateCounts = async () => {
         address: contractAddress,
         abi,
         functionName: 'getNetbooksByState',
-        args: [0] // Disponible
+        args: [0] // FABRICADA
       }).then(results => (results as any[]).length),
 
       readContract(config, {
         address: contractAddress,
         abi,
         functionName: 'getNetbooksByState',
-        args: [1] // En reparación HW
+        args: [1] // HW_APROBADO
       }).then(results => (results as any[]).length),
 
       readContract(config, {
         address: contractAddress,
         abi,
         functionName: 'getNetbooksByState',
-        args: [2] // En configuración SW
+        args: [2] // SW_VALIDADO
       }).then(results => (results as any[]).length),
 
       readContract(config, {
         address: contractAddress,
         abi,
         functionName: 'getNetbooksByState',
-        args: [3] // Asignado
-      }).then(results => (results as any[]).length),
-
-      readContract(config, {
-        address: contractAddress,
-        abi,
-        functionName: 'getNetbooksByState',
-        args: [4] // Cambio de estado
+        args: [3] // DISTRIBUIDA
       }).then(results => (results as any[]).length)
     ]);
 
     return {
-      disponible: counts[0],
-      enReparacionHw: counts[1],
-      enConfiguracionSw: counts[2],
-      asignado: counts[3],
-      cambioEstado: counts[4]
+      fabricada: counts[0],
+      hwAprobado: counts[1],
+      swValidado: counts[2],
+      distribuida: counts[3]
     };
   } catch (error) {
     console.error('Error fetching state counts:', error);
@@ -162,13 +159,13 @@ export const getRoleCounts = async () => {
 };
 
 // Register new netbook
-export const registerNetbook = async (dns: string) => {
+export const registerNetbook = async (serial: string, batchId: string, specs: string) => {
   try {
     const hash = await writeContract(config, {
       address: contractAddress,
       abi,
-      functionName: 'registerNetbook',
-      args: [dns]
+      functionName: 'registerNetbooks',
+      args: [[serial], [batchId], [specs]]
     });
 
     // Wait for transaction to be confirmed
@@ -181,13 +178,13 @@ export const registerNetbook = async (dns: string) => {
 };
 
 // Register multiple netbooks
-export const registerNetbooks = async (serials: string[], batches: string[], modelSpecs: string[]) => {
+export const registerNetbooks = async (serials: string[], batches: string[], specs: string[]) => {
   try {
     const hash = await writeContract(config, {
       address: contractAddress,
       abi,
       functionName: 'registerNetbooks',
-      args: [serials, batches, modelSpecs]
+      args: [serials, batches, specs]
     });
 
     const receipt = await waitForTransaction(config, { hash });
@@ -198,50 +195,50 @@ export const registerNetbooks = async (serials: string[], batches: string[], mod
   }
 };
 
-// Verify hardware
-export const verifyHardware = async (dns: string, passed: boolean) => {
+// Audit hardware
+export const auditHardware = async (serial: string, passed: boolean, reportHash: string = ethers.ZeroHash) => {
   try {
     const hash = await writeContract(config, {
       address: contractAddress,
       abi,
-      functionName: 'verifyHardware',
-      args: [dns, passed]
+      functionName: 'auditHardware',
+      args: [serial, passed, reportHash as `0x${string}`]
     });
 
     const receipt = await waitForTransaction(config, { hash });
     return receipt;
   } catch (error) {
-    console.error('Error verifying hardware:', error);
+    console.error('Error auditing hardware:', error);
     throw error;
   }
 };
 
-// Configure software
-export const configureSoftware = async (dns: string, passed: boolean) => {
+// Validate software
+export const validateSoftware = async (serial: string, osVersion: string, passed: boolean) => {
   try {
     const hash = await writeContract(config, {
       address: contractAddress,
       abi,
-      functionName: 'configureSoftware',
-      args: [dns, passed]
+      functionName: 'validateSoftware',
+      args: [serial, osVersion, passed]
     });
 
     const receipt = await waitForTransaction(config, { hash });
     return receipt;
   } catch (error) {
-    console.error('Error configuring software:', error);
+    console.error('Error validating software:', error);
     throw error;
   }
 };
 
 // Assign netbook to student
-export const assignToStudent = async (dns: string, studentAddress: string) => {
+export const assignToStudent = async (serial: string, schoolHash: string, studentHash: string) => {
   try {
     const hash = await writeContract(config, {
       address: contractAddress,
       abi,
       functionName: 'assignToStudent',
-      args: [dns, studentAddress]
+      args: [serial, schoolHash as `0x${string}`, studentHash as `0x${string}`]
     });
 
     const receipt = await waitForTransaction(config, { hash });

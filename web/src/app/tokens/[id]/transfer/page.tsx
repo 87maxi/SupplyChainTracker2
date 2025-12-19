@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useState, useEffect } from 'react';
 import * as SupplyChainService from '@/services/SupplyChainService';
 import { useParams } from 'next/navigation';
+import { id as hashId, ZeroHash } from 'ethers';
 
 export default function TransferTokenPage() {
   const { address, isConnected } = useWeb3();
@@ -54,7 +55,13 @@ export default function TransferTokenPage() {
       }
 
       // Transfer the netbook
-      const receipt = await SupplyChainService.assignToStudent(serial, toAddress);
+      // In the new contract, we need schoolHash and studentHash
+      // For now, we'll use the toAddress as schoolHash and a zero hash for studentHash
+      // unless we want to update the UI to accept both.
+      const schoolHash = toAddress.startsWith('0x') ? toAddress : hashId(toAddress);
+      const studentHash = ZeroHash;
+
+      const receipt = await SupplyChainService.assignToStudent(serial, schoolHash, studentHash);
 
       setSuccess(`Successfully transferred netbook ${serial} to ${toAddress}! Transaction: ${receipt.transactionHash}`);
       setToAddress('');
