@@ -12,30 +12,7 @@ interface UserRolesChartData {
 
 const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
 
-export function UserRolesChart() {
-  // Mock data - in a real app, this would come from the contract
-  const data: UserRolesChartData[] = [
-    {
-      role: 'Fabricantes',
-      count: 4,
-      fill: COLORS[0],
-    },
-    {
-      role: 'Auditores HW',
-      count: 6,
-      fill: COLORS[1],
-    },
-    {
-      role: 'Técnicos SW',
-      count: 5,
-      fill: COLORS[2],
-    },
-    {
-      role: 'Escuelas',
-      count: 12,
-      fill: COLORS[3],
-    },
-  ];
+export function UserRolesChart({ data }: { data: UserRolesChartData[] }) {
 
   return (
     <Card>

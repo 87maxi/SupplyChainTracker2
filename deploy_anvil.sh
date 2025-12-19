@@ -59,18 +59,11 @@ fi
 #     └─> ID de la red blockchain local (estándar para desarrollo)
 #         Rabby Wallet y MetaMask usan este ID para identificar la red
 #
-#   --block-time 1
-#     └─> Genera un nuevo bloque cada 1 segundo AUTOMÁTICAMENTE
-#         ⚠️ IMPORTANTE: Esto es lo que ves como "bloques generándose"
-#         
-#         ¿Por qué generar bloques automáticamente?
-#         - Simula una blockchain real (Ethereum genera bloques cada ~12 seg)
-#         - Permite que las transacciones se confirmen automáticamente
-#         - Evita que las transacciones queden pendientes indefinidamente
-#         - Facilita el testing de contratos que dependen del tiempo
+#   (Sin --block-time)
+#     └─> Anvil usará "auto-mining" por defecto.
+#         Generará un bloque SOLO cuando reciba una transacción.
+#         Esto evita el "ruido" de bloques vacíos constantes.
 #
-#         Sin --block-time, Anvil solo genera bloques cuando hay transacciones
-#         (modo "instamine"). Con --block-time 1, simula una red más realista.
 #
 #   --state ./anvil-state.json
 #     └─> CARGA el estado previo desde este archivo (si existe)
@@ -93,7 +86,7 @@ fi
 
 echo "📍 Iniciando Anvil con estado persistente..."
 echo "   Chain ID: 31337"
-echo "   Block Time: 1 segundo (generación automática de bloques)"
+echo "   Block Time: Auto-mining (bloques bajo demanda)"
 echo "   Estado: ./anvil-state.json"
 
 # Verificar si existe estado previo
@@ -104,7 +97,6 @@ if [ -f "anvil-state.json" ]; then
     # Iniciar con estado previo
     anvil \
         --chain-id 31337 \
-        --block-time 1 \
         --state ./anvil-state.json \
         --state-interval 1 \
         --dump-state ./anvil-state.json &
@@ -115,7 +107,6 @@ else
     # Iniciar sin estado previo
     anvil \
         --chain-id 31337 \
-        --block-time 1 \
         --state-interval 1 \
         --dump-state ./anvil-state.json &
 fi
@@ -311,7 +302,7 @@ fi
 ################################################################################
 
 echo "🔄 Anvil está corriendo en segundo plano..."
-echo "   ⏱️  Generando bloques automáticamente cada 1 segundo"
+echo "   ⏱️  Generando bloques bajo demanda (auto-mining)"
 echo "   💾 Guardando estado cada 1 segundo en anvil-state.json"
 echo ""
 echo "   Para detener: kill $ANVIL_PID"

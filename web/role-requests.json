@@ -30,5 +30,37 @@
     "status": "approved",
     "timestamp": 1766172708647,
     "signature": "0x1a280c1b9178a538fd942d7e25c887e96dd185f77146979133376a215435b0097286b8af38f5590b7d7d8cb55617fd195878423393932a17af2da384332db8451c"
+  },
+  {
+    "id": "yo62hb",
+    "address": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
+    "role": "auditor_hw",
+    "status": "pending",
+    "timestamp": 1766173193156,
+    "signature": "0x1a280c1b9178a538fd942d7e25c887e96dd185f77146979133376a215435b0097286b8af38f5590b7d7d8cb55617fd195878423393932a17af2da384332db8451c"
+  },
+  {
+    "id": "vu6ya",
+    "address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "role": "tecnico_sw",
+    "status": "pending",
+    "timestamp": 1766173232635,
+    "signature": "0x762edf063a5b2498c9c3a094bb05298fa466867bd3780363f8290b542547590d5c6dbacd133022aba051107fdde9a7894f9041b22667d0e5c359c79f031753a11b"
+  },
+  {
+    "id": "ej4i7",
+    "address": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
+    "role": "auditor_hw",
+    "status": "pending",
+    "timestamp": 1766174617394,
+    "signature": "0x1a280c1b9178a538fd942d7e25c887e96dd185f77146979133376a215435b0097286b8af38f5590b7d7d8cb55617fd195878423393932a17af2da384332db8451c"
+  },
+  {
+    "id": "vcjmkva",
+    "address": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
+    "role": "tecnico_sw",
+    "status": "pending",
+    "timestamp": 1766174641432,
+    "signature": "0x4e30473e40b7993264b629e861a8befa292657c585287fd851b62c469419660f5d40a851eb7565fdcd07a78280645b26db307cb63b0e855421e43189031966651c"
   }
 ]

@@ -264,8 +264,11 @@ export function DashboardOverview({ stats: initialStats }: { stats: DashboardSta
     });
   };
 
+  const [processingId, setProcessingId] = useState<string | null>(null);
+
   const handleApproveRequest = async (request: RoleRequest) => {
     try {
+      setProcessingId(request.id);
       if (!address) {
         throw new Error("No hay una billetera conectada");
       }
@@ -290,8 +293,20 @@ export function DashboardOverview({ stats: initialStats }: { stats: DashboardSta
       const tx = await SupplyChainContract.grantRole(roleBytes32, request.address);
       await tx.wait();
 
+      // Verify transaction on-chain
+      const hasRole = await SupplyChainContract.hasRole(roleBytes32, request.address);
+      if (!hasRole) {
+        throw new Error("La transacción se confirmó pero el rol no fue asignado. Verifica los logs del contrato.");
+      }
+
+      // Optimistic update: Remove request from list immediately
+      setPendingRequests(prev => prev.filter(req => req.id !== request.id));
+
       await updateRoleRequestStatus(request.id, 'approved');
-      refreshAllData(true);
+
+      // Refresh stats and roles, but NOT requests to avoid race condition with optimistic update
+      fetchDashboardData(true);
+      fetchUserRoles();
 
       toast({
         title: "Solicitud aprobada",
@@ -310,19 +325,27 @@ export function DashboardOverview({ stats: initialStats }: { stats: DashboardSta
         description: errorMessage,
         variant: "destructive"
       });
+    } finally {
+      setProcessingId(null);
     }
   };
 
   const handleRejectRequest = async (id: string) => {
     try {
+      setProcessingId(id);
       await updateRoleRequestStatus(id, 'rejected');
-      refreshAllData(true);
+
+      // Optimistic update
+      setPendingRequests(prev => prev.filter(req => req.id !== id));
+
       toast({
         title: "Solicitud rechazada",
         description: "La solicitud ha sido rechazada correctamente.",
       });
     } catch (error) {
       console.error('Error rejecting request:', error);
+    } finally {
+      setProcessingId(null);
     }
   };
 
@@ -510,13 +533,15 @@ export function DashboardOverview({ stats: initialStats }: { stats: DashboardSta
                             size="sm"
                             variant="gradient"
                             onClick={() => handleApproveRequest(request)}
+                            disabled={processingId === request.id}
                           >
-                            Aprobar
+                            {processingId === request.id ? <RefreshCw className="h-4 w-4 animate-spin" /> : 'Aprobar'}
                           </Button>
                           <Button
                             size="sm"
                             variant="destructive"
                             onClick={() => handleRejectRequest(request.id)}
+                            disabled={processingId === request.id}
                           >
                             Rechazar
                           </Button>
@@ -532,11 +557,22 @@ export function DashboardOverview({ stats: initialStats }: { stats: DashboardSta
       )}
 
       <div className="grid gap-6 md:grid-cols-2">
-        <NetbookStatusChart />
-        <UserRolesChart />
+        <NetbookStatusChart data={[
+          { status: 'Fabricadas', count: stats.totalFabricadas, fill: 'hsl(var(--chart-1))' },
+          { status: 'HW Aprobado', count: stats.totalHwAprobadas, fill: 'hsl(var(--chart-2))' },
+          { status: 'SW Validado', count: stats.totalSwValidadas, fill: 'hsl(var(--chart-3))' },
+          { status: 'Distribuidas', count: stats.totalDistribuidas, fill: 'hsl(var(--chart-4))' },
+        ]} />
+        <UserRolesChart data={[
+          { role: 'Fabricantes', count: stats.fabricanteCount, fill: 'hsl(var(--chart-1))' },
+          { role: 'Auditores HW', count: stats.auditorHwCount, fill: 'hsl(var(--chart-2))' },
+          { role: 'Técnicos SW', count: stats.tecnicoSwCount, fill: 'hsl(var(--chart-3))' },
+          { role: 'Escuelas', count: stats.escuelaCount, fill: 'hsl(var(--chart-4))' },
+        ]} />
       </div>
 
-      <AnalyticsChart />
+      {/* Analytics chart hidden as we don't have historical data yet */}
+      {/* <AnalyticsChart data={[]} /> */}
 
       <RoleManager
         isOpen={showRoleManager}

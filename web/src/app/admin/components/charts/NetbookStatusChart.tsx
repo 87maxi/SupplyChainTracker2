@@ -9,30 +9,7 @@ interface NetbookStatusData {
   fill: string;
 }
 
-export function NetbookStatusChart() {
-  // Mock data - in a real app, this would come from the contract
-  const data: NetbookStatusData[] = [
-    {
-      status: 'Fabricadas',
-      count: 28,
-      fill: 'hsl(var(--chart-1))',
-    },
-    {
-      status: 'HW Aprobado',
-      count: 24,
-      fill: 'hsl(var(--chart-2))',
-    },
-    {
-      status: 'SW Validado',
-      count: 20,
-      fill: 'hsl(var(--chart-3))',
-    },
-    {
-      status: 'Distribuidas',
-      count: 16,
-      fill: 'hsl(var(--chart-4))',
-    },
-  ];
+export function NetbookStatusChart({ data }: { data: NetbookStatusData[] }) {
 
   return (
     <Card>
@@ -44,8 +21,8 @@ export function NetbookStatusChart() {
         <div className="h-[200px]">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data}>
-              <XAxis 
-                dataKey="status" 
+              <XAxis
+                dataKey="status"
                 stroke="#888888"
                 fontSize={12}
                 tickLine={false}
@@ -78,7 +55,7 @@ export function NetbookStatusChart() {
                   return null;
                 }}
               />
-              <Bar dataKey="count" radius={[4, 4, 0, 0] }>
+              <Bar dataKey="count" radius={[4, 4, 0, 0]}>
                 <LabelList
                   dataKey="count"
                   position="top"

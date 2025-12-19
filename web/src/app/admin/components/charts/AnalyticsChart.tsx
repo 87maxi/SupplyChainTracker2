@@ -9,16 +9,7 @@ interface AnalyticsData {
   distribuidas: number;
 }
 
-export function AnalyticsChart() {
-  // Mock data - in a real app, this would come from the contract
-  const data: AnalyticsData[] = [
-    { date: 'Ene', fabricadas: 4, distribuidas: 2 },
-    { date: 'Feb', fabricadas: 6, distribuidas: 3 },
-    { date: 'Mar', fabricadas: 8, distribuidas: 5 },
-    { date: 'Abr', fabricadas: 10, distribuidas: 8 },
-    { date: 'May', fabricadas: 14, distribuidas: 10 },
-    { date: 'Jun', fabricadas: 28, distribuidas: 16 },
-  ];
+export function AnalyticsChart({ data }: { data: AnalyticsData[] }) {
 
   return (
     <Card>
@@ -31,8 +22,8 @@ export function AnalyticsChart() {
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis 
-                dataKey="date" 
+              <XAxis
+                dataKey="date"
                 stroke="#888888"
                 fontSize={12}
                 tickLine={false}
