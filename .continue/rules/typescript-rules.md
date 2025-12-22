@@ -1,8 +1,4 @@
----
-name: typescript-rules
-description: descripcion de la metodologia de desarrollo y debug
-invokable: false
----
+
 
 
 

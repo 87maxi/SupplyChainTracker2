@@ -1,8 +1,4 @@
----
-name: analisis-code
-description: Intruciones de administrador del sitema tracker
-invokable: true
----
+
 
 # Web Admin Platform
 

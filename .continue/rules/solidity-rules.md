@@ -1,8 +1,4 @@
----
-name: rules-solidity
-description: smart contract solidity con foundry
-invokable: true
----
+
 # Reglas de uso de solidity
 
 

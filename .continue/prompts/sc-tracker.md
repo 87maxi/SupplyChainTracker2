@@ -1,3 +1,6 @@
+
+
+
 # Arquitectura y Patrones de Diseño
 
 El sistema se fundamenta en dos patrones de diseño clave que aseguran la integridad y seguridad del flujo de trabajo:

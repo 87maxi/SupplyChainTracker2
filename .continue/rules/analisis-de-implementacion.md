@@ -1,8 +1,4 @@
----
-name: analisis-code-debug
-description: Intruciones de analisis
-invokable: true
----
+
 
 
 # Intruciones para debug de codigo

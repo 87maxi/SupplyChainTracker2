@@ -59,6 +59,46 @@ contract SupplyChainTracker is AccessControlEnumerable {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
+    // --- Funciones ERC-20 para evitar errores de "execution reverted" ---
+    // Estas funciones devuelven valores por defecto para evitar que herramientas
+    // que esperan un contrato ERC-20 fallen con "execution reverted"
+    
+    function name() external pure returns (string memory) {
+        return "SupplyChainTracker";
+    }
+    
+    function symbol() external pure returns (string memory) {
+        return "SCT";
+    }
+    
+    function decimals() external pure returns (uint8) {
+        return 0; // No es un token, por lo que no tiene decimales
+    }
+    
+    function totalSupply() external pure returns (uint256) {
+        return 0; // No es un token, por lo que no tiene suministro
+    }
+    
+    function balanceOf(address) external pure returns (uint256) {
+        return 0; // No es un token, por lo que no tiene balances
+    }
+    
+    function transfer(address, uint256) external pure returns (bool) {
+        return false; // No es un token, por lo que no permite transferencias
+    }
+    
+    function allowance(address, address) external pure returns (uint256) {
+        return 0; // No es un token, por lo que no tiene allowances
+    }
+    
+    function approve(address, uint256) external pure returns (bool) {
+        return false; // No es un token, por lo que no permite aprobaciones
+    }
+    
+    function transferFrom(address, address, uint256) external pure returns (bool) {
+        return false; // No es un token, por lo que no permite transferencias
+    }
+
     // --- Funciones de Escritura ---
 
     function registerNetbooks(
