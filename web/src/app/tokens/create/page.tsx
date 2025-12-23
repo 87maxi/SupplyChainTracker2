@@ -46,7 +46,12 @@ export default function CreateTokensPage() {
       }
 
       // Register netbooks
-      const receipt = await SupplyChainService.registerNetbooks(serialArray, batchArray, modelArray);
+      const receipt = await SupplyChainService.registerNetbooks(
+        serialArray, 
+        batchArray, 
+        modelArray,
+        address as `0x${string}`
+      );
 
       setSuccess(`Successfully registered ${serialArray.length} netbooks! Transaction: ${receipt.transactionHash}`);
       setSerials('');

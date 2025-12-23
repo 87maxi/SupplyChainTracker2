@@ -35,7 +35,7 @@
     "id": "yo62hb",
     "address": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
     "role": "auditor_hw",
-    "status": "pending",
+    "status": "approved",
     "timestamp": 1766173193156,
     "signature": "0x1a280c1b9178a538fd942d7e25c887e96dd185f77146979133376a215435b0097286b8af38f5590b7d7d8cb55617fd195878423393932a17af2da384332db8451c"
   },
@@ -43,7 +43,7 @@
     "id": "vu6ya",
     "address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
     "role": "tecnico_sw",
-    "status": "pending",
+    "status": "approved",
     "timestamp": 1766173232635,
     "signature": "0x762edf063a5b2498c9c3a094bb05298fa466867bd3780363f8290b542547590d5c6dbacd133022aba051107fdde9a7894f9041b22667d0e5c359c79f031753a11b"
   },
@@ -51,7 +51,7 @@
     "id": "ej4i7",
     "address": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
     "role": "auditor_hw",
-    "status": "pending",
+    "status": "approved",
     "timestamp": 1766174617394,
     "signature": "0x1a280c1b9178a538fd942d7e25c887e96dd185f77146979133376a215435b0097286b8af38f5590b7d7d8cb55617fd195878423393932a17af2da384332db8451c"
   },
@@ -59,8 +59,192 @@
     "id": "vcjmkva",
     "address": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
     "role": "tecnico_sw",
-    "status": "pending",
+    "status": "rejected",
     "timestamp": 1766174641432,
     "signature": "0x4e30473e40b7993264b629e861a8befa292657c585287fd851b62c469419660f5d40a851eb7565fdcd07a78280645b26db307cb63b0e855421e43189031966651c"
+  },
+  {
+    "id": "exx83a",
+    "address": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
+    "role": "auditor_hw",
+    "status": "rejected",
+    "timestamp": 1766497363724,
+    "signature": "0x1a280c1b9178a538fd942d7e25c887e96dd185f77146979133376a215435b0097286b8af38f5590b7d7d8cb55617fd195878423393932a17af2da384332db8451c"
+  },
+  {
+    "id": "test123",
+    "address": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+    "role": "auditor_hw",
+    "status": "approved",
+    "timestamp": 1766499638562
+  },
+  {
+    "id": "debug1766500312677",
+    "address": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+    "role": "tecnico_sw",
+    "status": "approved",
+    "timestamp": 1766500312677
+  },
+  {
+    "id": "frontend1766500464538",
+    "address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "role": "auditor_hw",
+    "status": "approved",
+    "timestamp": 1766500464538
+  },
+  {
+    "id": "debug-issue1766501135746",
+    "address": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+    "role": "tecnico_sw",
+    "status": "approved",
+    "timestamp": 1766501135746
+  },
+  {
+    "id": "frontend-flow1766501185813",
+    "address": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+    "role": "auditor_hw",
+    "status": "approved",
+    "timestamp": 1766501185813
+  },
+  {
+    "id": "debug-tx1766501238281",
+    "address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "role": "tecnico_sw",
+    "status": "approved",
+    "timestamp": 1766501238282
+  },
+  {
+    "id": "test-frontend1766501247851",
+    "address": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+    "role": "fabricante",
+    "status": "approved",
+    "timestamp": 1766501247851
+  },
+  {
+    "id": "frontend-test1766501310609",
+    "address": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+    "role": "escuela",
+    "status": "approved",
+    "timestamp": 1766501310609
+  },
+  {
+    "id": "complete-test1766501362418",
+    "address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "role": "admin",
+    "status": "approved",
+    "timestamp": 1766501362418
+  },
+  {
+    "id": "delay-test1766501517297",
+    "address": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+    "role": "fabricante",
+    "status": "approved",
+    "timestamp": 1766501517297
+  },
+  {
+    "id": "delay-test2-1766501536447",
+    "address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "role": "escuela",
+    "status": "approved",
+    "timestamp": 1766501536447
+  },
+  {
+    "id": "final-test1766501611587",
+    "address": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+    "role": "auditor_hw",
+    "status": "approved",
+    "timestamp": 1766501611587
+  },
+  {
+    "id": "final-test2-1766501621589",
+    "address": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+    "role": "tecnico_sw",
+    "status": "approved",
+    "timestamp": 1766501621589
+  },
+  {
+    "id": "final-test3-1766501652003",
+    "address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "role": "admin",
+    "status": "approved",
+    "timestamp": 1766501652003
+  },
+  {
+    "id": "final-test4-1766501673650",
+    "address": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+    "role": "fabricante",
+    "status": "approved",
+    "timestamp": 1766501673650
+  },
+  {
+    "id": "final-test5-1766501695242",
+    "address": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+    "role": "escuela",
+    "status": "approved",
+    "timestamp": 1766501695242
+  },
+  {
+    "id": "5i5me",
+    "address": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
+    "role": "tecnico_sw",
+    "status": "approved",
+    "timestamp": 1766501881319,
+    "signature": "0x8c754be0715488feec67952e67e7f9f52d6f3e8a6f03241b5c05019f595087257fab8a082ed97d7b0d303e671ce76058e8661656dd3871f0798c612de90273831c"
+  },
+  {
+    "id": "aa0r07",
+    "address": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+    "role": "fabricante",
+    "status": "approved",
+    "timestamp": 1766503178917,
+    "signature": "0x84562be6886644b8c0e876ed6963d018b588fcc346d1dfd0b845a5a0a5b4d28f388d55de45717a24416dd046ab5757ca3748fa60625a90aa0a28a662b83a0a951b"
+  },
+  {
+    "id": "3p0rb",
+    "address": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+    "role": "escuela",
+    "status": "approved",
+    "timestamp": 1766503827926,
+    "signature": "0x7e8f1085308c58ce3bad4c9ca17d90b1ef7f7195665027647db49782c6a0ad195bbe3c352cb93252639bca987457dbdaa97c7985d40052869d89a008796a209a1c"
+  },
+  {
+    "id": "ehjpry",
+    "address": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
+    "role": "auditor_hw",
+    "status": "approved",
+    "timestamp": 1766510514878,
+    "signature": "0x8c6996ef4d0aafcfa9d0aa10515b2ed790038f4177da50c25f088f3e7809119f6a2c0eac906e8930c83a0f8dc3aad02608f07615bde7752bd51a199eefe8251a1b"
+  },
+  {
+    "id": "bcg66n",
+    "address": "0xBcd4042DE499D14e55001CcbB24a551F3b954096",
+    "role": "escuela",
+    "status": "approved",
+    "timestamp": 1766510632917,
+    "signature": "0x1af9bcf6d320dd4ff93430ea17a4679332669955d5bb80b2657536fee2695d020cde2a54d4a6f82d8958015a43585c97f3b4348e5ae43dc1c2e460bc09efd7661c"
+  },
+  {
+    "id": "nt91kc",
+    "address": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
+    "role": "auditor_hw",
+    "status": "pending",
+    "timestamp": 1766519533672,
+    "signature": "0x1a280c1b9178a538fd942d7e25c887e96dd185f77146979133376a215435b0097286b8af38f5590b7d7d8cb55617fd195878423393932a17af2da384332db8451c"
+  },
+  {
+    "id": "7uf14m",
+    "address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "role": "tecnico_sw",
+    "status": "pending",
+    "timestamp": 1766519563946,
+    "signature": "0x762edf063a5b2498c9c3a094bb05298fa466867bd3780363f8290b542547590d5c6dbacd133022aba051107fdde9a7894f9041b22667d0e5c359c79f031753a11b"
+  },
+  {
+    "id": "87aufb",
+    "address": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
+    "role": "escuela",
+    "status": "pending",
+    "timestamp": 1766519607138,
+    "signature": "0xb5e0caa7f7313f7bb5205ac589c287b67be523510bc630bf241fd20860ecea23348e3330aa26f2ebaf1b3fa78dbb96e4c4c63f61cb677f450e8dddd2473f8fb41b"
   }
 ]

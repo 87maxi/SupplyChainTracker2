@@ -61,7 +61,12 @@ export default function TransferTokenPage() {
       const schoolHash = toAddress.startsWith('0x') ? toAddress : hashId(toAddress);
       const studentHash = ZeroHash;
 
-      const receipt = await SupplyChainService.assignToStudent(serial, schoolHash, studentHash);
+      const receipt = await SupplyChainService.assignToStudent(
+        serial, 
+        schoolHash, 
+        studentHash,
+        address as `0x${string}`
+      );
 
       setSuccess(`Successfully transferred netbook ${serial} to ${toAddress}! Transaction: ${receipt.transactionHash}`);
       setToAddress('');

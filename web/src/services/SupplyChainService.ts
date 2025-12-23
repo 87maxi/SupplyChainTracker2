@@ -1,10 +1,11 @@
 'use client';
 
 import { ROLES } from '@/lib/constants';
-import { readContract, writeContract, waitForTransactionReceipt, getBalance } from '@wagmi/core';
+import { readContract, waitForTransactionReceipt, getBalance } from '@wagmi/core';
 import { config } from '@/lib/wagmi/config';
 import { parseUnits } from 'viem';
 import { formatUnits, ethers } from 'ethers';
+import { writeContractWithQueue } from './TransactionManager';
 
 // Import contract ABI and address
 import SupplyChainTrackerABI from '@/contracts/abi/SupplyChainTracker.json';
@@ -159,17 +160,16 @@ export const getRoleCounts = async () => {
 };
 
 // Register new netbook
-export const registerNetbook = async (serial: string, batchId: string, specs: string) => {
+export const registerNetbook = async (serial: string, batchId: string, specs: string, account: `0x${string}`) => {
   try {
-    const hash = await writeContract(config, {
+    const receipt = await writeContractWithQueue({
       address: contractAddress,
       abi,
       functionName: 'registerNetbooks',
-      args: [[serial], [batchId], [specs]]
+      args: [[serial], [batchId], [specs]],
+      account
     });
 
-    // Wait for transaction to be confirmed
-    const receipt = await waitForTransactionReceipt(config, { hash });
     return receipt;
   } catch (error) {
     console.error('Error registering netbook:', error);
@@ -178,16 +178,16 @@ export const registerNetbook = async (serial: string, batchId: string, specs: st
 };
 
 // Register multiple netbooks
-export const registerNetbooks = async (serials: string[], batches: string[], specs: string[]) => {
+export const registerNetbooks = async (serials: string[], batches: string[], specs: string[], account: `0x${string}`) => {
   try {
-    const hash = await writeContract(config, {
+    const receipt = await writeContractWithQueue({
       address: contractAddress,
       abi,
       functionName: 'registerNetbooks',
-      args: [serials, batches, specs]
+      args: [serials, batches, specs],
+      account
     });
 
-    const receipt = await waitForTransactionReceipt(config, { hash });
     return receipt;
   } catch (error) {
     console.error('Error registering netbooks:', error);
@@ -196,16 +196,16 @@ export const registerNetbooks = async (serials: string[], batches: string[], spe
 };
 
 // Audit hardware
-export const auditHardware = async (serial: string, passed: boolean, reportHash: string = ethers.ZeroHash) => {
+export const auditHardware = async (serial: string, passed: boolean, reportHash: string = ethers.ZeroHash, account: `0x${string}`) => {
   try {
-    const hash = await writeContract(config, {
+    const receipt = await writeContractWithQueue({
       address: contractAddress,
       abi,
       functionName: 'auditHardware',
-      args: [serial, passed, reportHash as `0x${string}`]
+      args: [serial, passed, reportHash as `0x${string}`],
+      account
     });
 
-    const receipt = await waitForTransactionReceipt(config, { hash });
     return receipt;
   } catch (error) {
     console.error('Error auditing hardware:', error);
@@ -214,16 +214,16 @@ export const auditHardware = async (serial: string, passed: boolean, reportHash:
 };
 
 // Validate software
-export const validateSoftware = async (serial: string, osVersion: string, passed: boolean) => {
+export const validateSoftware = async (serial: string, osVersion: string, passed: boolean, account: `0x${string}`) => {
   try {
-    const hash = await writeContract(config, {
+    const receipt = await writeContractWithQueue({
       address: contractAddress,
       abi,
       functionName: 'validateSoftware',
-      args: [serial, osVersion, passed]
+      args: [serial, osVersion, passed],
+      account
     });
 
-    const receipt = await waitForTransactionReceipt(config, { hash });
     return receipt;
   } catch (error) {
     console.error('Error validating software:', error);
@@ -232,16 +232,16 @@ export const validateSoftware = async (serial: string, osVersion: string, passed
 };
 
 // Assign netbook to student
-export const assignToStudent = async (serial: string, schoolHash: string, studentHash: string) => {
+export const assignToStudent = async (serial: string, schoolHash: string, studentHash: string, account: `0x${string}`) => {
   try {
-    const hash = await writeContract(config, {
+    const receipt = await writeContractWithQueue({
       address: contractAddress,
       abi,
       functionName: 'assignToStudent',
-      args: [serial, schoolHash as `0x${string}`, studentHash as `0x${string}`]
+      args: [serial, schoolHash as `0x${string}`, studentHash as `0x${string}`],
+      account
     });
 
-    const receipt = await waitForTransactionReceipt(config, { hash });
     return receipt;
   } catch (error) {
     console.error('Error assigning to student:', error);
@@ -250,16 +250,16 @@ export const assignToStudent = async (serial: string, schoolHash: string, studen
 };
 
 // Grant role to user
-export const grantRole = async (role: string, userAddress: string) => {
+export const grantRole = async (role: string, userAddress: string, account: `0x${string}`) => {
   try {
-    const hash = await writeContract(config, {
+    const receipt = await writeContractWithQueue({
       address: contractAddress,
       abi,
       functionName: 'grantRole',
-      args: [role, userAddress]
+      args: [role, userAddress],
+      account
     });
 
-    const receipt = await waitForTransactionReceipt(config, { hash });
     return receipt;
   } catch (error) {
     console.error('Error granting role:', error);
@@ -268,16 +268,16 @@ export const grantRole = async (role: string, userAddress: string) => {
 };
 
 // Revoke role from user
-export const revokeRole = async (role: string, userAddress: string) => {
+export const revokeRole = async (role: string, userAddress: string, account: `0x${string}`) => {
   try {
-    const hash = await writeContract(config, {
+    const receipt = await writeContractWithQueue({
       address: contractAddress,
       abi,
       functionName: 'revokeRole',
-      args: [role, userAddress]
+      args: [role, userAddress],
+      account
     });
 
-    const receipt = await waitForTransactionReceipt(config, { hash });
     return receipt;
   } catch (error) {
     console.error('Error revoking role:', error);
@@ -417,4 +417,3 @@ export const getTotalNetbookCount = async () => {
     throw error;
   }
 };
-

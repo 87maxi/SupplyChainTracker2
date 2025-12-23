@@ -1,9 +1,8 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, RefreshCw, Settings2 } from 'lucide-react';
+import { RefreshCw, Settings2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { RoleManager } from '@/components/contract/RoleManager';
 import { Button } from '@/components/ui/button';
@@ -15,28 +14,20 @@ import {
   Monitor,
   GraduationCap,
   Package,
-  CheckCircle,
-  Network,
-  TrendingUp
+  CheckCircle
 } from 'lucide-react';
 import { NetbookStatusChart } from './charts/NetbookStatusChart';
 import { UserRolesChart } from './charts/UserRolesChart';
-import { AnalyticsChart } from './charts/AnalyticsChart';
 import { useWeb3 } from '@/hooks/useWeb3';
-import {
-  getRoleMembers,
-  getRoleMemberCount,
-  getNetbooksByState,
-  revalidateAll
-} from '@/lib/api/serverRpc';
 import { useToast } from '@/hooks/use-toast';
 import { DashboardSkeleton } from './skeletons/DashboardSkeleton';
 import { TransactionConfirmation } from '@/components/contract/TransactionConfirmation';
 import { truncateAddress } from '@/lib/utils';
 import { ROLES } from '@/lib/constants';
-import { getRoleRequests, updateRoleRequestStatus, deleteRoleRequest } from '@/services/RoleRequestService';
+import { getRoleRequests, updateRoleRequestStatus } from '@/services/RoleRequestService';
 import { RoleRequest } from '@/types/role-request';
-import { SupplyChainContract } from '@/lib/contracts/SupplyChainContract';
+import { grantRole, hasRole } from '@/services/SupplyChainService';
+import { getRoleConstant } from '@/lib/api/serverRpc';
 
 // Cache configuration
 const CACHE_CONFIG = {
@@ -84,21 +75,12 @@ function SummaryCard({ title, count, description, icon: Icon, color }: { title: 
   );
 }
 
-// State enum for better type safety
-enum State {
-  FABRICADA = 0,
-  HW_APROBADO = 1,
-  SW_VALIDADO = 2,
-  DISTRIBUIDA = 3
-}
-
-export function DashboardOverview({ stats: initialStats }: { stats: DashboardStats }) {
+export function DashboardOverview({ initialStats }: { initialStats: DashboardStats }) {
   const { address, isConnected } = useWeb3();
   const { toast } = useToast();
   const [showRoleManager, setShowRoleManager] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats>(initialStats);
-  // In a real app, this would be fetched from the contract
   const [userRoles, setUserRoles] = useState<UserRoleData[]>([]);
   const [pendingRequests, setPendingRequests] = useState<RoleRequest[]>([]);
 
@@ -111,105 +93,16 @@ export function DashboardOverview({ stats: initialStats }: { stats: DashboardSta
     }
   };
 
-  const fetchUserRoles = async () => {
-    try {
-      const { FABRICANTE, AUDITOR_HW, TECNICO_SW, ESCUELA, ADMIN } = ROLES;
-
-      const [adminMembers, fabricanteMembers, auditorHwMembers, tecnicoSwMembers, escuelaMembers] =
-        await Promise.all([
-          getRoleMembers(ADMIN.hash).catch(() => []),
-          getRoleMembers(FABRICANTE.hash).catch(() => []),
-          getRoleMembers(AUDITOR_HW.hash).catch(() => []),
-          getRoleMembers(TECNICO_SW.hash).catch(() => []),
-          getRoleMembers(ESCUELA.hash).catch(() => [])
-        ]);
-
-      const allUserRoles: UserRoleData[] = [];
-
-      adminMembers.forEach((address: string, index: number) => {
-        allUserRoles.push({
-          id: `admin-${index}`,
-          address,
-          role: 'admin',
-          since: new Date().toISOString().split('T')[0],
-          status: 'active'
-        });
-      });
-
-      fabricanteMembers.forEach((address: string, index: number) => {
-        allUserRoles.push({
-          id: `fabricante-${index}`,
-          address,
-          role: 'fabricante',
-          since: new Date().toISOString().split('T')[0],
-          status: 'active'
-        });
-      });
-
-      auditorHwMembers.forEach((address: string, index: number) => {
-        allUserRoles.push({
-          id: `auditor_hw-${index}`,
-          address,
-          role: 'auditor_hw',
-          since: new Date().toISOString().split('T')[0],
-          status: 'active'
-        });
-      });
-
-      tecnicoSwMembers.forEach((address: string, index: number) => {
-        allUserRoles.push({
-          id: `tecnico_sw-${index}`,
-          address,
-          role: 'tecnico_sw',
-          since: new Date().toISOString().split('T')[0],
-          status: 'active'
-        });
-      });
-
-      escuelaMembers.forEach((address: string, index: number) => {
-        allUserRoles.push({
-          id: `escuela-${index}`,
-          address,
-          role: 'escuela',
-          since: new Date().toISOString().split('T')[0],
-          status: 'active'
-        });
-      });
-
-      setUserRoles(allUserRoles);
-    } catch (error) {
-      console.error('Error fetching user roles:', error);
-    }
-  };
-
   const fetchDashboardData = async (silent = false) => {
     if (!isConnected || !address) return;
 
     try {
-      const [
-        fabricanteCount, auditorHwCount, tecnicoSwCount, escuelaCount,
-        fabricadas, hwAprobadas, swValidadas, distribuidas
-      ] = await Promise.all([
-        getRoleMemberCount(ROLES.FABRICANTE.hash).catch(() => 0),
-        getRoleMemberCount(ROLES.AUDITOR_HW.hash).catch(() => 0),
-        getRoleMemberCount(ROLES.TECNICO_SW.hash).catch(() => 0),
-        getRoleMemberCount(ROLES.ESCUELA.hash).catch(() => 0),
-        getNetbooksByState(State.FABRICADA).catch(() => []),
-        getNetbooksByState(State.HW_APROBADO).catch(() => []),
-        getNetbooksByState(State.SW_VALIDADO).catch(() => []),
-        getNetbooksByState(State.DISTRIBUIDA).catch(() => [])
-      ]);
-
-      setStats({
-        fabricanteCount,
-        auditorHwCount,
-        tecnicoSwCount,
-        escuelaCount,
-        totalFabricadas: fabricadas.length,
-        totalHwAprobadas: hwAprobadas.length,
-        totalSwValidadas: swValidadas.length,
-        totalDistribuidas: distribuidas.length
-      });
+      // Fetch dashboard data from server action
+      const response = await fetch('/api/admin/dashboard-stats');
+      if (!response.ok) throw new Error('Failed to fetch dashboard data');
+      
+      const newStats = await response.json();
+      setStats(newStats);
 
       if (!silent) {
         toast({
@@ -217,8 +110,6 @@ export function DashboardOverview({ stats: initialStats }: { stats: DashboardSta
           description: "El panel de administración se ha actualizado correctamente.",
         });
       }
-
-      revalidateAll();
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
       if (!silent) {
@@ -238,13 +129,11 @@ export function DashboardOverview({ stats: initialStats }: { stats: DashboardSta
 
     await Promise.all([
       fetchDashboardData(silent),
-      fetchUserRoles(),
       fetchRoleRequests()
     ]);
 
     setIsLoading(false);
   };
-  const [error, setError] = useState<string | null>(null);
 
   const [confirmationDialog, setConfirmationDialog] = useState({
     open: false,
@@ -273,9 +162,9 @@ export function DashboardOverview({ stats: initialStats }: { stats: DashboardSta
         throw new Error("No hay una billetera conectada");
       }
 
-      // Verify if current user is admin
-      const adminRole = await SupplyChainContract.getDefaultAdminRole();
-      const isAdmin = await SupplyChainContract.hasRole(adminRole, address);
+      // Verify if current user is admin using client-side service
+      const adminRole = await getRoleConstant('DEFAULT_ADMIN_ROLE');
+      const isAdmin = await hasRole(adminRole, address);
 
       if (!isAdmin) {
         throw new Error("No tienes permisos de administrador (AccessControl)");
@@ -290,23 +179,16 @@ export function DashboardOverview({ stats: initialStats }: { stats: DashboardSta
         default: throw new Error('Rol inválido');
       }
 
-      const tx = await SupplyChainContract.grantRole(roleBytes32, request.address);
-      await tx.wait();
-
-      // Verify transaction on-chain
-      const hasRole = await SupplyChainContract.hasRole(roleBytes32, request.address);
-      if (!hasRole) {
-        throw new Error("La transacción se confirmó pero el rol no fue asignado. Verifica los logs del contrato.");
-      }
+      // Use client-side service for granting role
+      await grantRole(roleBytes32, request.address, address as `0x${string}`);
 
       // Optimistic update: Remove request from list immediately
       setPendingRequests(prev => prev.filter(req => req.id !== request.id));
 
       await updateRoleRequestStatus(request.id, 'approved');
 
-      // Refresh stats and roles, but NOT requests to avoid race condition with optimistic update
+      // Refresh stats
       fetchDashboardData(true);
-      fetchUserRoles();
 
       toast({
         title: "Solicitud aprobada",
@@ -349,17 +231,6 @@ export function DashboardOverview({ stats: initialStats }: { stats: DashboardSta
     }
   };
 
-  // Handle confirmation dialog
-  const confirmAction = (title: string, description: string, warning: string, onConfirm: () => Promise<void>) => {
-    setConfirmationDialog({
-      open: true,
-      title,
-      description,
-      warning,
-      onConfirm
-    });
-  };
-
   // Refresh data when component mounts or connection changes
   useEffect(() => {
     refreshAllData();
@@ -375,20 +246,6 @@ export function DashboardOverview({ stats: initialStats }: { stats: DashboardSta
   // Loading state
   if (isLoading) {
     return <DashboardSkeleton />;
-  }
-
-  // Error state
-  if (error) {
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-3xl font-bold tracking-tight">Panel de Administración</h2>
-          <Button onClick={() => fetchDashboardData()}>
-            Intentar de nuevo
-          </Button>
-        </div>
-      </div>
-    );
   }
 
   // Main dashboard content
@@ -570,9 +427,6 @@ export function DashboardOverview({ stats: initialStats }: { stats: DashboardSta
           { role: 'Escuelas', count: stats.escuelaCount, fill: 'hsl(var(--chart-4))' },
         ]} />
       </div>
-
-      {/* Analytics chart hidden as we don't have historical data yet */}
-      {/* <AnalyticsChart data={[]} /> */}
 
       <RoleManager
         isOpen={showRoleManager}

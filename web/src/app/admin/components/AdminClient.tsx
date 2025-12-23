@@ -9,7 +9,7 @@ const UsersList = nextDynamic(() => import('./UsersList').then(mod => mod.UsersL
 export function AdminClient({ stats }: { stats: any }) {
     return (
         <div className="container mx-auto py-8 space-y-8">
-            <DashboardOverview stats={stats} />
+            <DashboardOverview initialStats={stats} />
             <PendingRoleRequests />
             <UsersList />
         </div>

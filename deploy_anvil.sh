@@ -64,15 +64,6 @@ fi
 #         Generará un bloque SOLO cuando reciba una transacción.
 #         Esto evita el "ruido" de bloques vacíos constantes.
 #
-#
-#   --state ./anvil-state.json
-#     └─> CARGA el estado previo desde este archivo (si existe)
-#         Esto permite que los contratos desplegados persistan entre reinicios
-#
-#   --state-interval 1
-#     └─> Guarda el estado cada 1 segundo
-#         Asegura que los cambios se persistan rápidamente
-#
 #   --dump-state ./anvil-state.json
 #     └─> GUARDA el estado actual en este archivo
 #         Se ejecuta periódicamente según --state-interval
@@ -89,27 +80,11 @@ echo "   Chain ID: 31337"
 echo "   Block Time: Auto-mining (bloques bajo demanda)"
 echo "   Estado: ./anvil-state.json"
 
-# Verificar si existe estado previo
-if [ -f "anvil-state.json" ]; then
-    echo "   ℹ️  Encontrado estado previo, cargando..."
-    echo "   ⚠️  Los contratos desplegados anteriormente seguirán disponibles"
-    
-    # Iniciar con estado previo
-    anvil \
-        --chain-id 31337 \
-        --state ./anvil-state.json \
-        --state-interval 1 \
-        --dump-state ./anvil-state.json &
-else
-    echo "   ℹ️  Iniciando con estado nuevo..."
-    echo "   ℹ️  Se creará anvil-state.json para persistir el estado"
-    
-    # Iniciar sin estado previo
-    anvil \
-        --chain-id 31337 \
-        --state-interval 1 \
-        --dump-state ./anvil-state.json &
-fi
+# Iniciar Anvil con estado persistente
+anvil \
+    --chain-id 31337 \
+    --dump-state ./anvil-state.json \
+    --state-interval 1 &
 
 # Capturar el PID (Process ID) de Anvil para gestión posterior
 ANVIL_PID=$!
