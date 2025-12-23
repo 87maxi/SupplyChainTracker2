@@ -94,17 +94,16 @@ if [ -f "anvil-state.json" ]; then
     echo "   ℹ️  Encontrado estado previo, cargando..."
     echo "   ⚠️  Los contratos desplegados anteriormente seguirán disponibles"
     
-    # Iniciar con estado previo
+    # Iniciar con estado previo (anvil carga automáticamente si existe)
     anvil \
         --chain-id 31337 \
-        --state ./anvil-state.json \
         --state-interval 1 \
         --dump-state ./anvil-state.json &
 else
     echo "   ℹ️  Iniciando con estado nuevo..."
     echo "   ℹ️  Se creará anvil-state.json para persistir el estado"
     
-    # Iniciar sin estado previo
+    # Iniciar sin estado previo (anvil creará el archivo si no existe)
     anvil \
         --chain-id 31337 \
         --state-interval 1 \

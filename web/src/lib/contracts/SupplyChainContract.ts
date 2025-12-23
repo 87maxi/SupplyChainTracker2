@@ -2,6 +2,8 @@ import { getContract } from '@/lib/web3';
 import { NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS, NEXT_PUBLIC_RPC_URL } from '@/lib/env';
 import SupplyChainTrackerABI from '@/contracts/abi/SupplyChainTracker.json';
 import { ethers } from 'ethers';
+import { writeContract, readContract } from '@wagmi/core';
+import { config } from '@/lib/wagmi/config';
 
 // Load environment variables
 const contractAddress = NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS;
@@ -80,8 +82,17 @@ export const SupplyChainContract = {
   },
 
   async hasRole(role: string, account: string) {
-    const contract = await getSupplyChainContract();
-    return contract.hasRole(role, account);
+    try {
+      return await readContract(config, {
+        address: contractAddress as `0x${string}`,
+        abi: SupplyChainTrackerABI,
+        functionName: 'hasRole',
+        args: [role, account]
+      });
+    } catch (error) {
+      console.error('Error in hasRole:', error);
+      throw error;
+    }
   },
 
   async getAllSerialNumbers() {
@@ -130,14 +141,32 @@ export const SupplyChainContract = {
   },
 
   async grantRole(role: string, account: string) {
-    const contract = await getSupplyChainContract();
-    const tx = await contract.grantRole(role, account);
-    return tx;
+    try {
+      const hash = await writeContract(config, {
+        address: contractAddress as `0x${string}`,
+        abi: SupplyChainTrackerABI,
+        functionName: 'grantRole',
+        args: [role, account]
+      });
+      return { hash };
+    } catch (error) {
+      console.error('Error in grantRole:', error);
+      throw error;
+    }
   },
 
   async revokeRole(role: string, account: string) {
-    const contract = await getSupplyChainContract();
-    const tx = await contract.revokeRole(role, account);
-    return tx;
+    try {
+      const hash = await writeContract(config, {
+        address: contractAddress as `0x${string}`,
+        abi: SupplyChainTrackerABI,
+        functionName: 'revokeRole',
+        args: [role, account]
+      });
+      return { hash };
+    } catch (error) {
+      console.error('Error in revokeRole:', error);
+      throw error;
+    }
   }
 };

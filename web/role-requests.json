@@ -43,7 +43,7 @@
     "id": "vu6ya",
     "address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
     "role": "tecnico_sw",
-    "status": "pending",
+    "status": "rejected",
     "timestamp": 1766173232635,
     "signature": "0x762edf063a5b2498c9c3a094bb05298fa466867bd3780363f8290b542547590d5c6dbacd133022aba051107fdde9a7894f9041b22667d0e5c359c79f031753a11b"
   },
@@ -62,5 +62,21 @@
     "status": "pending",
     "timestamp": 1766174641432,
     "signature": "0x4e30473e40b7993264b629e861a8befa292657c585287fd851b62c469419660f5d40a851eb7565fdcd07a78280645b26db307cb63b0e855421e43189031966651c"
+  },
+  {
+    "id": "bhb9k",
+    "address": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "role": "auditor_hw",
+    "status": "pending",
+    "timestamp": 1766486218416,
+    "signature": "0x5da10435ec3b56fc0382e5d29af169dc033f7a7eff9614f325af024ff17f142820f0f489c53ecf8040349acd22a5fdad2556b96ce88d7b983858272b8ccc37701b"
+  },
+  {
+    "id": "4dvjca",
+    "address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "role": "escuela",
+    "status": "pending",
+    "timestamp": 1766486256131,
+    "signature": "0x842658e25fd96f95738f63233daddee691ad80ff1d4f3595d7158c08ca36700068d8d495ff2063b65f19b6aed75593809b36b6e3f3249da950ac71ccc8fd080d1c"
   }
 ]

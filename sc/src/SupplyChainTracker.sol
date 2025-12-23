@@ -5,10 +5,10 @@ import {AccessControlEnumerable} from "openzeppelin-contracts/contracts/access/e
 
 contract SupplyChainTracker is AccessControlEnumerable {
     // --- Roles ---
-    bytes32 public constant FABRICANTE_ROLE = keccak256("FABRICANTE_ROLE");
-    bytes32 public constant AUDITOR_HW_ROLE = keccak256("AUDITOR_HW_ROLE");
-    bytes32 public constant TECNICO_SW_ROLE = keccak256("TECNICO_SW_ROLE");
-    bytes32 public constant ESCUELA_ROLE = keccak256("ESCUELA_ROLE");
+    bytes32 public immutable FABRICANTE_ROLE = keccak256("FABRICANTE_ROLE");
+    bytes32 public immutable AUDITOR_HW_ROLE = keccak256("AUDITOR_HW_ROLE");
+    bytes32 public immutable TECNICO_SW_ROLE = keccak256("TECNICO_SW_ROLE");
+    bytes32 public immutable ESCUELA_ROLE = keccak256("ESCUELA_ROLE");
 
     // --- Enums ---
     enum State {
