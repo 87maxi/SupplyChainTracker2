@@ -183,47 +183,48 @@ export const RoleManagementSection = () => {
           </div>
         </div>
 
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[300px]">Dirección</TableHead>
-                <TableHead>Rol</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {roleMembers[selectedRole].length > 0 ? (
-                roleMembers[selectedRole].map((memberAddress) => (
-                  <TableRow key={memberAddress}>
-                    <TableCell className="font-mono text-sm">
-                      {truncateAddress(memberAddress)}
-                      <Copy 
-                        className="inline-block ml-2 h-4 w-4 cursor-pointer text-muted-foreground hover:text-foreground" 
-                        onClick={() => copyToClipboard(memberAddress)} 
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{getRoleLabel(selectedRole)}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                                            <Button 
-                        variant="destructive" 
-                        size="sm" 
-                        onClick={() => handleRemoveMember(selectedRole, memberAddress)}
-                        disabled={isLoading(`revokeRole:${selectedRole}`)}
-                      >
-                        {isLoading(`revokeRole:${selectedRole}`) ? 'Revocando...' : 'Revocar'}
-                      </Button>
+                  <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[300px]">Dirección</TableHead>
+                  <TableHead>Rol</TableHead>
+                  <TableHead className="text-right">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {roleMembers[selectedRole].length > 0 ? (
+                  roleMembers[selectedRole].map((memberAddress) => (
+                    <TableRow key={memberAddress}>
+                      <TableCell className="font-mono text-sm">
+                        {truncateAddress(memberAddress)}
+                        <Copy 
+                          className="inline-block ml-2 h-4 w-4 cursor-pointer text-muted-foreground hover:text-foreground" 
+                          onClick={() => copyToClipboard(memberAddress)} 
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{getRoleLabel(selectedRole)}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                                              <Button 
+                          variant="destructive" 
+                          size="sm" 
+                          onClick={() => handleRemoveMember(selectedRole, memberAddress)}
+                          disabled={isLoading(`revokeRole:${selectedRole}`)}
+                        >
+                          {isLoading(`revokeRole:${selectedRole}`) ? 'Revocando...' : 'Revocar'}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={3} className="h-24 text-center">
+                      No hay miembros en este rol.
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={3} className="h-24 text-center">
-                    No hay miembros en este rol.
-                  </TableCell>
-                </TableRow>
-              )
-            </TableBody>
-          </Table>
+                )
+              </TableBody>
+            </Table>
+          </div>
