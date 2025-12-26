@@ -12,7 +12,11 @@ type RoleMap = {
   ADMIN: string;
 };
 
+let cachedRoleHashes: RoleMap | null = null;
+
 export const getRoleHashes = async (): Promise<RoleMap> => {
+  if (cachedRoleHashes) return cachedRoleHashes;
+
   try {
     // Get role hashes from the contract
     const [fabricanteRole, auditorHwRole, tecnicoSwRole, escuelaRole, defaultAdminRole] = await Promise.all([
@@ -43,22 +47,23 @@ export const getRoleHashes = async (): Promise<RoleMap> => {
       })
     ]);
 
-    return {
+    cachedRoleHashes = {
       FABRICANTE: fabricanteRole as string,
       AUDITOR_HW: auditorHwRole as string,
       TECNICO_SW: tecnicoSwRole as string,
       ESCUELA: escuelaRole as string,
       ADMIN: defaultAdminRole as string
     };
+
+    return cachedRoleHashes;
   } catch (error) {
     console.error('Error getting role hashes:', error);
-    // In case of error, return empty strings
     return {
       FABRICANTE: '',
-       AUDITOR_HW: '',
-       TECNICO_SW: '',
-       ESCUELA: '',
-       ADMIN: ''
+      AUDITOR_HW: '',
+      TECNICO_SW: '',
+      ESCUELA: '',
+      ADMIN: ''
     };
   }
 };

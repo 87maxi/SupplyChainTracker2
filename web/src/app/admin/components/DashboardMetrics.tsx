@@ -2,28 +2,24 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Factory, Monitor, GraduationCap, Gavel, ShieldCheck } from 'lucide-react';
+import { Users, Factory, Monitor, GraduationCap, Gavel, ShieldCheck, Clock, TrendingUp, CheckCircle, AlertTriangle } from 'lucide-react';
 import { AllRolesSummary } from '@/types/supply-chain-types';
 import { cn } from '@/lib/utils';
 
 interface DashboardMetricsProps {
   rolesSummary: AllRolesSummary | null;
   pendingRequestsCount: number;
-  recentActivity?: {
-    tokensCreated: number;
-    transfersCompleted: number;
-    approvalsPending: number;
-  };
+  logs?: any[];
   loading?: boolean;
 }
 
 // Componente para el resumen de roles
-function RoleMetricCard({ 
-  title, 
-  count, 
-  icon: Icon, 
-  color 
-}: { 
+function RoleMetricCard({
+  title,
+  count,
+  icon: Icon,
+  color
+}: {
   title: string;
   count: number;
   icon: React.ComponentType<any>;
@@ -43,7 +39,7 @@ function RoleMetricCard({
 export const DashboardMetrics = ({
   rolesSummary,
   pendingRequestsCount,
-  recentActivity = { tokensCreated: 0, transfersCompleted: 0, approvalsPending: 0 },
+  logs = [],
   loading = false
 }: DashboardMetricsProps) => {
   if (loading) {
@@ -65,34 +61,34 @@ export const DashboardMetrics = ({
     {
       title: 'Solicitudes Pendientes',
       value: pendingRequestsCount,
-      icon: 'Clock',
+      icon: Clock,
       color: 'text-amber-500',
       trend: pendingRequestsCount > 0 ? 'warning' : 'positive',
       description: 'Esperando aprobación'
     },
     {
-      title: 'Tokens Creados',
-      value: recentActivity.tokensCreated,
-      icon: 'TrendingUp',
+      title: 'Usuarios Totales',
+      value: rolesSummary ? Object.values(rolesSummary).reduce((acc, curr) => acc + curr.count, 0) : 0,
+      icon: Users,
       color: 'text-blue-500',
       trend: 'positive',
-      description: 'Últimas 24h'
+      description: 'Registrados en el sistema'
     },
     {
-      title: 'Transferencias',
-      value: recentActivity.transfersCompleted,
-      icon: 'CheckCircle',
+      title: 'Roles Activos',
+      value: rolesSummary ? Object.values(rolesSummary).filter(r => r.count > 0).length : 0,
+      icon: ShieldCheck,
       color: 'text-green-500',
       trend: 'positive',
-      description: 'Completadas hoy'
+      description: 'Con miembros asignados'
     },
     {
-      title: 'Pendientes Aprobación',
-      value: recentActivity.approvalsPending,
-      icon: 'AlertTriangle',
+      title: 'Alertas de Sistema',
+      value: logs.filter(l => l.type === 'error').length,
+      icon: AlertTriangle,
       color: 'text-red-500',
-      trend: 'warning',
-      description: 'Esperando acción'
+      trend: logs.filter(l => l.type === 'error').length > 0 ? 'warning' : 'positive',
+      description: logs.filter(l => l.type === 'error').length > 0 ? 'Requiere revisión' : 'Sin incidencias'
     }
   ];
 
@@ -107,7 +103,7 @@ export const DashboardMetrics = ({
                 {metric.title}
               </CardTitle>
               {/* Asumiendo que los íconos están disponibles en un componente de íconos o similar */}
-              <span className={cn("h-4 w-4", metric.color)}>{metric.icon}</span>
+              <metric.icon className={cn("h-4 w-4", metric.color)} />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{metric.value}</div>

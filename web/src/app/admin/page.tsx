@@ -16,6 +16,8 @@ import { PendingRoleRequests } from './components/PendingRoleRequests';
 import { ActivityLogs } from '@/components/admin/activity-logs';
 import { DashboardMetrics } from './components/DashboardMetrics';
 import { RoleManagementSection } from './components/RoleManagementSection';
+import { NetbookStateMetrics } from './components/NetbookStateMetrics';
+import { useRoleRequests } from '@/hooks/useRoleRequests';
 import { getActivityLogs } from '@/lib/activity-logger';
 import { getLogStats } from '@/lib/activity-logger';
 
@@ -28,6 +30,8 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [rolesSummary, setRolesSummary] = useState<AllRolesSummary | null>(null);
+  const { requests } = useRoleRequests();
+  const pendingRequestsCount = requests.filter(req => req.status === 'pending').length;
   const [logs, setLogs] = useState(getActivityLogs());
   const [activityStats, setActivityStats] = useState(getLogStats(logs));
 
@@ -129,15 +133,18 @@ export default function AdminPage() {
         </div>
       </div>
 
-      <DashboardMetrics 
+      <DashboardMetrics
         rolesSummary={rolesSummary}
-        pendingRequestsCount={0} 
-        recentActivity={undefined}
+        pendingRequestsCount={pendingRequestsCount}
+        logs={logs}
         loading={loading}
       />
 
+      {/* Estado de Netbooks por Etapa */}
+      <NetbookStateMetrics />
+
       <RoleManagementSection />
-      
+
       {/* Sección de Solicitudes Pendientes */}
       <div id="pending-requests" className="space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">

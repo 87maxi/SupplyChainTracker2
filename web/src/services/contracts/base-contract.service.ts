@@ -21,19 +21,7 @@ export abstract class BaseContractService {
   ) {
     // Obtener el public client usando wagmi's getPublicClient
     this.publicClient = getPublicClient(config);
-    
-    // En entornos cliente, intentamos obtener el wallet client
-    if (typeof window !== 'undefined') {
-      try {
-        // Obtener el wallet client usando wagmi's getWalletClient
-        const client = getWalletClient(config);
-        if (client) {
-          this.walletClient = client;
-        }
-      } catch (error) {
-        console.warn('No se pudo obtener el wallet client:', error);
-      }
-    }
+    // walletClient se obtiene de forma lazy cuando se necesita
   }
 
   /**
@@ -44,12 +32,12 @@ export abstract class BaseContractService {
    * @returns Resultado de la llamada
    */
   protected async read<T>(
-    functionName: string, 
+    functionName: string,
     args: any[] = [],
     useCache: boolean = true
   ): Promise<T> {
     const cacheKey = `${this.cachePrefix}:${functionName}:${JSON.stringify(args)}`;
-    
+
     // Intentar obtener de caché si está habilitado
     if (useCache) {
       const cached = CacheService.get(cacheKey);
@@ -57,7 +45,7 @@ export abstract class BaseContractService {
         return cached;
       }
     }
-    
+
     try {
       const result = await this.publicClient.readContract({
         address: this.contractAddress,
@@ -65,12 +53,12 @@ export abstract class BaseContractService {
         functionName,
         args
       });
-      
+
       // Almacenar en caché si está habilitado
       if (useCache) {
         CacheService.set(cacheKey, result);
       }
-      
+
       return result as T;
     } catch (error) {
       throw ErrorHandler.handleWeb3Error(error);
@@ -87,18 +75,29 @@ export abstract class BaseContractService {
     functionName: string,
     args: any[] = []
   ): Promise<{ hash: `0x${string}` }> {
+    // Obtener walletClient de forma lazy si no existe
+    if (!this.walletClient) {
+      try {
+        this.walletClient = await getWalletClient(config);
+      } catch (error) {
+        throw new AppError('No hay conexión con la wallet', 'WALLET_NOT_CONNECTED');
+      }
+    }
+
     if (!this.walletClient) {
       throw new AppError('No hay conexión con la wallet', 'WALLET_NOT_CONNECTED');
     }
-    
+
     try {
       const hash = await this.walletClient.writeContract({
         address: this.contractAddress,
         abi: this.abi,
         functionName,
-        args
+        args,
+        chain: this.walletClient.chain,
+        account: this.walletClient.account!
       });
-      
+
       return { hash };
     } catch (error) {
       throw ErrorHandler.handleWeb3Error(error);
@@ -120,7 +119,7 @@ export abstract class BaseContractService {
         hash,
         timeout
       });
-      
+
       return receipt;
     } catch (error) {
       throw ErrorHandler.handleWeb3Error(error);

@@ -1,98 +1,26 @@
 [
   {
-    "id": "030gcd",
-    "address": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
-    "role": "tecnico_sw",
-    "status": "rejected",
-    "timestamp": 1766112881588,
-    "signature": "0x6d4c76003a25a8500b333ea49bcf48de7f6ab3a15bbc375933cfab3a46dee49d7d55297e86bfc545ead22e32c8a5d0b1eabf298aa8414c1fbed5412c0f1de79a1b"
-  },
-  {
-    "id": "d0oq6w",
-    "address": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
-    "role": "auditor_hw",
-    "status": "rejected",
-    "timestamp": 1766150968511,
-    "signature": "0xf56cab23921811747ce1df030f13646b292f13bc332c1db157aa31bef320483810812f3191c129dc43383869bcef7587a6f68af8d6cd01fc64b77c4acc21abf71c"
-  },
-  {
-    "id": "k9cwrj",
+    "id": "u8ie9d",
     "address": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
     "role": "auditor_hw",
     "status": "rejected",
-    "timestamp": 1766157820306,
+    "timestamp": 1766779713122,
     "signature": "0x1a280c1b9178a538fd942d7e25c887e96dd185f77146979133376a215435b0097286b8af38f5590b7d7d8cb55617fd195878423393932a17af2da384332db8451c"
   },
   {
-    "id": "v281ji",
-    "address": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
-    "role": "auditor_hw",
-    "status": "approved",
-    "timestamp": 1766172708647,
-    "signature": "0x1a280c1b9178a538fd942d7e25c887e96dd185f77146979133376a215435b0097286b8af38f5590b7d7d8cb55617fd195878423393932a17af2da384332db8451c"
-  },
-  {
-    "id": "yo62hb",
-    "address": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
-    "role": "auditor_hw",
-    "status": "pending",
-    "timestamp": 1766173193156,
-    "signature": "0x1a280c1b9178a538fd942d7e25c887e96dd185f77146979133376a215435b0097286b8af38f5590b7d7d8cb55617fd195878423393932a17af2da384332db8451c"
-  },
-  {
-    "id": "vu6ya",
+    "id": "kc9ggg",
     "address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
     "role": "tecnico_sw",
     "status": "rejected",
-    "timestamp": 1766173232635,
+    "timestamp": 1766779730197,
     "signature": "0x762edf063a5b2498c9c3a094bb05298fa466867bd3780363f8290b542547590d5c6dbacd133022aba051107fdde9a7894f9041b22667d0e5c359c79f031753a11b"
   },
   {
-    "id": "ej4i7",
-    "address": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
-    "role": "auditor_hw",
-    "status": "pending",
-    "timestamp": 1766174617394,
-    "signature": "0x1a280c1b9178a538fd942d7e25c887e96dd185f77146979133376a215435b0097286b8af38f5590b7d7d8cb55617fd195878423393932a17af2da384332db8451c"
-  },
-  {
-    "id": "vcjmkva",
-    "address": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
-    "role": "tecnico_sw",
-    "status": "pending",
-    "timestamp": 1766174641432,
-    "signature": "0x4e30473e40b7993264b629e861a8befa292657c585287fd851b62c469419660f5d40a851eb7565fdcd07a78280645b26db307cb63b0e855421e43189031966651c"
-  },
-  {
-    "id": "bhb9k",
-    "address": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-    "role": "auditor_hw",
-    "status": "pending",
-    "timestamp": 1766486218416,
-    "signature": "0x5da10435ec3b56fc0382e5d29af169dc033f7a7eff9614f325af024ff17f142820f0f489c53ecf8040349acd22a5fdad2556b96ce88d7b983858272b8ccc37701b"
-  },
-  {
-    "id": "4dvjca",
-    "address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "id": "lqfa",
+    "address": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
     "role": "escuela",
     "status": "pending",
-    "timestamp": 1766486256131,
-    "signature": "0x842658e25fd96f95738f63233daddee691ad80ff1d4f3595d7158c08ca36700068d8d495ff2063b65f19b6aed75593809b36b6e3f3249da950ac71ccc8fd080d1c"
-  },
-  {
-    "id": "q1meag",
-    "address": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
-    "role": "auditor_hw",
-    "status": "pending",
-    "timestamp": 1766729767447,
-    "signature": "0x1a280c1b9178a538fd942d7e25c887e96dd185f77146979133376a215435b0097286b8af38f5590b7d7d8cb55617fd195878423393932a17af2da384332db8451c"
-  },
-  {
-    "id": "wa8xq",
-    "address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
-    "role": "auditor_hw",
-    "status": "pending",
-    "timestamp": 1766761066576,
-    "signature": "0x2ee7f80433b79d388ea08af18c6cd04825e1f990d3d443a0dc49e5f11e2727f56e4acff358d805f09ab4f6d174fe7f20256ada0337b2ea8671fb1fdc478f48ea1b"
+    "timestamp": 1766779755232,
+    "signature": "0xb5e0caa7f7313f7bb5205ac589c287b67be523510bc630bf241fd20860ecea23348e3330aa26f2ebaf1b3fa78dbb96e4c4c63f61cb677f450e8dddd2473f8fb41b"
   }
 ]

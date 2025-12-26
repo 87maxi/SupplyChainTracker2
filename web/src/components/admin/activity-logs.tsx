@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { 
+import {
   History,
   Search,
   Filter,
@@ -16,18 +16,18 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { 
-  ActivityLog, 
-  filterLogs, 
-  getLogStats 
+import {
+  ActivityLog,
+  filterLogs,
+  getLogStats
 } from '@/lib/activity-logger';
 import { format } from 'date-fns';
 
@@ -68,7 +68,7 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = ({
       endDate: endDate ? new Date(endDate) : undefined,
       search: searchTerm || undefined
     };
-    
+
     const filtered = filterLogs(logs, filters);
     setFilteredLogs(filtered);
     setStats(getLogStats(filtered));
@@ -77,13 +77,13 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = ({
   // Obtener logs del localStorage (si no se proporcionan externamente)
   const getActivityLogs = (): ActivityLog[] => {
     if (externalLogs) return externalLogs;
-    
+
     try {
       if (typeof window === 'undefined') return [];
-      
+
       const stored = localStorage.getItem('supply-chain-activity-logs');
       if (!stored) return [];
-      
+
       const parsed = JSON.parse(stored);
       return parsed.map((log: any) => ({
         ...log,
@@ -100,11 +100,11 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = ({
     const headers = ['ID', 'Tipo', 'Acción', 'Descripción', 'Dirección', 'Estado', 'Timestamp'];
     const csvContent = [
       headers.join(','),
-      ...filteredLogs.map(log => 
+      ...filteredLogs.map(log =>
         `${log.id},${log.type},${log.action},${log.description.replace(/,/g, ';')},${log.address},${log.status},${format(log.timestamp, 'yyyy-MM-dd HH:mm:ss')}`
       )
     ].join('\n');
-    
+
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -196,14 +196,17 @@ export const ActivityLogs: React.FC<ActivityLogsProps> = ({
               <SelectItem value="failed">Fallido</SelectItem>
             </SelectContent>
           </Select>
-          
+
           <Input
             placeholder="Dirección..."
             value={addressFilter}
             onChange={(e) => setAddressFilter(e.target.value)}
             className="flex-1"
           />
-      </div>
+        </div>
+
+        {/* Tabla de Logs */}
+        <ActivityLogsTable logs={filteredLogs} />
       </CardContent>
     </Card>
   );

@@ -1,7 +1,9 @@
 import './globals.css';
+import '@rainbow-me/rainbowkit/styles.css';
 import { Web3Providers } from '@/components/Web3Providers';
 import { Header } from '@/components/layout/Header';
 import { Toaster } from '@/components/ui/toaster';
+import { RequireWallet } from '@/components/auth/RequireWallet';
 
 export const metadata = {
   title: 'SupplyChainTracker - Gestión de Trazabilidad de Netbooks',
@@ -20,7 +22,9 @@ export default function RootLayout({ children }: RootLayoutProps) {
           <div className="flex flex-col min-h-screen">
             <Header />
             <main className="flex-1">
-              {children}
+              <RequireWallet>
+                {children}
+              </RequireWallet>
             </main>
             <Toaster />
           </div>
@@ -29,4 +33,3 @@ export default function RootLayout({ children }: RootLayoutProps) {
     </html>
   );
 }
-

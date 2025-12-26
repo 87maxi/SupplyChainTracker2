@@ -10,7 +10,26 @@ export const useSupplyChainService = () => {
 
   const hasRole = useCallback(async (role: string, userAddress: Address): Promise<boolean> => {
     try {
-      return await SupplyChainService.hasRole(role, userAddress);
+      const roleHashes = await import('@/lib/roleUtils').then(({ getRoleHashes }) => getRoleHashes());
+
+      // Mapeo de nombres de rol a keys de roleHashes
+      const roleKeyMap: Record<string, keyof typeof roleHashes> = {
+        'FABRICANTE': 'FABRICANTE',
+        'FABRICANTE_ROLE': 'FABRICANTE',
+        'AUDITOR_HW': 'AUDITOR_HW',
+        'AUDITOR_HW_ROLE': 'AUDITOR_HW',
+        'TECNICO_SW': 'TECNICO_SW',
+        'TECNICO_SW_ROLE': 'TECNICO_SW',
+        'ESCUELA': 'ESCUELA',
+        'ESCUELA_ROLE': 'ESCUELA',
+        'ADMIN': 'ADMIN',
+        'DEFAULT_ADMIN_ROLE': 'ADMIN'
+      };
+
+      const roleKey = roleKeyMap[role] || role as keyof typeof roleHashes;
+      const roleHash = roleHashes[roleKey] || role;
+
+      return await SupplyChainService.hasRole(roleHash, userAddress);
     } catch (error) {
       console.error('Error in hasRole:', error);
       return false;
@@ -39,16 +58,16 @@ export const useSupplyChainService = () => {
   const getAllRolesSummary = useCallback(async () => {
     try {
       const roleHashes = await import('@/lib/roleUtils').then(({ getRoleHashes }) => getRoleHashes());
-      
+
       const roleEntries = Object.entries(roleHashes);
-      
+
       // Fetch members for each role concurrently
       const roleResults = await Promise.all(
         roleEntries.map(async ([roleName, roleHash]) => {
           try {
             // Use the service function instead of direct contract calls
             const members = await SupplyChainService.getAllMembers(roleHash);
-            
+
             return [
               roleName as ContractRoles,
               {
@@ -63,7 +82,7 @@ export const useSupplyChainService = () => {
           }
         })
       );
-      
+
       return Object.fromEntries(roleResults) as AllRolesSummary;
     } catch (error) {
       console.error('Error in getAllRolesSummary:', error);
@@ -74,14 +93,28 @@ export const useSupplyChainService = () => {
   const grantRole = useCallback(async (role: string, userAddress: Address) => {
     try {
       const roleHashes = await import('@/lib/roleUtils').then(({ getRoleHashes }) => getRoleHashes());
-      const roleKey = role as keyof typeof roleHashes;
-      
-      if (!roleHashes[roleKey]) {
-        throw new Error(`Role ${role} not found`);
+
+      // Mapeo de nombres de rol a keys de roleHashes
+      const roleKeyMap: Record<string, keyof typeof roleHashes> = {
+        'FABRICANTE': 'FABRICANTE',
+        'FABRICANTE_ROLE': 'FABRICANTE',
+        'AUDITOR_HW': 'AUDITOR_HW',
+        'AUDITOR_HW_ROLE': 'AUDITOR_HW',
+        'TECNICO_SW': 'TECNICO_SW',
+        'TECNICO_SW_ROLE': 'TECNICO_SW',
+        'ESCUELA': 'ESCUELA',
+        'ESCUELA_ROLE': 'ESCUELA',
+        'ADMIN': 'ADMIN'
+      };
+
+      const roleKey = roleKeyMap[role];
+      if (!roleKey || !roleHashes[roleKey]) {
+        throw new Error(`Role ${role} not found in role hashes`);
       }
-      
+
       const hash = roleHashes[roleKey];
-      
+      console.log(`Granting role ${role} (hash: ${hash}) to ${userAddress}`);
+
       // Use the service function instead of direct contract calls
       return await SupplyChainService.grantRole(hash, userAddress);
     } catch (error) {
@@ -90,17 +123,31 @@ export const useSupplyChainService = () => {
     }
   }, []);
 
-    const revokeRole = useCallback(async (role: string, userAddress: Address) => {
+  const revokeRole = useCallback(async (role: string, userAddress: Address) => {
     try {
       const roleHashes = await import('@/lib/roleUtils').then(({ getRoleHashes }) => getRoleHashes());
-      const roleKey = role as keyof typeof roleHashes;
-      
-      if (!roleHashes[roleKey]) {
-        throw new Error(`Role ${role} not found`);
+
+      // Mapeo de nombres de rol a keys de roleHashes
+      const roleKeyMap: Record<string, keyof typeof roleHashes> = {
+        'FABRICANTE': 'FABRICANTE',
+        'FABRICANTE_ROLE': 'FABRICANTE',
+        'AUDITOR_HW': 'AUDITOR_HW',
+        'AUDITOR_HW_ROLE': 'AUDITOR_HW',
+        'TECNICO_SW': 'TECNICO_SW',
+        'TECNICO_SW_ROLE': 'TECNICO_SW',
+        'ESCUELA': 'ESCUELA',
+        'ESCUELA_ROLE': 'ESCUELA',
+        'ADMIN': 'ADMIN'
+      };
+
+      const roleKey = roleKeyMap[role];
+      if (!roleKey || !roleHashes[roleKey]) {
+        throw new Error(`Role ${role} not found in role hashes`);
       }
-      
+
       const hash = roleHashes[roleKey];
-      
+      console.log(`Revoking role ${role} (hash: ${hash}) from ${userAddress}`);
+
       // Use the service function instead of direct contract calls
       return await SupplyChainService.revokeRole(hash, userAddress);
     } catch (error) {

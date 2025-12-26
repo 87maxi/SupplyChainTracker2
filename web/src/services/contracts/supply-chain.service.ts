@@ -319,6 +319,4 @@ export class SupplyChainService extends BaseContractService {
       throw error;
     }
   }
-
-  /**
-   * Obtiene todos los números de
+}

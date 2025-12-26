@@ -19,6 +19,9 @@ export function PendingRoleRequests() {
   const [approving, setApproving] = useState<string | null>(null);
   const [rejecting, setRejecting] = useState<string | null>(null);
 
+  // Filtrar solo solicitudes pendientes
+  const pendingRequests = requests.filter(req => req.status === 'pending');
+
   // Role descriptions for display
   const roleDescriptions: Record<string, string> = {
     'FABRICANTE': 'Puede registrar nuevos dispositivos en la cadena de suministro',
@@ -27,20 +30,29 @@ export function PendingRoleRequests() {
     'ESCUELA': 'Puede asignar dispositivos a estudiantes finales'
   };
 
-  const handleApprove = async (requestId: string, role: string, address: string) => {
+  const handleApprove = async (requestId: string, role: string, userAddress: string) => {
     setApproving(requestId);
     try {
-      await grantRole(role, address as `0x${string}`);
-      await updateRequestStatus(requestId, 'approved');
-      toast({
-        title: 'Rol asignado',
-        description: `Se ha asignado el rol ${role} correctamente`,
-      });
+      console.log(`Approving request ${requestId} for role ${role} and address ${userAddress}`);
+
+      // 1. Grant role in blockchain
+      const receipt = await grantRole(role, userAddress as `0x${string}`);
+      console.log('Blockchain transaction successful:', receipt);
+
+      // 2. Update status in server
+      const success = await updateRequestStatus(requestId, 'approved');
+
+      if (success) {
+        toast({
+          title: 'Rol asignado correctamente',
+          description: `Transacción confirmada: ${receipt.transactionHash.slice(0, 10)}...`,
+        });
+      }
     } catch (error: any) {
       console.error('Error approving request:', error);
       toast({
-        title: 'Error',
-        description: error.message || 'No se pudo asignar el rol',
+        title: 'Error al aprobar solicitud',
+        description: error.message || 'La transacción falló o fue rechazada',
         variant: 'destructive',
       });
     } finally {
@@ -51,16 +63,20 @@ export function PendingRoleRequests() {
   const handleReject = async (requestId: string) => {
     setRejecting(requestId);
     try {
-      await updateRequestStatus(requestId, 'rejected');
-      toast({
-        title: 'Solicitud rechazada',
-        description: 'La solicitud ha sido rechazada',
-      });
+      console.log(`Rejecting request ${requestId}`);
+      const success = await updateRequestStatus(requestId, 'rejected');
+
+      if (success) {
+        toast({
+          title: 'Solicitud rechazada',
+          description: 'La solicitud ha sido rechazada correctamente',
+        });
+      }
     } catch (error: any) {
       console.error('Error rejecting request:', error);
       toast({
         title: 'Error',
-        description: 'No se pudo rechazar la solicitud',
+        description: 'No se pudo rechazar la solicitud en el servidor',
         variant: 'destructive',
       });
     } finally {
@@ -80,7 +96,7 @@ export function PendingRoleRequests() {
     );
   }
 
-  if (requests.length === 0) {
+  if (pendingRequests.length === 0) {
     return (
       <Card>
         <CardContent className="p-6">
@@ -101,22 +117,22 @@ export function PendingRoleRequests() {
       <CardContent className="p-6">
         <h3 className="text-lg font-semibold mb-4">Solicitudes Pendientes</h3>
         <div className="space-y-4">
-          {requests.map((request: RoleRequest) => (
+          {pendingRequests.map((request: RoleRequest) => (
             <div
               key={request.id}
               className="flex items-center justify-between p-4 border rounded-lg"
             >
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
-                  <Badge variant="outline" className="text-xs">
+                  <Badge variant="outline" className="text-xs font-semibold px-2 py-0.5 bg-primary/5 border-primary/20 text-primary">
                     {request.role}
                   </Badge>
-                  <span className="text-sm text-muted-foreground">
-                    {request.address}
+                  <span className="text-sm font-mono text-muted-foreground bg-muted/30 px-2 py-0.5 rounded">
+                    {request.address.slice(0, 6)}...{request.address.slice(-4)}
                   </span>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {roleDescriptions[request.role] || 'Rol del sistema'}
+                <p className="text-sm text-muted-foreground/80 leading-relaxed">
+                  {roleDescriptions[request.role] || 'Solicitud de acceso al sistema'}
                 </p>
               </div>
               <div className="flex gap-2">

@@ -47,17 +47,17 @@ export function useRoleRequests() {
       }
 
       // Update local state
-      setRequests(prev => 
-        prev.map(req => 
+      setRequests(prev =>
+        prev.map(req =>
           req.id === id ? { ...req, status } : req
         )
       );
-      
+
       toast({
         title: 'Éxito',
         description: `Solicitud actualizada correctamente a ${status}`,
       });
-      
+
       return true;
     } catch (error) {
       console.error('Error updating request status:', error);
@@ -83,12 +83,12 @@ export function useRoleRequests() {
 
       // Update local state
       setRequests(prev => prev.filter(req => req.id !== id));
-      
+
       toast({
         title: 'Éxito',
         description: 'Solicitud eliminada correctamente',
       });
-      
+
       return true;
     } catch (error) {
       console.error('Error deleting request:', error);
@@ -103,12 +103,12 @@ export function useRoleRequests() {
 
   useEffect(() => {
     fetchRequests();
-    
-    // Set up polling to check for new requests every 30 seconds
+
+    // Set up polling to check for new requests every 60 seconds
     const interval = setInterval(() => {
       fetchRequests();
-    }, 30000);
-    
+    }, 60000);
+
     return () => clearInterval(interval);
   }, []);
 
