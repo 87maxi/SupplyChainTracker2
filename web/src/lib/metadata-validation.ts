@@ -91,17 +91,17 @@ export const validateNetbookMetadata = (
     }
 
     // Validar patrón regex
-    if (rules.pattern && value && typeof value === 'string') {
+    if ('pattern' in rules && rules.pattern && value && typeof value === 'string') {
       if (!rules.pattern.test(value)) {
         errors.push(`${field}: ${rules.message}`);
       }
     }
 
     // Validar longitud
-    if (rules.minLength && value && value.length < rules.minLength) {
+    if ('minLength' in rules && rules.minLength && value && value.length < rules.minLength) {
       errors.push(`${field}: mínimo ${rules.minLength} caracteres`);
     }
-    if (rules.maxLength && value && value.length > rules.maxLength) {
+    if ('maxLength' in rules && rules.maxLength && value && value.length > rules.maxLength) {
       errors.push(`${field}: máximo ${rules.maxLength} caracteres`);
     }
   });

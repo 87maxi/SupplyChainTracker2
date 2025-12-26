@@ -2,7 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
-import { createConfig, http } from 'wagmi';
+import { createConfig, http, WagmiProvider } from 'wagmi';
 import { mainnet, polygon, bscTestnet } from 'wagmi/chains';
 import { useState } from 'react';
 import { Web3Provider } from '@/contexts/Web3Context';
@@ -44,19 +44,17 @@ interface Web3ProvidersProps {
 }
 
 export function Web3Providers({ children }: Web3ProvidersProps) {
-  // Create query client once
   const [queryClient] = useState(() => new QueryClient());
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <WagmiProvider config={config}>
+    <WagmiProvider config={config}>
+      <QueryClientProvider client={queryClient}>
         <RainbowKitProvider>
           <Web3Provider>
             {children}
           </Web3Provider>
         </RainbowKitProvider>
-      </WagmiProvider>
-    </QueryClientProvider>
+      </QueryClientProvider>
+    </WagmiProvider>
   );
 }
-

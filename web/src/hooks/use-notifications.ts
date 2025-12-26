@@ -11,11 +11,19 @@ export interface Notification {
   timestamp: Date;
 }
 
+export interface NotificationMethods {
+  success: (title: string, message: string, duration?: number) => void;
+  error: (title: string, message: string, duration?: number) => void;
+  warning: (title: string, message: string, duration?: number) => void;
+  info: (title: string, message: string, duration?: number) => void;
+}
+
 export interface UseNotificationsReturn {
   notifications: Notification[];
   addNotification: (notification: Omit<Notification, 'id' | 'timestamp'>) => void;
   removeNotification: (id: string) => void;
   clearNotifications: () => void;
+  notify: NotificationMethods;
 }
 
 // Duración por defecto para cada tipo de notificación

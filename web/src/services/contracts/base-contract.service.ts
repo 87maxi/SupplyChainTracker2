@@ -1,6 +1,7 @@
 // web/src/services/contracts/base-contract.service.ts
 
 import { PublicClient, WalletClient, HttpTransport, Chain } from 'viem';
+import { getPublicClient, getWalletClient } from '@wagmi/core';
 import { config } from '@/lib/wagmi/config';
 import { CacheService } from '@/lib/cache/cache-service';
 import { ErrorHandler, AppError } from '@/lib/errors/error-handler';
@@ -18,12 +19,17 @@ export abstract class BaseContractService {
     protected abi: any,
     protected cachePrefix: string
   ) {
-    this.publicClient = config.publicClient;
+    // Obtener el public client usando wagmi's getPublicClient
+    this.publicClient = getPublicClient(config);
     
     // En entornos cliente, intentamos obtener el wallet client
     if (typeof window !== 'undefined') {
       try {
-        this.walletClient = config.getClient();
+        // Obtener el wallet client usando wagmi's getWalletClient
+        const client = getWalletClient(config);
+        if (client) {
+          this.walletClient = client;
+        }
       } catch (error) {
         console.warn('No se pudo obtener el wallet client:', error);
       }

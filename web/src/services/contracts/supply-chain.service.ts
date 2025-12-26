@@ -262,4 +262,63 @@ export class SupplyChainService extends BaseContractService {
   }
 
   /**
+   * Obtiene todos los números de serie registrados
+   * @returns Array de números de serie
+   */
+  async getAllSerialNumbers(): Promise<string[]> {
+    try {
+      // Leer todos los números de serie
+      const result = await this.read<string[]>('getAllSerialNumbers', []);
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene todas las netbooks por estado
+   * @param state Estado de las netbooks a obtener
+   * @returns Array de números de serie
+   */
+  async getNetbooksByState(state: number): Promise<string[]> {
+    try {
+      // Leer netbooks por estado
+      const result = await this.read<string[]>('getNetbooksByState', [state]);
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene todos los miembros de un rol
+   * @param roleHash Hash del rol
+   * @returns Array de direcciones de miembros
+   */
+  async getAllMembers(roleHash: string): Promise<string[]> {
+    try {
+      // Leer todos los miembros del rol
+      const result = await this.read<string[]>('getAllMembers', [roleHash]);
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene los miembros de un rol
+   * @param roleHash Hash del rol
+   * @returns Array de direcciones de miembros
+   */
+  async getRoleMembers(roleHash: string): Promise<string[]> {
+    try {
+      // Leer miembros del rol
+      const result = await this.read<string[]>('getRoleMembers', [roleHash]);
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
    * Obtiene todos los números de

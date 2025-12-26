@@ -1,6 +1,5 @@
-// web/src/app/layout.tsx
 import './globals.css';
-import { Web3Provider } from '@/contexts/Web3Context';
+import { Web3Providers } from '@/components/Web3Providers';
 import { Header } from '@/components/layout/Header';
 import { Toaster } from '@/components/ui/toaster';
 
@@ -15,18 +14,19 @@ type RootLayoutProps = {
 
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
-    <html lang="es">
-      <body>
-        <Web3Provider>
+    <html lang="es" className="dark">
+      <body className="antialiased">
+        <Web3Providers>
           <div className="flex flex-col min-h-screen">
             <Header />
-            <main className="flex-1 container mx-auto px-4 py-8">
+            <main className="flex-1">
               {children}
             </main>
             <Toaster />
           </div>
-        </Web3Provider>
+        </Web3Providers>
       </body>
     </html>
   );
 }
+

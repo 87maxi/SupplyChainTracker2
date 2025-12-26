@@ -253,4 +253,26 @@ export const useSupplyChainContract = () => {
       ActivityLogger.system(operation, `Se obtuvieron ${serials.length} números de serie`);
       return serials;
     } catch (error) {
-      handleError(error, operation
+      handleError(error, operation);
+      return [];
+    } finally {
+      setLoadingState(operation, false);
+    }
+  }, [handleError, setLoadingState]);
+
+  return {
+    // Operaciones de netbooks
+    registerNetbooks,
+    auditHardware,
+    validateSoftware,
+    assignToStudent,
+    
+    // Consultas de netbooks
+    getNetbookState,
+    getNetbookReport,
+    getAllSerialNumbers,
+    
+    // Estado
+    isLoading
+  };
+}
