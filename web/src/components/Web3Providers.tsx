@@ -2,7 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
-import { createConfig, http, WagmiProvider } from 'wagmi';
+import { createConfig, http } from 'wagmi';
 import { mainnet, polygon, bscTestnet } from 'wagmi/chains';
 import { useState } from 'react';
 import { Web3Provider } from '@/contexts/Web3Context';
@@ -60,5 +60,3 @@ export function Web3Providers({ children }: Web3ProvidersProps) {
   );
 }
 
-// Import WagmiProvider
-import { WagmiProvider } from 'wagmi';
