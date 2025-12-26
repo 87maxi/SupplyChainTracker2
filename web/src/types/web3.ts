@@ -1,6 +1,9 @@
 export interface Web3State {
-  address: string | null;
+  address: `0x${string}` | null;
   isConnected: boolean;
-  connect: () => void;
+  isConnecting: boolean;
+  chain: { id: number; name: string } | null;
+  connect: (connectorId?: string) => Promise<void>;
   disconnect: () => void;
+  switchNetwork: (chainId: number) => void;
 }

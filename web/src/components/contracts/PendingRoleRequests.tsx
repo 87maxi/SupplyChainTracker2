@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useWeb3 } from '@/hooks/useWeb3';
+import { useWeb3 } from '@/contexts/Web3Context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { SupplyChainContract } from '@/lib/contracts/SupplyChainContract';
-import { ROLES } from '@/lib/constants';
+import { getRoleHashes } from '@/lib/roleUtils';
 
 interface PendingRequest {
   requestId: string;
@@ -20,30 +20,46 @@ export function PendingRoleRequests() {
   const [requests, setRequests] = useState<PendingRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [approving, setApproving] = useState<string | null>(null);
+  const [roleHashes, setRoleHashes] = useState<Record<string, string> | null>(null);
   const { toast } = useToast();
 
-  // Load pending requests on component mount
+  // Load role hashes on component mount
   useEffect(() => {
-    loadPendingRequests();
+    const loadRoleHashes = async () => {
+      try {
+        const hashes = await getRoleHashes();
+        setRoleHashes(hashes);
+        // After getting role hashes, load pending requests
+        loadPendingRequests(hashes);
+      } catch (error) {
+        console.error('Error loading role hashes:', error);
+        toast({
+          title: 'Error',
+          description: 'No se pudieron cargar los roles del sistema',
+          variant: 'destructive',
+        });
+        setLoading(false);
+      }
+    };
+
+    loadRoleHashes();
   }, []);
 
-  const loadPendingRequests = async () => {
+  const loadPendingRequests = (hashes: Record<string, string>) => {
     try {
-      setLoading(true);
-      
       // In a real implementation, this would fetch from the contract
       // For now, we'll simulate some data
       const mockRequests: PendingRequest[] = [
         {
           requestId: '1',
           requester: '0x742d35Cc6634C0532925a3b8D4C76aA7Aa58a848',
-          role: ROLES.FABRICANTE.hash,
+          role: hashes.FABRICANTE,
           timestamp: Math.floor(Date.now() / 1000) - 3600 // 1 hour ago
         },
         {
           requestId: '2',
           requester: '0x853d955aCEf822Db058eb8505911ED77F175b99e',
-          role: ROLES.AUDITOR_HW.hash,
+          role: hashes.AUDITOR_HW,
           timestamp: Math.floor(Date.now() / 1000) - 7200 // 2 hours ago
         }
       ];
@@ -74,8 +90,17 @@ export function PendingRoleRequests() {
       }
       
       // Grant the role
-      const tx = await SupplyChainContract.grantRole(role, requester);
-      await tx.wait();
+      const result = await SupplyChainContract.grantRole(role, requester);
+      
+      if ('hash' in result) {
+        const { config } = await import('@/lib/wagmi/config');
+        const { waitForTransactionReceipt } = await import('@wagmi/core');
+        const receipt = await waitForTransactionReceipt(config, { hash: result.hash });
+        
+        if (receipt.status !== 'success') {
+          throw new Error(`Transacción fallida: ${receipt.transactionHash}`);
+        }
+      }
       
       // Remove the approved request from the list
       setRequests(prev => prev.filter(req => req.requestId !== requestId));
@@ -122,8 +147,17 @@ export function PendingRoleRequests() {
   };
 
   const getRoleLabel = (roleHash: string) => {
-    const role = Object.values(ROLES).find(r => r.hash === roleHash);
-    return role ? role.label : 'Rol Desconocido';
+    if (!roleHashes) return 'Cargando...';
+    
+    // Map role hashes to labels
+    const roleLabels: Record<string, string> = {
+      [roleHashes.FABRICANTE]: 'Fabricante',
+      [roleHashes.AUDITOR_HW]: 'Auditor HW',
+      [roleHashes.TECNICO_SW]: 'Técnico SW',
+      [roleHashes.ESCUELA]: 'Escuela',
+      [roleHashes.ADMIN]: 'Administrador'
+    };
+    return roleLabels[roleHash] || 'Rol Desconocido';
   };
 
   if (loading) {
@@ -185,19 +219,3 @@ export function PendingRoleRequests() {
                   disabled={approving === request.requestId}
                 >
                   Denegar
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => approveRequest(request.requestId, request.role, request.requester)}
-                  disabled={approving === request.requestId}
-                >
-                  {approving === request.requestId ? 'Aprobando...' : 'Aceptar'}
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}

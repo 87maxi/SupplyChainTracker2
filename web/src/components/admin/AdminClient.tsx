@@ -1,7 +1,7 @@
 "use client";
 
 import nextDynamic from 'next/dynamic';
-import { PendingRoleRequests } from '@/components/contract/PendingRoleRequests';
+import { PendingRoleRequests } from '@/components/contracts/PendingRoleRequests';
 
 const DashboardOverview = nextDynamic(() => import('./DashboardOverview').then(mod => mod.DashboardOverview), { ssr: false });
 const UsersList = nextDynamic(() => import('./UsersList').then(mod => mod.UsersList), { ssr: false });

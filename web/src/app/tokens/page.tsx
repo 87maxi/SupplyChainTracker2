@@ -1,29 +1,29 @@
 "use client";
 
-import { useWeb3 } from '@/hooks/useWeb3';
+import { useWeb3 } from '@/contexts/Web3Context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Link from 'next/link';
 import { getAllSerialNumbers, getNetbookState, getNetbookReport } from '@/services/SupplyChainService';
 import { useState, useEffect } from 'react';
-import { Netbook, State } from '@/types/contract';
+import { Netbook } from '@/types/supply-chain-types';
 import { Laptop, Plus } from 'lucide-react';
 
 export default function TokensPage() {
   const { isConnected } = useWeb3();
-  const [netbooks, setNetbooks] = useState<Array<{serialNumber: string, currentState: State, hwAuditor: string, swTechnician: string}>>([]);
+  const [netbooks, setNetbooks] = useState<Array<{serialNumber: string, currentState: number, hwAuditor: string, swTechnician: string}>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const stateLabels = {
+  const stateLabels: Record<number, string> = {
     0: 'FABRICADA',
     1: 'HW_APROBADO',
     2: 'SW_VALIDADO',
     3: 'DISTRIBUIDA'
   };
 
-  const stateColors = {
+  const stateColors: Record<number, string> = {
     0: 'bg-blue-100 text-blue-800 border border-blue-200',
     1: 'bg-green-100 text-green-800 border border-green-200',
     2: 'bg-yellow-100 text-yellow-800 border border-yellow-200',
@@ -47,7 +47,7 @@ export default function TokensPage() {
         
         return { 
           serialNumber: serial, 
-          currentState: state as State,
+          currentState: state as number,
           hwAuditor: report.hwAuditor,
           swTechnician: report.swTechnician
         };

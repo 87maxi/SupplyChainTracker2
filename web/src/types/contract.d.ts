@@ -1,19 +1,26 @@
+import { Address, Hex } from 'viem';
+
 // Type definitions for SupplyChainTracker contract
+
+export enum NetbookState {
+  FABRICADA = 0,
+  HW_APROBADO = 1,
+  SW_VALIDADO = 2,
+  DISTRIBUIDA = 3,
+}
 
 export interface Netbook {
   serialNumber: string;
   batchId: string;
   initialModelSpecs: string;
-  hwAuditor: string;
+  hwAuditor: Address;
   hwIntegrityPassed: boolean;
-  hwReportHash: string; // bytes32 is returned as hex string
-  swTechnician: string;
+  hwReportHash: Hex;
+  swTechnician: Address;
   osVersion: string;
   swValidationPassed: boolean;
-  destinationSchoolHash: string; // bytes32 is returned as hex string
-  studentIdHash: string; // bytes32 is returned as hex string
-  distributionTimestamp: string; // uint is returned as string (hex or decimal)
-  currentState: State; // State enum as type
+  destinationSchoolHash: Hex;
+  studentIdHash: Hex;
+  distributionTimestamp: bigint;
+  currentState: NetbookState;
 }
-
-export type State = 0 | 1 | 2 | 3; // FABRICADA, HW_APROBADO, SW_VALIDADO, DISTRIBUIDA

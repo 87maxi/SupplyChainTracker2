@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useWeb3 } from '@/hooks/useWeb3';
-import { ROLES, ROLE_LABELS } from '@/lib/constants';
+import { useWeb3 } from '@/contexts/Web3Context';
 import * as SupplyChainService from '@/services/SupplyChainService';
+import { readContract } from '@wagmi/core';
+import { config } from '@/lib/wagmi/config';
+import SupplyChainTrackerABI from '@/contracts/abi/SupplyChainTracker.json';
+import { NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS } from '@/lib/env';
 
 interface UserRoles {
   isAdmin: boolean;
@@ -11,12 +14,14 @@ interface UserRoles {
   isSchool: boolean;
   isLoading: boolean;
   hasRole: (roleName: string) => boolean;
-  roles: string[];
+  roles: string[]; // Array of role hashes
+  activeRoleNames: string[]; // Array of human-readable role names
+  getActiveRoles: () => Promise<string[]>; // Async function to get role hashes
 }
 
 export const useUserRoles = () => {
   const { address, isConnected } = useWeb3();
-  const [roles, setRoles] = useState<UserRoles>({
+  const [roles, setRoles] = useState<UserRoles>({ activeRoleNames: [],
     isAdmin: false,
     isManufacturer: false,
     isHardwareAuditor: false,
@@ -37,11 +42,35 @@ export const useUserRoles = () => {
       try {
         setRoles(prev => ({ ...prev, isLoading: true }));
 
+        // Get role hashes from the contract
+        const [fabricanteRole, auditorHwRole, tecnicoSwRole, escuelaRole] = await Promise.all([
+          readContract(config, {
+            address: NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS as `0x${string}`,
+            abi: SupplyChainTrackerABI,
+            functionName: 'FABRICANTE_ROLE'
+          }),
+          readContract(config, {
+            address: NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS as `0x${string}`,
+            abi: SupplyChainTrackerABI,
+            functionName: 'AUDITOR_HW_ROLE'
+          }),
+          readContract(config, {
+            address: NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS as `0x${string}`,
+            abi: SupplyChainTrackerABI,
+            functionName: 'TECNICO_SW_ROLE'
+          }),
+          readContract(config, {
+            address: NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS as `0x${string}`,
+            abi: SupplyChainTrackerABI,
+            functionName: 'ESCUELA_ROLE'
+          })
+        ]);
+        
         const isAdmin = await SupplyChainService.hasRole('0x0000000000000000000000000000000000000000000000000000000000000000', address);
-        const isManufacturer = await SupplyChainService.hasRole(ROLES.FABRICANTE.hash, address);
-        const isHardwareAuditor = await SupplyChainService.hasRole(ROLES.AUDITOR_HW.hash, address);
-        const isSoftwareTechnician = await SupplyChainService.hasRole(ROLES.TECNICO_SW.hash, address);
-        const isSchool = await SupplyChainService.hasRole(ROLES.ESCUELA.hash, address);
+        const isManufacturer = await SupplyChainService.hasRole(fabricanteRole as string, address);
+        const isHardwareAuditor = await SupplyChainService.hasRole(auditorHwRole as string, address);
+        const isSoftwareTechnician = await SupplyChainService.hasRole(tecnicoSwRole as string, address);
+        const isSchool = await SupplyChainService.hasRole(escuelaRole as string, address);
 
         setRoles({
           isAdmin,
@@ -50,8 +79,9 @@ export const useUserRoles = () => {
           isSoftwareTechnician,
           isSchool,
           isLoading: false,
-          hasRole: () => false, // This will be overridden by the returned object
-          roles: [] // This will be overridden by the returned object
+          hasRole: () => false,
+          roles: [], // This will be overridden by the returned object
+          activeRoleNames: [] // This will be overridden by the returned object
         });
       } catch (error) {
         console.error('Error fetching user roles:', error);
@@ -81,19 +111,63 @@ export const useUserRoles = () => {
   };
 
   // Función para obtener roles activos como array de hashes
-  const getActiveRoles = () => {
+  const getActiveRoles = async () => {
     const activeRoles: string[] = [];
-    if (roles.isAdmin) activeRoles.push(ROLES.ADMIN.hash);
-    if (roles.isManufacturer) activeRoles.push(ROLES.FABRICANTE.hash);
-    if (roles.isHardwareAuditor) activeRoles.push(ROLES.AUDITOR_HW.hash);
-    if (roles.isSoftwareTechnician) activeRoles.push(ROLES.TECNICO_SW.hash);
-    if (roles.isSchool) activeRoles.push(ROLES.ESCUELA.hash);
+    
+    // Get role hashes from the contract
+    try {
+      const [fabricanteRole, auditorHwRole, tecnicoSwRole, escuelaRole] = await Promise.all([
+        readContract(config, {
+          address: NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS as `0x${string}`,
+          abi: SupplyChainTrackerABI,
+          functionName: 'FABRICANTE_ROLE'
+        }),
+        readContract(config, {
+          address: NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS as `0x${string}`,
+          abi: SupplyChainTrackerABI,
+          functionName: 'AUDITOR_HW_ROLE'
+        }),
+        readContract(config, {
+          address: NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS as `0x${string}`,
+          abi: SupplyChainTrackerABI,
+          functionName: 'TECNICO_SW_ROLE'
+        }),
+        readContract(config, {
+          address: NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS as `0x${string}`,
+          abi: SupplyChainTrackerABI,
+          functionName: 'ESCUELA_ROLE'
+        })
+      ]);
+      
+      if (roles.isAdmin) activeRoles.push('0x0000000000000000000000000000000000000000000000000000000000000000');
+      if (roles.isManufacturer) activeRoles.push(fabricanteRole as string);
+      if (roles.isHardwareAuditor) activeRoles.push(auditorHwRole as string);
+      if (roles.isSoftwareTechnician) activeRoles.push(tecnicoSwRole as string);
+      if (roles.isSchool) activeRoles.push(escuelaRole as string);
+    } catch (error) {
+      console.error('Error fetching role hashes:', error);
+    }
+    
     return activeRoles;
   };
 
-  return {
-    ...roles,
-    hasRole: checkRole,
-    roles: getActiveRoles(),
-  };
+      // Función para obtener nombres de roles activos
+    const getActiveRoleNames = () => {
+      const activeRoleNames: string[] = [];
+      if (roles.isAdmin) activeRoleNames.push('Administrador');
+      if (roles.isManufacturer) activeRoleNames.push('Fabricante');
+      if (roles.isHardwareAuditor) activeRoleNames.push('Auditor HW');
+      if (roles.isSoftwareTechnician) activeRoleNames.push('Técnico SW');
+      if (roles.isSchool) activeRoleNames.push('Escuela');
+      return activeRoleNames;
+    };
+    
+    return {
+      ...roles,
+      hasRole: checkRole,
+      roles: [], // Roles will be populated by the component using getActiveRoles()
+      activeRoleNames: getActiveRoleNames(),
+      getActiveRoles: getActiveRoles
+    };
+
 };

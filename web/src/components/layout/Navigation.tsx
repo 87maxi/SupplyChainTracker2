@@ -1,51 +1,92 @@
+// web/src/components/layout/Navigation.tsx
 "use client";
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useUserRoles } from '@/hooks/useUserRoles';
-import { ROLES } from '@/lib/constants';
+import { ContractRoles } from '@/types/supply-chain-types'; // Importación corregida
 import { cn } from '@/lib/utils';
 import {
   BarChart3,
   Laptop,
   Settings,
-  User
+  User,
+  History, // Nuevo ícono para Transfers/Trazabilidad
 } from 'lucide-react';
 
-const navigationItems = [
+interface NavigationItem {
+  href: string;
+  label: string;
+  icon: React.ElementType; // Usamos React.ElementType para los íconos Lucide
+  description: string;
+  roles: ContractRoles[]; // Usamos ContractRoles directamente
+}
+
+const navigationItems: NavigationItem[] = [
   {
     href: '/dashboard',
     label: 'Dashboard',
     icon: BarChart3,
     description: 'Resumen del sistema',
-    roles: Object.values(ROLES).map(role => role.hash),
+    roles: [
+    "DEFAULT_ADMIN_ROLE",
+    "FABRICANTE_ROLE",
+    "AUDITOR_HW_ROLE",
+    "TECNICO_SW_ROLE",
+    "ESCUELA_ROLE",
+  ], // Todos pueden ver el dashboard
   },
   {
     href: '/tokens',
     label: 'Netbooks',
     icon: Laptop,
-    description: 'Gestión de tokens',
-    roles: [ROLES.FABRICANTE.hash, ROLES.AUDITOR_HW.hash, ROLES.TECNICO_SW.hash, ROLES.ESCUELA.hash],
+    description: 'Gestión de netbooks por número de serie',
+    roles: [
+      "DEFAULT_ADMIN_ROLE",
+      "FABRICANTE_ROLE",
+      "AUDITOR_HW_ROLE",
+      "TECNICO_SW_ROLE",
+      "ESCUELA_ROLE",
+    ], // Todos los roles de negocio pueden gestionar
+  },
+  {
+    href: '/transfers',
+    label: 'Trazabilidad',
+    icon: History,
+    description: 'Historial de transiciones de netbooks',
+    roles: [
+      "DEFAULT_ADMIN_ROLE",
+      "FABRICANTE_ROLE",
+      "AUDITOR_HW_ROLE",
+      "TECNICO_SW_ROLE",
+      "ESCUELA_ROLE",
+    ], // Todos pueden ver la trazabilidad
   },
   {
     href: '/admin',
     label: 'Administración',
     icon: Settings,
-    description: 'Gestión de roles',
-    roles: [ROLES.ADMIN.hash],
+    description: 'Gestión de roles y usuarios',
+    roles: ["DEFAULT_ADMIN_ROLE"], // Solo el administrador
   },
   {
     href: '/profile',
     label: 'Perfil',
     icon: User,
-    description: 'Información del usuario',
-    roles: Object.values(ROLES).map(role => role.hash),
+    description: 'Información y roles de tu cuenta',
+    roles: [
+      "DEFAULT_ADMIN_ROLE",
+      "FABRICANTE_ROLE",
+      "AUDITOR_HW_ROLE",
+      "TECNICO_SW_ROLE",
+      "ESCUELA_ROLE",
+    ], // Todos pueden ver su perfil
   },
 ];
 
 export const Navigation = () => {
   const pathname = usePathname();
-  const { roles, isLoading } = useUserRoles();
+  const { activeRoleNames, isLoading } = useUserRoles(); // Usar activeRoleNames
 
   if (isLoading) {
     return (
@@ -57,14 +98,15 @@ export const Navigation = () => {
     );
   }
 
+  // Filtrar ítems de navegación basados en los roles activos del usuario
   const filteredItems = navigationItems.filter(item =>
-    item.roles.some(role => roles.includes(role))
+    item.roles.some(requiredRole => activeRoleNames.includes(requiredRole))
   );
 
   return (
     <nav className="flex space-x-4">
       {filteredItems.map((item) => {
-        const isActive = pathname === item.href;
+        const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
         const IconComponent = item.icon;
         return (
           <Link

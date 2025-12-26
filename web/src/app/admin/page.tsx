@@ -1,10 +1,189 @@
-export const dynamic = 'force-dynamic';
+// web/src/app/admin/page.tsx
+"use client";
 
-import { getDashboardData } from '@/app/admin/components/server/actions';
-import { AdminClient } from '@/app/admin/components/AdminClient';
+import { useWeb3 } from '@/contexts/Web3Context';
+import { useSupplyChainService } from '@/hooks/useSupplyChainService';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Loader2, ShieldAlert, Users, Factory, Monitor, GraduationCap, Gavel, ArrowRight, ShieldCheck } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { AllRolesSummary } from '@/types/supply-chain-types';
+import { cn } from '@/lib/utils';
 
-export default async function AdminPage() {
-  const stats = await getDashboardData();
+export default function AdminPage() {
+  const { address, isConnected, connectWallet } = useWeb3();
+  const { hasRole, getAllRolesSummary } = useSupplyChainService();
+  const { toast } = useToast();
+  const router = useRouter();
 
-  return <AdminClient stats={stats} />;
+  const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [rolesSummary, setRolesSummary] = useState<AllRolesSummary | null>(null);
+
+  const fetchAdminData = useCallback(async () => {
+    if (!isConnected || !address) {
+      setLoading(false);
+      setIsAdmin(false);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const userIsAdmin = await hasRole("DEFAULT_ADMIN_ROLE", address);
+      setIsAdmin(userIsAdmin);
+
+      if (userIsAdmin) {
+        const summary = await getAllRolesSummary();
+        setRolesSummary(summary);
+      }
+    } catch (err: any) {
+      console.error('Error fetching admin data:', err);
+      toast({
+        title: "Error de carga",
+        description: `No se pudieron cargar los datos de administración: ${err.message}`,
+        variant: "destructive",
+      });
+      setIsAdmin(false);
+    } finally {
+      setLoading(false);
+    }
+  }, [isConnected, address, hasRole, getAllRolesSummary, toast]);
+
+  useEffect(() => {
+    fetchAdminData();
+  }, [fetchAdminData]);
+
+  if (!isConnected) {
+    return (
+      <div className="container mx-auto px-4 py-12">
+        <Card className="border-dashed border-2">
+          <CardContent className="flex flex-col items-center justify-center py-16 space-y-6">
+            <h3 className="text-xl font-medium text-foreground mb-2">Acceso Restringido</h3>
+            <p className="text-muted-foreground mb-6 text-center max-w-md">
+              Por favor, conecta tu wallet para acceder al panel de administración.
+            </p>
+            <Button size="lg" variant="gradient" onClick={() => connectWallet()} className="h-12 px-8">
+              Conectar Wallet
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-12">
+        <div className="flex flex-col items-center justify-center py-24 space-y-4">
+          <Loader2 className="h-12 w-12 text-primary animate-spin" />
+          <p className="text-lg text-muted-foreground animate-pulse">Cargando panel de administración...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="container mx-auto px-4 py-12">
+        <Card className="border-dashed border-2">
+          <CardContent className="flex flex-col items-center justify-center py-16 space-y-6">
+            <ShieldAlert className="h-12 w-12 text-red-500/50 mb-4" />
+            <h3 className="text-xl font-medium text-red-500 mb-2">Acceso Denegado</h3>
+            <p className="text-muted-foreground mb-6 text-center max-w-md">
+              No tienes permisos de administrador para acceder a esta página.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-12 space-y-12">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+          <h1 className="text-4xl font-bold tracking-tight mb-2">Panel de Administración</h1>
+          <p className="text-muted-foreground">Gestiona los roles y el acceso de los usuarios en la cadena de suministro.</p>
+        </div>
+        <div className="flex items-center gap-3 bg-white/5 p-2 rounded-xl border border-white/10">
+          <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-sm font-medium">Administrador Conectado</span>
+        </div>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <Card className="hover:shadow-lg transition-shadow">
+          <CardHeader className="pb-2 flex flex-row items-center justify-between">
+            <CardTitle className="text-xl font-semibold">Gestión de Usuarios</CardTitle>
+            <Users className="h-6 w-6 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <CardDescription className="mb-4">Asigna o revoca roles a las direcciones de los participantes.</CardDescription>
+            <Button asChild className="w-full">
+              <Link href="/admin/users">
+                Gestionar Usuarios <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Resumen de Roles */}
+        {rolesSummary && (
+          <>
+            <RoleSummaryCard
+              title="Administradores"
+              count={rolesSummary.DEFAULT_ADMIN_ROLE?.count || 0}
+              icon={Gavel}
+              color="text-red-400"
+            />
+            <RoleSummaryCard
+              title="Fabricantes"
+              count={rolesSummary.FABRICANTE_ROLE?.count || 0}
+              icon={Factory}
+              color="text-blue-400"
+            />
+            <RoleSummaryCard
+              title="Auditores HW"
+              count={rolesSummary.AUDITOR_HW_ROLE?.count || 0}
+              icon={ShieldCheck}
+              color="text-emerald-400"
+            />
+            <RoleSummaryCard
+              title="Técnicos SW"
+              count={rolesSummary.TECNICO_SW_ROLE?.count || 0}
+              icon={Monitor}
+              color="text-purple-400"
+            />
+            <RoleSummaryCard
+              title="Escuelas"
+              count={rolesSummary.ESCUELA_ROLE?.count || 0}
+              icon={GraduationCap}
+              color="text-amber-400"
+            />
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Componente para el resumen de roles
+function RoleSummaryCard({ title, count, icon: Icon, color }: { title: string, count: number, icon: any, color: string }) {
+  return (
+    <Card className="relative overflow-hidden group">
+      <div className={cn("absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity", color)}>
+        <Icon className="h-16 w-16" />
+      </div>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="text-4xl font-bold mb-1">{count}</div>
+        <p className="text-xs text-muted-foreground leading-relaxed">Miembros activos</p>
+      </CardContent>
+    </Card>
+  );
 }

@@ -1,7 +1,5 @@
 'use server';
 
-import { ROLES } from '@/lib/constants';
-
 export async function getDashboardData() {
   try {
     // Dynamically import serverRpc functions to avoid build-time evaluation issues
@@ -14,12 +12,17 @@ export async function getDashboardData() {
     // Get all serial numbers
     const serialNumbers = await getAllSerialNumbers();
 
+    // Get role hashes from our utility
+    const { FABRICANTE, AUDITOR_HW, TECNICO_SW, ESCUELA } = await import('@/lib/roleUtils').then(
+      ({ getRoleHashes }) => getRoleHashes()
+    );
+
     // Get role members
     const [fabricanteCount, auditorHwCount, tecnicoSwCount, escuelaCount] = await Promise.all([
-      getRoleMemberCount(ROLES.FABRICANTE.hash),
-      getRoleMemberCount(ROLES.AUDITOR_HW.hash),
-      getRoleMemberCount(ROLES.TECNICO_SW.hash),
-      getRoleMemberCount(ROLES.ESCUELA.hash)
+      getRoleMemberCount(FABRICANTE),
+      getRoleMemberCount(AUDITOR_HW),
+      getRoleMemberCount(TECNICO_SW),
+      getRoleMemberCount(ESCUELA)
     ]);
 
     // Get netbook counts by state

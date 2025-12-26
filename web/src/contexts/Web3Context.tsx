@@ -1,69 +1,65 @@
-"use client";
+// web/src/contexts/Web3Context.tsx
+import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { useAccount, useConnect, useDisconnect } from 'wagmi';
+import { Address } from 'viem';
 
-import { createContext, useContext, ReactNode } from 'react';
-import { useAccount, useConnect, useDisconnect, useSwitchChain } from 'wagmi';
-
-// Types
+// Define the context type
 interface Web3ContextType {
-  address: string | null;
+  address: Address | undefined;
   isConnected: boolean;
-  chain: { id: number; name: string } | null;
-  connect: () => void;
-  disconnect: () => void;
-  switchNetwork: (chainId: number) => void;
   isConnecting: boolean;
+  disconnect: () => void;
+  connectWallet: (connectorId?: string) => void;
+  defaultAdminAddress: Address | undefined;
 }
+
+const Web3Context = createContext<Web3ContextType | undefined>(undefined);
 
 interface Web3ProviderProps {
   children: ReactNode;
 }
 
-// Create context
-const Web3Context = createContext<Web3ContextType | undefined>(undefined);
+export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }) => {
+  const { address, isConnected, isConnecting } = useAccount();
+  const { connect, connectors } = useConnect();
+  const { disconnect } = useDisconnect();
 
-// Provider component
-export function Web3Provider({ children }: Web3ProviderProps) {
-  const { address, isConnected, isConnecting, chain } = useAccount();
-  const { connect: wagmiConnect, connectors } = useConnect();
-  const { disconnect: wagmiDisconnect } = useDisconnect();
-  const { switchChain } = useSwitchChain();
-
-  // Connect wallet (MetaMask by default if available)
-  const connect = () => {
-    const connector = connectors[0];
-    if (connector) {
-      wagmiConnect({ connector });
+  const connectWallet = (connectorId?: string) => {
+    if (connectorId) {
+      const selectedConnector = connectors.find(c => c.id === connectorId);
+      if (selectedConnector) {
+        connect({ connector: selectedConnector });
+      } else {
+        console.warn(`Connector with ID ${connectorId} not found.`);
+        // Fallback to default if a specific connector isn't found
+        if (connectors.length > 0) {
+          connect({ connector: connectors[0] });
+        }
+      }
+    } else if (connectors.length > 0) {
+      connect({ connector: connectors[0] }); // Connect with the first available connector by default
     }
   };
 
-  // Disconnect wallet
-  const disconnect = () => {
-    wagmiDisconnect();
-  };
-
-  // Switch network
-  const switchNetwork = (chainId: number) => {
-    switchChain?.({ chainId });
-  };
+  // In Next.js, environment variables are available directly in process.env on both server and client
+  const defaultAdminAddress = process.env.NEXT_PUBLIC_DEFAULT_ADMIN_ADDRESS as Address | undefined;
 
   const value = {
-    address: address || null,
+    address,
     isConnected,
-    chain: chain ? { id: chain.id, name: chain.name } : null,
-    connect,
-    disconnect,
-    switchNetwork,
     isConnecting,
+    disconnect,
+    connectWallet,
+    defaultAdminAddress,
   };
 
   return <Web3Context.Provider value={value}>{children}</Web3Context.Provider>;
-}
+};
 
-// Custom hook to use the web3 context
-export function useWeb3() {
+export const useWeb3 = () => {
   const context = useContext(Web3Context);
   if (context === undefined) {
     throw new Error('useWeb3 must be used within a Web3Provider');
   }
   return context;
-}
+};

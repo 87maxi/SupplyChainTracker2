@@ -1,12 +1,12 @@
 "use client";
 
-import { useWeb3 } from '@/hooks/useWeb3';
+import { useWeb3 } from '@/contexts/Web3Context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import * as SupplyChainService from '@/services/SupplyChainService';
 import { useParams, useRouter } from 'next/navigation';
-import { State } from '@/types/contract';
+import { NetbookState } from '@/types/supply-chain-types';
 import { useState, useEffect } from 'react';
 import { Netbook } from '@/types/contract';
 
@@ -14,7 +14,7 @@ export default function NetbookDetailsPage() {
   const { id } = useParams();
   const { isConnected } = useWeb3();
   const router = useRouter();
-  const [netbook, setNetbook] = useState<Netbook | null>(null);
+  const [netbook, setNetbook] = useState<Omit<Netbook, 'currentState'> & { currentState: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -47,7 +47,7 @@ export default function NetbookDetailsPage() {
         setNetbook({
           ...(report as Netbook),
           serialNumber: serial,
-          currentState: state as State
+          currentState: state as number
         });
       } catch (err) {
         console.error('Error fetching netbook:', err);

@@ -78,5 +78,13 @@
     "status": "pending",
     "timestamp": 1766486256131,
     "signature": "0x842658e25fd96f95738f63233daddee691ad80ff1d4f3595d7158c08ca36700068d8d495ff2063b65f19b6aed75593809b36b6e3f3249da950ac71ccc8fd080d1c"
+  },
+  {
+    "id": "q1meag",
+    "address": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
+    "role": "auditor_hw",
+    "status": "pending",
+    "timestamp": 1766729767447,
+    "signature": "0x1a280c1b9178a538fd942d7e25c887e96dd185f77146979133376a215435b0097286b8af38f5590b7d7d8cb55617fd195878423393932a17af2da384332db8451c"
   }
 ]

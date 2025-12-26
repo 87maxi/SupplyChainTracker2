@@ -1,6 +1,7 @@
 "use client";
 
-import { useWeb3 } from '@/hooks/useWeb3';
+import { useWeb3 } from '@/contexts/Web3Context';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -20,6 +21,46 @@ import {
 
 export default function Home() {
   const { isConnected } = useWeb3();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Don't render the dynamic content until we're on the client
+  if (!isMounted) {
+    return (
+      <div className="relative isolate overflow-hidden">
+        {/* Background Glows */}
+        <div className="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80">
+          <div className="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-[#0ea5e9] to-[#8b5cf6] opacity-20 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]"></div>
+        </div>
+
+        <div className="container mx-auto px-4 py-24 sm:py-32">
+          <div className="flex flex-col items-center text-center space-y-10">
+            {/* Hero Section */}
+            <div className="space-y-6 max-w-4xl animate-float">
+              <Badge variant="outline-glow" className="px-4 py-1.5 text-sm uppercase tracking-widest">
+                Web3 Supply Chain Solution
+              </Badge>
+              <h1 className="text-5xl sm:text-7xl font-extrabold tracking-tight">
+                Trazabilidad <span className="text-gradient">Inmutable</span> para la Educación
+              </h1>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+                Garantiza la transparencia y seguridad en la distribución de netbooks educativas utilizando tecnología blockchain de última generación.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-6">
+              <div className="scale-110">
+                <ConnectButton />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative isolate overflow-hidden">

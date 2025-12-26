@@ -1,66 +1,102 @@
+// web/src/app/profile/page.tsx
 "use client";
 
-import { useWeb3 } from '@/hooks/useWeb3';
+import { useWeb3 } from '@/contexts/Web3Context';
+import { useSupplyChainService } from '@/hooks/useSupplyChainService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { QueryClient, useQuery } from '@tanstack/react-query';
-import * as SupplyChainService from '@/services/SupplyChainService';
-import { ROLE_LABELS, ROLES } from '@/lib/constants';
-import { useState, useEffect } from 'react';
-import { State } from '@/types/contract';
+import { useState, useEffect, useCallback } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2, Wallet, User, ShieldQuestion, ClipboardCopy, Link as LinkIcon } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { ContractRoles } from '@/types/supply-chain-types';
+import { getRoleHashes } from '@/lib/roleUtils';
+import Link from 'next/link';
+import { Address } from 'viem';
 
 export default function ProfilePage() {
-  const { address, isConnected, disconnect } = useWeb3();
-  const [balance, setBalance] = useState<string>('0');
-  const [roles, setRoles] = useState<string[]>([]);
+  const { address, isConnected, disconnect, connectWallet } = useWeb3();
+  const { hasRole, getAccountBalance } = useSupplyChainService();
+  const { toast } = useToast();
+
+  const [balance, setBalance] = useState<string | null>(null);
+  const [userRoles, setUserRoles] = useState<ContractRoles[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const rolesMap = ROLE_LABELS;
+  const fetchProfileData = useCallback(async () => {
+    if (!isConnected || !address) {
+      setLoading(false);
+      setError('Wallet no conectada.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      // Fetch balance
+      const fetchedBalance = await getAccountBalance(address);
+      setBalance(fetchedBalance);
+
+      // Fetch user roles
+      // First get all role hashes from the contract
+      const roleHashes = await getRoleHashes();
+      
+      // Define a mapping of our expected role keys to their actual hashes in the contract
+      const roleKeysToCheck: Array<keyof typeof roleHashes> = ['FABRICANTE', 'AUDITOR_HW', 'TECNICO_SW', 'ESCUELA', 'ADMIN'];
+      
+      const rolesFound: ContractRoles[] = [];
+      
+      // Check each role by its hash
+      if (roleHashes.FABRICANTE && await hasRole(roleHashes.FABRICANTE, address)) {
+        rolesFound.push('FABRICANTE_ROLE');
+      }
+      if (roleHashes.AUDITOR_HW && await hasRole(roleHashes.AUDITOR_HW, address)) {
+        rolesFound.push('AUDITOR_HW_ROLE');
+      }
+      if (roleHashes.TECNICO_SW && await hasRole(roleHashes.TECNICO_SW, address)) {
+        rolesFound.push('TECNICO_SW_ROLE');
+      }
+      if (roleHashes.ESCUELA && await hasRole(roleHashes.ESCUELA, address)) {
+        rolesFound.push('ESCUELA_ROLE');
+      }
+      if (roleHashes.ADMIN && await hasRole(roleHashes.ADMIN, address)) {
+        rolesFound.push('DEFAULT_ADMIN_ROLE');
+      }
+      setUserRoles(rolesFound.sort()); // Ordenar roles alfabéticamente
+    } catch (err: any) {
+      console.error('Error fetching profile data:', err);
+      setError(`No se pudo cargar la información del perfil: ${err.message}`);
+      setBalance(null);
+      setUserRoles([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [isConnected, address, getAccountBalance, hasRole]);
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      if (!isConnected || !address) return;
+    fetchProfileData();
+  }, [fetchProfileData]);
 
-      setLoading(true);
-      setError('');
-
-      try {
-        // Get wallet balance
-        const balance = await SupplyChainService.getAccountBalance(address);
-        setBalance(balance);
-
-        // Get roles for this address
-        const userRoles: string[] = [];
-        const roleKeys = Object.keys(rolesMap);
-
-        for (const roleKey of roleKeys) {
-          const hasRole = await SupplyChainService.hasRole(roleKey, address);
-          if (hasRole) {
-            userRoles.push(rolesMap[roleKey as keyof typeof rolesMap]);
-          }
-        }
-
-        setRoles(userRoles);
-      } catch (err) {
-        console.error('Error fetching profile:', err);
-        setError('Failed to load profile information');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProfile();
-  }, [isConnected, address]);
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({ title: "Copiado al portapapeles", description: text });
+  };
 
   if (!isConnected) {
     return (
       <div className="container mx-auto px-4 py-12">
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <p className="text-lg mb-4">Por favor, conecta tu wallet para ver tu perfil.</p>
-            <Button onClick={() => window.location.reload()}>Conectar Wallet</Button>
+        <Card className="border-dashed border-2">
+          <CardContent className="flex flex-col items-center justify-center py-16 space-y-6">
+            <h3 className="text-xl font-medium text-foreground mb-2">Acceso Restringido</h3>
+            <p className="text-muted-foreground mb-6 text-center max-w-md">
+              Por favor, conecta tu wallet para ver la información de tu perfil.
+            </p>
+            <Button size="lg" variant="gradient" onClick={() => connectWallet()} className="h-12 px-8 gap-2">
+              <LinkIcon className="h-4 w-4" /> Conectar Wallet
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -70,11 +106,10 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-12">
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <p>Cargando perfil...</p>
-          </CardContent>
-        </Card>
+        <div className="flex flex-col items-center justify-center py-24 space-y-4">
+          <Loader2 className="h-12 w-12 text-primary animate-spin" />
+          <p className="text-lg text-muted-foreground animate-pulse">Cargando información del perfil...</p>
+        </div>
       </div>
     );
   }
@@ -86,44 +121,53 @@ export default function ProfilePage() {
       <Card>
         <CardHeader>
           <CardTitle>Información de la Cuenta</CardTitle>
-          <CardDescription>Detalles de tu wallet y permisos en el sistema</CardDescription>
+          <CardDescription>Detalles de tu wallet y roles asignados en el sistema.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {error && <div className="text-red-500 p-4 rounded-md bg-red-50">{error}</div>}
+          {error && <div className="text-red-500 p-4 rounded-md bg-red-50 mb-4">{error}</div>}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label>Dirección de la Wallet</Label>
-              <div className="p-4 bg-gray-50 rounded-md font-mono text-sm">{address}</div>
+              <div className="p-3 bg-card-foreground/5 rounded-md font-mono text-sm flex items-center justify-between">
+                <span>{address}</span>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => address && copyToClipboard(address)}>
+                  <ClipboardCopy className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
 
             <div className="space-y-2">
               <Label>Saldo ETH</Label>
-              <div className="p-4 bg-gray-50 rounded-md">{balance} ETH</div>
+              <div className="p-3 bg-card-foreground/5 rounded-md flex items-center gap-2">
+                <Wallet className="h-4 w-4 text-primary" />
+                <span className="font-semibold">{balance !== null ? `${parseFloat(balance).toFixed(4)} ETH` : 'Cargando...'}</span>
+              </div>
             </div>
           </div>
 
           <div className="space-y-2">
             <Label>Roles en el Sistema</Label>
-            <div className="flex flex-wrap gap-2">
-              {roles.length > 0 ? (
-                roles.map((role, index) => (
-                  <span
-                    key={index}
-                    className="bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full"
-                  >
-                    {role}
-                  </span>
+            <div className="flex flex-wrap gap-2 p-3 bg-card-foreground/5 rounded-md">
+              {userRoles.length > 0 ? (
+                userRoles.map((role, index) => (
+                  <Badge key={index} variant="secondary" className="px-3 py-1 text-sm gap-1">
+                    <User className="h-3.5 w-3.5" /> {role.replace(/_/g, ' ')}
+                  </Badge>
                 ))
               ) : (
-                <span className="text-muted-foreground text-sm">No tienes roles asignados</span>
+                <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                  <ShieldQuestion className="h-4 w-4" /> No tienes roles asignados.
+                </div>
               )}
             </div>
           </div>
 
-          <Button variant="outline" onClick={disconnect} className="mt-4">
-            Desconectar Wallet
-          </Button>
+          <div className="border-t pt-6 mt-6">
+            <Button variant="outline" onClick={disconnect} className="gap-2">
+              Desconectar Wallet
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>

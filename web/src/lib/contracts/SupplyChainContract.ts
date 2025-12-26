@@ -81,14 +81,15 @@ export const SupplyChainContract = {
     return parseInt(state);
   },
 
-  async hasRole(role: string, account: string) {
+  async hasRole(role: string, account: string): Promise<boolean> {
     try {
-      return await readContract(config, {
+      const result = await readContract(config, {
         address: contractAddress as `0x${string}`,
         abi: SupplyChainTrackerABI,
         functionName: 'hasRole',
         args: [role, account]
       });
+      return result as boolean;
     } catch (error) {
       console.error('Error in hasRole:', error);
       throw error;

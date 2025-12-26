@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, Shield } from 'lucide-react';
 import { getRoleMembers } from '@/lib/api/serverRpc';
-import { ROLES } from '@/lib/constants';
-import { useWeb3 } from '@/hooks/useWeb3';
+import { getRoleHashes } from '@/lib/roleUtils';
+import { useWeb3 } from '@/contexts/Web3Context';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -47,17 +47,17 @@ export function UsersList() {
     try {
       setIsLoading(true);
 
-      // Get role hashes from constants
-      const { FABRICANTE, AUDITOR_HW, TECNICO_SW, ESCUELA, ADMIN } = ROLES;
+      // Get role hashes from contract
+      const roleHashes = await getRoleHashes();
 
       // Fetch members for each role concurrently
       const [adminMembers, fabricanteMembers, auditorHwMembers, tecnicoSwMembers, escuelaMembers] =
         await Promise.all([
-          getRoleMembers(ADMIN.hash).catch(() => []),
-          getRoleMembers(FABRICANTE.hash).catch(() => []),
-          getRoleMembers(AUDITOR_HW.hash).catch(() => []),
-          getRoleMembers(TECNICO_SW.hash).catch(() => []),
-          getRoleMembers(ESCUELA.hash).catch(() => [])
+          getRoleMembers(roleHashes.ADMIN).catch(() => []),
+          getRoleMembers(roleHashes.FABRICANTE).catch(() => []),
+          getRoleMembers(roleHashes.AUDITOR_HW).catch(() => []),
+          getRoleMembers(roleHashes.TECNICO_SW).catch(() => []),
+          getRoleMembers(roleHashes.ESCUELA).catch(() => [])
         ]);
 
       // Transform to UserRoleData format

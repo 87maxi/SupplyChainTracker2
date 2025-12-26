@@ -5,7 +5,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, RefreshCw, Settings2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { RoleManager } from '@/components/contract/RoleManager';
+import RoleManager from '@/components/contracts/RoleManager';
 import { Button } from '@/components/ui/button';
 import {
   Building,
@@ -19,10 +19,10 @@ import {
   Network,
   TrendingUp
 } from 'lucide-react';
-import { NetbookStatusChart } from './charts/NetbookStatusChart';
-import { UserRolesChart } from './charts/UserRolesChart';
-import { AnalyticsChart } from './charts/AnalyticsChart';
-import { useWeb3 } from '@/hooks/useWeb3';
+import { NetbookStatusChart } from '@/components/charts/NetbookStatusChart';
+import { UserRolesChart } from '@/components/charts/UserRolesChart';
+import { AnalyticsChart } from '@/components/charts/AnalyticsChart';
+import { useWeb3 } from '@/contexts/Web3Context';
 import {
   getRoleMembers,
   getRoleMemberCount,
@@ -30,10 +30,10 @@ import {
   revalidateAll
 } from '@/lib/api/serverRpc';
 import { useToast } from '@/hooks/use-toast';
-import { DashboardSkeleton } from './skeletons/DashboardSkeleton';
-import { TransactionConfirmation } from '@/components/contract/TransactionConfirmation';
+import { Skeleton } from '@/components/ui/skeleton';
+import { TransactionConfirmation } from '@/components/contracts/TransactionConfirmation';
 import { truncateAddress } from '@/lib/utils';
-import { ROLES } from '@/lib/constants';
+import { getRoleHashes } from '@/lib/roleUtils';
 import { getRoleRequests, updateRoleRequestStatus, deleteRoleRequest } from '@/services/RoleRequestService';
 import { RoleRequest } from '@/types/role-request';
 import { SupplyChainContract } from '@/lib/contracts/SupplyChainContract';
@@ -113,15 +113,15 @@ export function DashboardOverview({ stats: initialStats }: { stats: DashboardSta
 
   const fetchUserRoles = async () => {
     try {
-      const { FABRICANTE, AUDITOR_HW, TECNICO_SW, ESCUELA, ADMIN } = ROLES;
+      const roleHashes = await getRoleHashes();
 
       const [adminMembers, fabricanteMembers, auditorHwMembers, tecnicoSwMembers, escuelaMembers] =
         await Promise.all([
-          getRoleMembers(ADMIN.hash).catch(() => []),
-          getRoleMembers(FABRICANTE.hash).catch(() => []),
-          getRoleMembers(AUDITOR_HW.hash).catch(() => []),
-          getRoleMembers(TECNICO_SW.hash).catch(() => []),
-          getRoleMembers(ESCUELA.hash).catch(() => [])
+          getRoleMembers(roleHashes.ADMIN).catch(() => []),
+          getRoleMembers(roleHashes.FABRICANTE).catch(() => []),
+          getRoleMembers(roleHashes.AUDITOR_HW).catch(() => []),
+          getRoleMembers(roleHashes.TECNICO_SW).catch(() => []),
+          getRoleMembers(roleHashes.ESCUELA).catch(() => [])
         ]);
 
       const allUserRoles: UserRoleData[] = [];
@@ -186,14 +186,17 @@ export function DashboardOverview({ stats: initialStats }: { stats: DashboardSta
     if (!isConnected || !address) return;
 
     try {
+      // Get role hashes from the contract
+      const roleHashes = await getRoleHashes();
+      
       const [
         fabricanteCount, auditorHwCount, tecnicoSwCount, escuelaCount,
         fabricadas, hwAprobadas, swValidadas, distribuidas
       ] = await Promise.all([
-        getRoleMemberCount(ROLES.FABRICANTE.hash).catch(() => 0),
-        getRoleMemberCount(ROLES.AUDITOR_HW.hash).catch(() => 0),
-        getRoleMemberCount(ROLES.TECNICO_SW.hash).catch(() => 0),
-        getRoleMemberCount(ROLES.ESCUELA.hash).catch(() => 0),
+        getRoleMemberCount(roleHashes.FABRICANTE).catch(() => 0),
+        getRoleMemberCount(roleHashes.AUDITOR_HW).catch(() => 0),
+        getRoleMemberCount(roleHashes.TECNICO_SW).catch(() => 0),
+        getRoleMemberCount(roleHashes.ESCUELA).catch(() => 0),
         getNetbooksByState(State.FABRICADA).catch(() => []),
         getNetbooksByState(State.HW_APROBADO).catch(() => []),
         getNetbooksByState(State.SW_VALIDADO).catch(() => []),
@@ -281,17 +284,30 @@ export function DashboardOverview({ stats: initialStats }: { stats: DashboardSta
         throw new Error("No tienes permisos de administrador (AccessControl)");
       }
 
+      // Get role hashes from the contract
+      const roleHashes = await getRoleHashes();
+      
       let roleBytes32: string;
       switch (request.role) {
-        case 'fabricante': roleBytes32 = ROLES.FABRICANTE.hash; break;
-        case 'auditor_hw': roleBytes32 = ROLES.AUDITOR_HW.hash; break;
-        case 'tecnico_sw': roleBytes32 = ROLES.TECNICO_SW.hash; break;
-        case 'escuela': roleBytes32 = ROLES.ESCUELA.hash; break;
+        case 'fabricante': roleBytes32 = roleHashes.FABRICANTE; break;
+        case 'auditor_hw': roleBytes32 = roleHashes.AUDITOR_HW; break;
+        case 'tecnico_sw': roleBytes32 = roleHashes.TECNICO_SW; break;
+        case 'escuela': roleBytes32 = roleHashes.ESCUELA; break;
         default: throw new Error('Rol inválido');
       }
 
-      const tx = await SupplyChainContract.grantRole(roleBytes32, request.address);
-      await tx.wait();
+      const result = await SupplyChainContract.grantRole(roleBytes32, request.address);
+      
+      if ('hash' in result) {
+        const { config } = await import('@/lib/wagmi/config');
+        const { waitForTransactionReceipt } = await import('@wagmi/core');
+        const receipt = await waitForTransactionReceipt(config, { hash: result.hash });
+        
+        if (receipt.status !== 'success') {
+          throw new Error(`Transacción fallida: ${receipt.transactionHash}`);
+        }
+      }
+      
 
       // Verify transaction on-chain
       const hasRole = await SupplyChainContract.hasRole(roleBytes32, request.address);
@@ -374,7 +390,74 @@ export function DashboardOverview({ stats: initialStats }: { stats: DashboardSta
 
   // Loading state
   if (isLoading) {
-    return <DashboardSkeleton />;
+    return (
+      <div className="space-y-10">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div>
+            <h2 className="text-4xl font-bold tracking-tight mb-2"><Skeleton className="h-8 w-64" /></h2>
+            <p className="text-muted-foreground text-lg"><Skeleton className="h-4 w-96" /></p>
+          </div>
+          <div className="flex gap-4">
+            <Button size="lg" variant="outline" className="h-12 px-6">
+              <Skeleton className="h-5 w-20" />
+            </Button>
+            <Button size="lg" variant="gradient" className="h-12 px-8 shadow-lg">
+              <Skeleton className="h-5 w-24" />
+            </Button>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <div className="flex items-center gap-2">
+            <Package className="h-6 w-6 text-primary" />
+            <h3 className="text-2xl font-bold tracking-tight"><Skeleton className="h-6 w-48" /></h3>
+          </div>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {[...Array(4)].map((_, i) => (
+              <Card key={i}>
+                <CardHeader className="pb-2">
+                  <Skeleton className="h-4 w-32" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-10 w-16" />
+                  <Skeleton className="h-4 w-24 mt-1" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          <div className="flex items-center gap-2">
+            <Users className="h-6 w-6 text-primary" />
+            <h3 className="text-2xl font-bold tracking-tight"><Skeleton className="h-6 w-40" /></h3>
+          </div>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            {[...Array(4)].map((_, i) => (
+              <Card key={i}>
+                <CardHeader className="pb-2">
+                  <Skeleton className="h-4 w-32" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-10 w-16" />
+                  <Skeleton className="h-4 w-24 mt-1" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2">
+          {[...Array(2)].map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <Skeleton className="h-64 w-full" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   // Error state
@@ -574,14 +657,16 @@ export function DashboardOverview({ stats: initialStats }: { stats: DashboardSta
       {/* Analytics chart hidden as we don't have historical data yet */}
       {/* <AnalyticsChart data={[]} /> */}
 
-      <RoleManager
-        isOpen={showRoleManager}
-        onOpenChange={(open) => setShowRoleManager(open)}
-        onComplete={() => {
-          setShowRoleManager(false);
-          fetchDashboardData();
-        }}
-      />
+      {/* 
+        <RoleManager
+          isOpen={showRoleManager}
+          onOpenChange={(open) => setShowRoleManager(open)}
+          onComplete={() => {
+            setShowRoleManager(false);
+            fetchDashboardData();
+          }}
+        />
+      */}
 
       <TransactionConfirmation
         open={confirmationDialog.open}
