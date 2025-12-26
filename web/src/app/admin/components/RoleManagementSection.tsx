@@ -54,7 +54,7 @@ export const RoleManagementSection = () => {
         const newRoleMembers = {} as Record<RoleValue, string[]>;
         availableRoles.forEach(({ value }) => {
           const roleSummary = summary[value as keyof typeof summary];
-          newRoleMembers[value as RoleValue] = roleSummary?.members || [];
+          newRoleMembers[value as RoleValue] = (roleSummary as { members: string[] })?.members || [];
         });
         setRoleMembers(newRoleMembers);
       }
@@ -224,8 +224,11 @@ export const RoleManagementSection = () => {
                       No hay miembros en este rol.
                     </TableCell>
                   </TableRow>
-                )
+                )}
               </TableBody>
             </Table>
           </div>
         </CardContent>
+    </Card>
+  )
+};
