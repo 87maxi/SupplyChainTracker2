@@ -1,0 +1,46 @@
+```puml
+@startuml
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
+
+package "Frontend Components" {
+    [Admin Page] --> [DashboardMetrics]
+    [Admin Page] --> [RoleManagementSection]
+    [Admin Page] --> [PendingRoleRequests]
+    [Admin Page] --> [ActivityLogs]
+}
+
+package "Hooks" {
+    [useRoleRequests] --> [RoleRequestService]
+    [useUserRoles] --> [Web3Context]
+    [useSupplyChainService] --> [SupplyChainService]
+}
+
+package "Services" {
+    [RoleRequestService] --> [API Routes]
+    [SupplyChainService] --> [Contract Interaction]
+}
+
+package "Backend" {
+    [API Routes] --> [role-requests.json]
+}
+
+[Web3Context] --> [Wagmi]
+[Contract Interaction] --> [SupplyChainTracker Contract]
+
+note right of [Admin Page]
+  Punto de entrada principal
+  para usuarios administradores
+end note
+
+note right of [useRoleRequests]
+  Gestiona solicitudes de roles
+  desde cliente a servidor
+end note
+
+note right of [API Routes]
+  API REST para manejo de
+  solicitudes de roles
+end note
+@enduml
+```

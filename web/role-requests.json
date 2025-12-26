@@ -86,5 +86,13 @@
     "status": "pending",
     "timestamp": 1766729767447,
     "signature": "0x1a280c1b9178a538fd942d7e25c887e96dd185f77146979133376a215435b0097286b8af38f5590b7d7d8cb55617fd195878423393932a17af2da384332db8451c"
+  },
+  {
+    "id": "wa8xq",
+    "address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "role": "auditor_hw",
+    "status": "pending",
+    "timestamp": 1766761066576,
+    "signature": "0x2ee7f80433b79d388ea08af18c6cd04825e1f990d3d443a0dc49e5f11e2727f56e4acff358d805f09ab4f6d174fe7f20256ada0337b2ea8671fb1fdc478f48ea1b"
   }
 ]

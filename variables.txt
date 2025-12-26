@@ -2,5 +2,5 @@ Dirección del contrato: 0x5FbDB2315678afecb367f032d93F642f64180aa3
 URL de RPC: http://localhost:8545
 Chain ID: 31337
 Estado persistente: ./anvil-state.json
-Despliegue completado: vie 26 dic 2025 02:38:40 -03
-Anvil PID: 710164
+Despliegue completado: vie 26 dic 2025 11:56:39 -03
+Anvil PID: 30789

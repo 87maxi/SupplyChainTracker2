@@ -1,167 +1,85 @@
+// web/src/app/page.tsx
 "use client";
 
 import { useWeb3 } from '@/contexts/Web3Context';
-import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Wallet } from 'lucide-react';
 import Link from 'next/link';
-import { cn } from '@/lib/utils';
-import { ConnectButton } from '@rainbow-me/rainbowkit';
 
-import {
-  ShieldCheck,
-  Cpu,
-  Code2,
-  GraduationCap,
-  Settings2,
-  History,
-  ArrowRight
-} from 'lucide-react';
-
-export default function Home() {
-  const { isConnected } = useWeb3();
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  // Don't render the dynamic content until we're on the client
-  if (!isMounted) {
-    return (
-      <div className="relative isolate overflow-hidden">
-        {/* Background Glows */}
-        <div className="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80">
-          <div className="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-[#0ea5e9] to-[#8b5cf6] opacity-20 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]"></div>
-        </div>
-
-        <div className="container mx-auto px-4 py-24 sm:py-32">
-          <div className="flex flex-col items-center text-center space-y-10">
-            {/* Hero Section */}
-            <div className="space-y-6 max-w-4xl animate-float">
-              <Badge variant="outline-glow" className="px-4 py-1.5 text-sm uppercase tracking-widest">
-                Web3 Supply Chain Solution
-              </Badge>
-              <h1 className="text-5xl sm:text-7xl font-extrabold tracking-tight">
-                Trazabilidad <span className="text-gradient">Inmutable</span> para la Educación
-              </h1>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-                Garantiza la transparencia y seguridad en la distribución de netbooks educativas utilizando tecnología blockchain de última generación.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-center gap-6">
-              <div className="scale-110">
-                <ConnectButton />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+export default function HomePage() {
+  const { address, isConnected, connectWallet } = useWeb3();
 
   return (
-    <div className="relative isolate overflow-hidden">
-      {/* Background Glows */}
-      <div className="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80">
-        <div className="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-[#0ea5e9] to-[#8b5cf6] opacity-20 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]"></div>
-      </div>
-
-      <div className="container mx-auto px-4 py-24 sm:py-32">
-        <div className="flex flex-col items-center text-center space-y-10">
-          {/* Hero Section */}
-          <div className="space-y-6 max-w-4xl animate-float">
-            <Badge variant="outline-glow" className="px-4 py-1.5 text-sm uppercase tracking-widest">
-              Web3 Supply Chain Solution
-            </Badge>
-            <h1 className="text-5xl sm:text-7xl font-extrabold tracking-tight">
-              Trazabilidad <span className="text-gradient">Inmutable</span> para la Educación
-            </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              Garantiza la transparencia y seguridad en la distribución de netbooks educativas utilizando tecnología blockchain de última generación.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-6">
-            {!isConnected ? (
-              <div className="scale-110">
-                <ConnectButton />
+    <div className="container mx-auto px-4 py-16">
+      <div className="flex flex-col items-center justify-center text-center space-y-12">
+        <div className="max-w-4xl space-y-6">
+          <h1 className="text-5xl md:text-7xl font-bold tracking-tight">
+            Rastrea la
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-cyan-500 ml-4">Trazabilidad</span>
+            de Netbooks
+          </h1>
+          <p className="text-xl text-muted-foreground max-w-2xl">
+            Sistema descentralizado para el seguimiento completo del ciclo de vida de netbooks educativas, desde su fabricación hasta su distribución a estudiantes.
+          </p>
+          {!isConnected ? (
+            <Button
+              size="lg"
+              className="h-12 px-8 text-lg bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
+              onClick={() => connectWallet()}
+            >
+              <Wallet className="mr-3 h-5 w-5" />
+              Conectar Wallet
+            </Button>
+          ) : (
+            <div className="space-y-4">
+              <p className="text-lg text-muted-foreground">Conectado como: {address?.slice(0, 6)}...{address?.slice(-4)}</p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button asChild size="lg" className="h-12 px-8">
+                  <Link href="/dashboard">
+                    Ir al Dashboard
+                  </Link>
+                </Button>
+                <Button asChild size="lg" variant="outline" className="h-12 px-8">
+                  <Link href="/tokens">
+                    Gestionar Netbooks
+                  </Link>
+                </Button>
               </div>
-            ) : (
-              <Button asChild size="lg" variant="gradient" className="h-12 px-8 text-lg font-semibold">
-                <Link href="/dashboard">
-                  Ir al Panel <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
-            )}
-          </div>
-
-          {/* Feature Grid */}
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 mt-24 w-full">
-            <FeatureCard
-              icon={Cpu}
-              title="Fabricación"
-              description="Registro inicial de netbooks con huella digital única en la blockchain."
-              color="text-blue-400"
-            />
-            <FeatureCard
-              icon={ShieldCheck}
-              title="Auditoría HW"
-              description="Verificación rigurosa del hardware por auditores certificados."
-              color="text-emerald-400"
-            />
-            <FeatureCard
-              icon={Code2}
-              title="Validación SW"
-              description="Certificación del ecosistema de software instalado y configurado."
-              color="text-purple-400"
-            />
-            <FeatureCard
-              icon={GraduationCap}
-              title="Distribución"
-              description="Asignación transparente a instituciones y estudiantes finales."
-              color="text-amber-400"
-            />
-            <FeatureCard
-              icon={Settings2}
-              title="Administración"
-              description="Control granular de roles y permisos mediante Smart Contracts."
-              color="text-rose-400"
-            />
-            <FeatureCard
-              icon={History}
-              title="Trazabilidad"
-              description="Historial completo y auditable de cada dispositivo en tiempo real."
-              color="text-cyan-400"
-            />
-          </div>
+            </div>
+          )}
         </div>
-      </div>
 
-      <div className="absolute inset-x-0 top-[calc(100%-13rem)] -z-10 transform-gpu overflow-hidden blur-3xl sm:top-[calc(100%-30rem)]">
-        <div className="relative left-[calc(50%+3rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 bg-gradient-to-tr from-[#8b5cf6] to-[#0ea5e9] opacity-20 sm:left-[calc(50%+36rem)] sm:w-[72.1875rem]"></div>
+        <div className="grid md:grid-cols-3 gap-8 max-w-5xl w-full">
+          <Card>
+            <CardHeader>
+              <CardTitle>Fabricación</CardTitle>
+              <CardDescription>Registro de netbooks</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p>Los fabricantes registran cada netbook con sus especificaciones y lote de producción.</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Auditoría</CardTitle>
+              <CardDescription>Verificación de calidad</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p>Auditores verifican la integridad del hardware y técnicos validan el software instalado.</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Distribución</CardTitle>
+              <CardDescription>Entrega a estudiantes</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p>Las escuelas asignan netbooks a estudiantes finales, completando el ciclo de vida.</p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
-  );
-}
-
-function FeatureCard({ icon: Icon, title, description, color }: { icon: any, title: string, description: string, color: string }) {
-  return (
-    <Card className="group relative overflow-hidden transition-all duration-500 hover:translate-y-[-8px]">
-      <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-      <CardHeader>
-        <div className={cn("p-3 rounded-2xl bg-white/5 w-fit mb-4 group-hover:scale-110 transition-transform duration-500", color)}>
-          <Icon className="h-8 w-8" />
-        </div>
-        <CardTitle className="text-2xl group-hover:text-primary transition-colors">{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-muted-foreground leading-relaxed">
-          {description}
-        </p>
-      </CardContent>
-    </Card>
   );
 }

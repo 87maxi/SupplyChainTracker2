@@ -1,44 +1,31 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
-import '@rainbow-me/rainbowkit/styles.css';
+// web/src/app/layout.tsx
+import './globals.css';
+import { Web3Provider } from '@/contexts/Web3Context';
 import { Header } from '@/components/layout/Header';
-import { Web3Providers } from '@/components/Web3Providers';
+import { Toaster } from '@/components/ui/toaster';
 
-
-export const metadata: Metadata = {
-  title: "Supply Chain Tracker",
-  description: "Sistema de trazabilidad de netbooks educativas",
+export const metadata = {
+  title: 'SupplyChainTracker - Gestión de Trazabilidad de Netbooks',
+  description: 'Sistema de trazabilidad para el ciclo de vida de netbooks educativas',
 };
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-
-
-export default function RootLayout({
-  children,
-}: Readonly<{
+type RootLayoutProps = {
   children: React.ReactNode;
-}>) {
+};
+
+export default function RootLayout({ children }: RootLayoutProps) {
   return (
-    <html lang="es" className={`dark ${geistSans.variable} ${geistMono.variable}`}>
+    <html lang="es">
       <body>
-        <Web3Providers>
-          <div className="min-h-screen bg-background font-sans antialiased">
+        <Web3Provider>
+          <div className="flex flex-col min-h-screen">
             <Header />
-            <main>
+            <main className="flex-1 container mx-auto px-4 py-8">
               {children}
             </main>
+            <Toaster />
           </div>
-        </Web3Providers>
+        </Web3Provider>
       </body>
     </html>
   );

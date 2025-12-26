@@ -14,7 +14,8 @@ import { AllRolesSummary } from '@/types/supply-chain-types';
 import { cn } from '@/lib/utils';
 import { PendingRoleRequests } from './components/PendingRoleRequests';
 import { ActivityLogs } from '@/components/admin/activity-logs';
-import { DashboardMetrics } from '@/components/admin/dashboard-metrics';
+import { DashboardMetrics } from './components/DashboardMetrics';
+import { RoleManagementSection } from './components/RoleManagementSection';
 import { getActivityLogs } from '@/lib/activity-logger';
 import { getLogStats } from '@/lib/activity-logger';
 
@@ -135,6 +136,8 @@ export default function AdminPage() {
         loading={loading}
       />
 
+      <RoleManagementSection />
+      
       {/* Sección de Solicitudes Pendientes */}
       <div id="pending-requests" className="space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -161,23 +164,5 @@ export default function AdminPage() {
         <ActivityLogs logs={logs} />
       </div>
     </div>
-  );
-}
-
-// Componente para el resumen de roles
-function RoleSummaryCard({ title, count, icon: Icon, color }: { title: string, count: number, icon: any, color: string }) {
-  return (
-    <Card className="relative overflow-hidden group">
-      <div className={cn("absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity", color)}>
-        <Icon className="h-16 w-16" />
-      </div>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="text-4xl font-bold mb-1">{count}</div>
-        <p className="text-xs text-muted-foreground leading-relaxed">Miembros activos</p>
-      </CardContent>
-    </Card>
   );
 }
