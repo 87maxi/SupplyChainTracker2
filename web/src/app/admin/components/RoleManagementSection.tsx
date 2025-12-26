@@ -216,3 +216,4 @@ export const RoleManagementSection = () => {
                         {isLoading(`revokeRole:${selectedRole}`) ? 'Revocando...' : 'Revocar'}
                       </Button>
                     </TableCell>
+                  </TableRow>
