@@ -102,13 +102,13 @@ export const DashboardMetrics = ({
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {metrics.map((metric, index) => (
           <Card key={index} className="hover:shadow-lg transition-shadow">
-            <Card.Header className="pb-2 flex flex-row items-center justify-between">
-              <Card.Title className="text-sm font-medium text-muted-foreground">
+            <CardHeader className="pb-2 flex flex-row items-center justify-between">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
                 {metric.title}
-              </Card.Title>
+              </CardTitle>
               {/* Asumiendo que los íconos están disponibles en un componente de íconos o similar */}
               <span className={cn("h-4 w-4", metric.color)}>{metric.icon}</span>
-            </Card.Header>
+            </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{metric.value}</div>
               <p className="text-xs text-muted-foreground">{metric.description}</p>
