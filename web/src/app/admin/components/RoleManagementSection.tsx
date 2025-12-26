@@ -226,3 +226,4 @@ export const RoleManagementSection = () => {
                 </TableRow>
               )
             </TableBody>
+          </Table>
