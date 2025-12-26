@@ -207,10 +207,11 @@ export const RoleManagementSection = () => {
                       <Badge variant="outline">{getRoleLabel(selectedRole)}</Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button 
+                                            <Button 
                         variant="destructive" 
                         size="sm" 
                         onClick={() => handleRemoveMember(selectedRole, memberAddress)}
                         disabled={isLoading(`revokeRole:${selectedRole}`)}
                       >
-                        {isLoading(`revokeRole:${selectedRole}`) ?
+                        {isLoading(`revokeRole:${selectedRole}`) ? 'Revocando...' : 'Revocar'}
+                      </Button>
