@@ -6,9 +6,11 @@ import { useSupplyChainService } from '@/hooks/useSupplyChainService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Wallet, User, ShieldQuestion, ClipboardCopy, Link as LinkIcon } from 'lucide-react';
+import { Loader2, Wallet, User, ShieldQuestion, ClipboardCopy, Link as LinkIcon, Send } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { ContractRoles } from '@/types/supply-chain-types';
 import { getRoleHashes } from '@/lib/roleUtils';
@@ -24,6 +26,8 @@ export default function ProfilePage() {
   const [userRoles, setUserRoles] = useState<ContractRoles[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [selectedRole, setSelectedRole] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchProfileData = useCallback(async () => {
     if (!isConnected || !address) {
@@ -83,6 +87,51 @@ export default function ProfilePage() {
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast({ title: "Copiado al portapapeles", description: text });
+  };
+
+  const submitRoleRequest = async () => {
+    if (!selectedRole || !address) {
+      toast({
+        title: "Error",
+        description: "Por favor selecciona un rol para solicitar",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const response = await fetch('/api/role-requests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          address,
+          role: selectedRole,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al enviar la solicitud');
+      }
+
+      toast({
+        title: "Solicitud enviada",
+        description: `Tu solicitud para el rol ${selectedRole} ha sido enviada para revisión`,
+      });
+      
+      setSelectedRole('');
+    } catch (error: any) {
+      console.error('Error submitting role request:', error);
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo enviar la solicitud",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!isConnected) {
@@ -163,7 +212,41 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <div className="border-t pt-6 mt-6">
+          <div className="border-t pt-6 mt-6 space-y-6">
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Solicitar Nuevo Rol</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="md:col-span-2">
+                  <Select value={selectedRole} onValueChange={setSelectedRole}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona un rol para solicitar" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="FABRICANTE">Fabricante</SelectItem>
+                      <SelectItem value="AUDITOR_HW">Auditor HW</SelectItem>
+                      <SelectItem value="TECNICO_SW">Técnico SW</SelectItem>
+                      <SelectItem value="ESCUELA">Escuela</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button 
+                  onClick={submitRoleRequest} 
+                  disabled={!selectedRole || isSubmitting}
+                  className="gap-2"
+                >
+                  {isSubmitting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                  Solicitar Rol
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Tu solicitud será revisada por un administrador del sistema.
+              </p>
+            </div>
+            
             <Button variant="outline" onClick={disconnect} className="gap-2">
               Desconectar Wallet
             </Button>

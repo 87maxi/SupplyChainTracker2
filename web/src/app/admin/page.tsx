@@ -5,13 +5,18 @@ import { useWeb3 } from '@/contexts/Web3Context';
 import { useSupplyChainService } from '@/hooks/useSupplyChainService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, ShieldAlert, Users, Factory, Monitor, GraduationCap, Gavel, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Loader2, ShieldAlert, Users, Factory, Monitor, GraduationCap, Gavel, ArrowRight, ShieldCheck, Clock } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AllRolesSummary } from '@/types/supply-chain-types';
 import { cn } from '@/lib/utils';
+import { PendingRoleRequests } from './components/PendingRoleRequests';
+import { ActivityLogs } from '@/components/admin/activity-logs';
+import { DashboardMetrics } from '@/components/admin/dashboard-metrics';
+import { getActivityLogs } from '@/lib/activity-logger';
+import { getLogStats } from '@/lib/activity-logger';
 
 export default function AdminPage() {
   const { address, isConnected, connectWallet } = useWeb3();
@@ -22,6 +27,8 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [rolesSummary, setRolesSummary] = useState<AllRolesSummary | null>(null);
+  const [logs, setLogs] = useState(getActivityLogs());
+  const [activityStats, setActivityStats] = useState(getLogStats(logs));
 
   const fetchAdminData = useCallback(async () => {
     if (!isConnected || !address) {
@@ -51,6 +58,13 @@ export default function AdminPage() {
       setLoading(false);
     }
   }, [isConnected, address, hasRole, getAllRolesSummary, toast]);
+
+  // Actualizar logs cuando cambien
+  useEffect(() => {
+    const updatedLogs = getActivityLogs();
+    setLogs(updatedLogs);
+    setActivityStats(getLogStats(updatedLogs));
+  }, [isConnected, address]);
 
   useEffect(() => {
     fetchAdminData();
@@ -114,57 +128,37 @@ export default function AdminPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="hover:shadow-lg transition-shadow">
-          <CardHeader className="pb-2 flex flex-row items-center justify-between">
-            <CardTitle className="text-xl font-semibold">Gestión de Usuarios</CardTitle>
-            <Users className="h-6 w-6 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <CardDescription className="mb-4">Asigna o revoca roles a las direcciones de los participantes.</CardDescription>
-            <Button asChild className="w-full">
-              <Link href="/admin/users">
-                Gestionar Usuarios <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+      <DashboardMetrics 
+        rolesSummary={rolesSummary}
+        pendingRequestsCount={0} 
+        recentActivity={undefined}
+        loading={loading}
+      />
 
-        {/* Resumen de Roles */}
-        {rolesSummary && (
-          <>
-            <RoleSummaryCard
-              title="Administradores"
-              count={rolesSummary.DEFAULT_ADMIN_ROLE?.count || 0}
-              icon={Gavel}
-              color="text-red-400"
-            />
-            <RoleSummaryCard
-              title="Fabricantes"
-              count={rolesSummary.FABRICANTE_ROLE?.count || 0}
-              icon={Factory}
-              color="text-blue-400"
-            />
-            <RoleSummaryCard
-              title="Auditores HW"
-              count={rolesSummary.AUDITOR_HW_ROLE?.count || 0}
-              icon={ShieldCheck}
-              color="text-emerald-400"
-            />
-            <RoleSummaryCard
-              title="Técnicos SW"
-              count={rolesSummary.TECNICO_SW_ROLE?.count || 0}
-              icon={Monitor}
-              color="text-purple-400"
-            />
-            <RoleSummaryCard
-              title="Escuelas"
-              count={rolesSummary.ESCUELA_ROLE?.count || 0}
-              icon={GraduationCap}
-              color="text-amber-400"
-            />
-          </>
-        )}
+      {/* Sección de Solicitudes Pendientes */}
+      <div id="pending-requests" className="space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight mb-2">Solicitudes de Rol Pendientes</h2>
+            <p className="text-muted-foreground">Revisa y gestiona las solicitudes de acceso al sistema.</p>
+          </div>
+        </div>
+        <PendingRoleRequests />
+      </div>
+
+      {/* Sección de Registro de Actividad */}
+      <div id="activity-logs" className="space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight mb-2">
+              Registro de Actividad del Sistema
+            </h2>
+            <p className="text-muted-foreground">
+              Monitoreo completo de todas las acciones y eventos.
+            </p>
+          </div>
+        </div>
+        <ActivityLogs logs={logs} />
       </div>
     </div>
   );

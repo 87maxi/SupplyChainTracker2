@@ -1,0 +1,1 @@
+define(["react","react-dom","./react-app/src/App"],function(e,t,n){return{init:function(r){const o=t.createRoot(document.getElementById(r));o.render(e.createElement(n))}}})

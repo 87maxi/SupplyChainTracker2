@@ -29,7 +29,8 @@ export const useUserRoles = () => {
     isSchool: false,
     isLoading: true,
     hasRole: () => false,
-    roles: []
+    roles: [],
+    getActiveRoles: async () => []
   });
 
   useEffect(() => {
@@ -81,7 +82,8 @@ export const useUserRoles = () => {
           isLoading: false,
           hasRole: () => false,
           roles: [], // This will be overridden by the returned object
-          activeRoleNames: [] // This will be overridden by the returned object
+          activeRoleNames: [], // This will be overridden by the returned object
+          getActiveRoles: async () => []
         });
       } catch (error) {
         console.error('Error fetching user roles:', error);

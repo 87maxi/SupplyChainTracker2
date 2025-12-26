@@ -29,7 +29,7 @@ import { Address } from 'viem';
     userAddress: z.string().min(1, 'La dirección del usuario es requerida.').startsWith('0x', 'Debe ser una dirección hexadecimal válida (0x...).').length(42, 'Debe tener 42 caracteres.'),
     role: z.string().min(1, 'Rol requerido'), // Validación básica, se verificará contra roles reales
   });
-type RoleManagementInputs = z.infer<typeof roleManagementSchema> & { roleHash: string; };
+type RoleManagementInputs = z.infer<typeof roleManagementSchema>;
 
 // Tipo para la tabla de usuarios
 interface UserWithRoles {
@@ -115,13 +115,14 @@ export default function AdminUsersPage() {
           if (Object.prototype.hasOwnProperty.call(summary, roleNameKey)) {
             const roleName = roleNameKey as ContractRoles;
             if (summary[roleName] && Array.isArray(summary[roleName].members)) {
-              summary[roleName].members.forEach((memberAddress: Address) => {
-                if (!consolidatedUsers[memberAddress]) {
-                  consolidatedUsers[memberAddress] = [];
+              summary[roleName].members.forEach((memberAddress: string) => {
+                const address = memberAddress as Address;
+                if (!consolidatedUsers[address]) {
+                  consolidatedUsers[address] = [];
                 }
                 // Only add the role if it's not already present
-                if (!consolidatedUsers[memberAddress].includes(roleName)) {
-                  consolidatedUsers[memberAddress].push(roleName);
+                if (!consolidatedUsers[address].includes(roleName)) {
+                  consolidatedUsers[address].push(roleName);
                 }
               });
             }
@@ -145,7 +146,14 @@ export default function AdminUsersPage() {
     } catch (err: any) {
       console.error('Error fetching users and roles:', err);
       toast({
-        title: "
+        title: "Error al cargar usuarios y roles",
+        description: err.message || "No se pudieron cargar los datos",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [address, defaultAdminAddress, getAllRolesSummary, hasRole, isConnected, toast]);
 
   useEffect(() => {
     fetchUsersAndRoles();

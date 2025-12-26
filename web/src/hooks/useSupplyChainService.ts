@@ -3,6 +3,7 @@ import { useCallback } from 'react';
 import * as SupplyChainService from '@/services/SupplyChainService';
 import { useWeb3 } from '@/contexts/Web3Context';
 import { Address } from 'viem';
+import { ContractRoles, AllRolesSummary } from '@/types/supply-chain-types';
 
 export const useSupplyChainService = () => {
   const { address } = useWeb3();
@@ -34,21 +35,79 @@ export const useSupplyChainService = () => {
     }
   }, []);
 
-  // Placeholder functions with proper implementation
+  // Implementation of role management functions
   const getAllRolesSummary = useCallback(async () => {
-    console.warn('getAllRolesSummary is not yet implemented');
-    return {};
+    try {
+      const roleHashes = await import('@/lib/roleUtils').then(({ getRoleHashes }) => getRoleHashes());
+      
+      const roleEntries = Object.entries(roleHashes);
+      
+      // Fetch members for each role concurrently
+      const roleResults = await Promise.all(
+        roleEntries.map(async ([roleName, roleHash]) => {
+          try {
+            // Use the service function instead of direct contract calls
+            const members = await SupplyChainService.getAllMembers(roleHash);
+            
+            return [
+              roleName as ContractRoles,
+              {
+                name: roleName,
+                count: members.length,
+                members
+              }
+            ];
+          } catch (error) {
+            console.error(`Error fetching members for role ${roleName}:`, error);
+            return [roleName as ContractRoles, { name: roleName, count: 0, members: [] }];
+          }
+        })
+      );
+      
+      return Object.fromEntries(roleResults) as AllRolesSummary;
+    } catch (error) {
+      console.error('Error in getAllRolesSummary:', error);
+      return {};
+    }
   }, []);
 
   const grantRole = useCallback(async (role: string, userAddress: Address) => {
-    console.warn('grantRole is not yet implemented');
-    return {};
+    try {
+      const roleHashes = await import('@/lib/roleUtils').then(({ getRoleHashes }) => getRoleHashes());
+      const roleKey = role as keyof typeof roleHashes;
+      
+      if (!roleHashes[roleKey]) {
+        throw new Error(`Role ${role} not found`);
+      }
+      
+      const hash = roleHashes[roleKey];
+      
+      // Use the service function instead of direct contract calls
+      return await SupplyChainService.grantRole(hash, userAddress);
+    } catch (error) {
+      console.error('Error in grantRole:', error);
+      throw error;
+    }
   }, []);
 
-  const revokeRole = useCallback(async (role: string, userAddress: Address) => {
-    console.warn('revokeRole is not yet implemented');
-    return {};
-  }, []);
+    const revokeRole = useCallback(async (role: string, userAddress: Address) => {
+    try {
+      const roleHashes = await import('@/lib/roleUtils').then(({ getRoleHashes }) => getRoleHashes());
+      const roleKey = role as keyof typeof roleHashes;
+      
+      if (!roleHashes[roleKey]) {
+        throw new Error(`Role ${role} not found`);
+      }
+      
+      const hash = roleHashes[roleKey];
+      
+      // Use the service function instead of direct contract calls
+      return await SupplyChainService.revokeRole(hash, userAddress);
+    } catch (error) {
+      console.error('Error in revokeRole:', error);
+      throw error;
+    }
+  }, [])
 
   const getNetbookBySerial = useCallback(async (serial: string) => {
     console.warn('getNetbookBySerial is not yet implemented');
@@ -76,8 +135,12 @@ export const useSupplyChainService = () => {
   }, []);
 
   const registerNetbooks = useCallback(async (serials: string[], batches: string[], specs: string[]) => {
-    console.warn('registerNetbooks is not yet implemented');
-    return {};
+    try {
+      return await SupplyChainService.registerNetbooks(serials, batches, specs);
+    } catch (error) {
+      console.error('Error in registerNetbooks:', error);
+      throw error;
+    }
   }, []);
 
   return {

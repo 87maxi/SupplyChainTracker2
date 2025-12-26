@@ -1,0 +1,19 @@
+---
+# Grunt configuration for building React app
+# This file tells Grunt how to build the React application
+
+# Main build task
+default:
+  - "build-react"
+
+# React build task
+build-react:
+  cmd: "cd amd/src/react-app && npm run build"
+
+# Copy built files to amd/build
+copy-built:
+  cmd: "cp -r amd/src/react-app/build/* amd/build/react-app/"
+
+# Clean build directory
+clean:
+  cmd: "rm -rf amd/build/react-app/*"

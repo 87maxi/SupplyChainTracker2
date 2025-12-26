@@ -2,6 +2,7 @@
 
 import { readContract, writeContract, waitForTransactionReceipt, getBalance } from '@wagmi/core';
 import { config } from '@/lib/wagmi/config';
+import { Address } from 'viem';
 
 // Import contract ABI and address
 import SupplyChainTrackerABI from '@/contracts/abi/SupplyChainTracker.json';
@@ -77,3 +78,133 @@ export const getRoleCounts = async () => {
 // Additional functions would go here but are omitted for brevity
 // to ensure the file saves completely. In a real implementation,
 // all the functions from the original file would be included.
+
+// Get netbook state by serial number
+export const getNetbookState = async (serial: string) => {
+  try {
+    const result = await readContract(config, {
+      address: contractAddress,
+      abi,
+      functionName: 'getNetbookState',
+      args: [serial]
+    });
+    return result;
+  } catch (error) {
+    console.error('Error getting netbook state:', error);
+    throw error;
+  }
+};
+
+// Get netbook report by serial number
+export const getNetbookReport = async (serial: string) => {
+  try {
+    const result = await readContract(config, {
+      address: contractAddress,
+      abi,
+      functionName: 'getNetbookReport',
+      args: [serial]
+    });
+    return result;
+  } catch (error) {
+    console.error('Error getting netbook report:', error);
+    throw error;
+  }
+};
+
+// Get all serial numbers
+export const getAllSerialNumbers = async () => {
+  try {
+    const result = await readContract(config, {
+      address: contractAddress,
+      abi,
+      functionName: 'getAllSerialNumbers',
+      args: []
+    });
+    return result as string[];
+  } catch (error) {
+    console.error('Error getting serial numbers:', error);
+    throw error;
+  }
+};
+
+// Get all members of a role
+export const getAllMembers = async (roleHash: string): Promise<string[]> => {
+  try {
+    const result = await readContract(config, {
+      address: contractAddress,
+      abi,
+      functionName: 'getAllMembers',
+      args: [roleHash]
+    });
+    return result as string[];
+  } catch (error) {
+    console.error('Error getting role members:', error);
+    throw error;
+  }
+};
+
+// Grant a role to a user
+export const grantRole = async (roleHash: string, userAddress: Address) => {
+  try {
+    const transactionHash = await writeContract(config, {
+      address: contractAddress,
+      abi,
+      functionName: 'grantRole',
+      args: [roleHash, userAddress]
+    });
+    
+    // Wait for transaction to be mined
+    const receipt = await waitForTransactionReceipt(config, {
+      hash: transactionHash
+    });
+    
+    return receipt;
+  } catch (error) {
+    console.error('Error granting role:', error);
+    throw error;
+  }
+};
+
+// Revoke a role from a user
+export const revokeRole = async (roleHash: string, userAddress: Address) => {
+  try {
+    const transactionHash = await writeContract(config, {
+      address: contractAddress,
+      abi,
+      functionName: 'revokeRole',
+      args: [roleHash, userAddress]
+    });
+    
+    // Wait for transaction to be mined
+    const receipt = await waitForTransactionReceipt(config, {
+      hash: transactionHash
+    });
+    
+    return receipt;
+  } catch (error) {
+    console.error('Error revoking role:', error);
+    throw error;
+  }
+};
+
+// Register multiple netbooks
+export const registerNetbooks = async (serials: string[], batches: string[], specs: string[]) => {
+  try {
+    const transactionHash = await writeContract(config, {
+      address: contractAddress,
+      abi,
+      functionName: 'registerNetbooks',
+      args: [serials, batches, specs]
+    });
+    
+    // Wait for transaction to be mined
+    const receipt = await waitForTransactionReceipt(config, {
+      hash: transactionHash
+    });
+    
+    return receipt;
+  } catch (error) {
+    console.error('Error registering netbooks:', error);
+    throw error;
+  }
+};

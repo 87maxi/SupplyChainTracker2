@@ -42,15 +42,15 @@ export default function TokensPage() {
         
         const netbooksData = await Promise.all(
           serials.map(async (serial) => {
-                    const state = await getNetbookState(serial);
-        const report = await getNetbookReport(serial);
-        
-        return { 
-          serialNumber: serial, 
-          currentState: state as number,
-          hwAuditor: report.hwAuditor,
-          swTechnician: report.swTechnician
-        };
+            const state = await getNetbookState(serial);
+            const report = await getNetbookReport(serial) as { hwAuditor: string; swTechnician: string };
+            
+            return { 
+              serialNumber: serial, 
+              currentState: state as number,
+              hwAuditor: report.hwAuditor,
+              swTechnician: report.swTechnician
+            };
           })
         );
         
