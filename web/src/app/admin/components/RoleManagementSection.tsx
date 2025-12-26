@@ -217,3 +217,11 @@ export const RoleManagementSection = () => {
                       </Button>
                     </TableCell>
                   </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={3} className="h-24 text-center">
+                    No hay miembros en este rol.
+                  </TableCell>
+                </TableRow>
+              )
