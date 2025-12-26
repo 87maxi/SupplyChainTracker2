@@ -2,7 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
-import { createConfig, http } from 'wagmi';
+import { createConfig, http, WagmiProvider } from 'wagmi';
 import { mainnet, polygon, bscTestnet } from 'wagmi/chains';
 import { useState } from 'react';
 import { Web3Provider } from '@/contexts/Web3Context';
