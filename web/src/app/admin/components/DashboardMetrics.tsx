@@ -1,7 +1,7 @@
 // web/src/app/admin/components/DashboardMetrics.tsx
 "use client";
 
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, Factory, Monitor, GraduationCap, Gavel, ShieldCheck } from 'lucide-react';
 import { AllRolesSummary } from '@/types/supply-chain-types';
 import { cn } from '@/lib/utils';
