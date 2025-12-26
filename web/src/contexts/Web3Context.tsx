@@ -1,4 +1,6 @@
 // web/src/contexts/Web3Context.tsx
+'use client';
+
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { Address } from 'viem';
