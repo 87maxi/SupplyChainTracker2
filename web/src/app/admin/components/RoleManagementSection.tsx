@@ -183,7 +183,7 @@ export const RoleManagementSection = () => {
           </div>
         </div>
 
-                  <div className="rounded-md border">
+          <div className="rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -228,3 +228,4 @@ export const RoleManagementSection = () => {
               </TableBody>
             </Table>
           </div>
+        </CardContent>
