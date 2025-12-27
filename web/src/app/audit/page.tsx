@@ -9,8 +9,11 @@ import { registerAuditReport } from '@/services/SupplyChainService';
 
 export default function HardwareAuditPage() {
   const { toast } = useToast();
+  const { auditHardware } = useSupplyChainService();
   const [ipfsHash, setIpfsHash] = useState<string | null>(null);
   const [isRegistering, setIsRegistering] = useState(false);
+  const [currentSerial, setCurrentSerial] = useState('');
+  const [auditPassed, setAuditPassed] = useState(true);
 
   // Manejador para cuando se completa la subida a IPFS
   const handleUploadComplete = (hash: string) => {
@@ -23,10 +26,10 @@ export default function HardwareAuditPage() {
 
   // Manejador para registrar el hash en la blockchain
   const handleRegisterOnChain = async () => {
-    if (!ipfsHash) {
+    if (!ipfsHash || !currentSerial) {
       toast({
         title: "Error",
-        description: "Primero debe subir el informe a IPFS",
+        description: "Primero debe completar todos los campos",
         variant: "destructive"
       });
       return;
@@ -36,13 +39,17 @@ export default function HardwareAuditPage() {
     
     try {
       // Registrar el hash en la blockchain
-      // Aquí el rol de auditor de hardware llamaría a la función auditHardware del contrato
-      await registerAuditReport(ipfsHash);
+      await auditHardware(currentSerial, auditPassed, ipfsHash);
       
       toast({
         title: "Registro completado",
-        description: "El hash del informe se ha registrado en la blockchain",
+        description: "El informe de auditoría se ha registrado en la blockchain",
       });
+      
+      // Reset form
+      setCurrentSerial('');
+      setAuditPassed(true);
+      setIpfsHash(null);
       
     } catch (error) {
       console.error('Error registering on blockchain:', error);
@@ -88,12 +95,26 @@ export default function HardwareAuditPage() {
           <CardHeader>
             <CardTitle>2. Registre en Blockchain</CardTitle>
             <CardDescription>
-              Una vez subido a IPFS, registre el hash en la blockchain
+              Complete los campos y registre en la blockchain
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {ipfsHash ? (
-              <div className="space-y-4">
+            <div className="space-y-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="serial" className="text-right">
+                  Serial
+                </Label>
+                <Input
+                  id="serial"
+                  value={currentSerial}
+                  onChange={(e) => setCurrentSerial(e.target.value)}
+                  className="col-span-3"
+                  placeholder="NB-001"
+                  required
+                />
+              </div>
+              
+              {ipfsHash ? (
                 <div className="p-4 bg-muted rounded-md">
                   <h3 className="font-medium mb-2">Hash IPFS</h3>
                   <p className="text-sm font-mono break-all">{ipfsHash}</p>
@@ -108,19 +129,20 @@ export default function HardwareAuditPage() {
                     </a>
                   </div>
                 </div>
-                <Button 
-                  onClick={handleRegisterOnChain}
-                  disabled={isRegistering}
-                  className="w-full"
-                >
-                  {isRegistering ? 'Registrando...' : 'Registrar en Blockchain'}
-                </Button>
-              </div>
-            ) : (
-              <div className="p-4 text-center text-muted-foreground">
-                <p>Primero complete y suba el informe a IPFS</p>
-              </div>
-            )}
+              ) : (
+                <div className="text-center text-muted-foreground">
+                  <p>Primero suba el informe a IPFS</p>
+                </div>
+              )}
+            
+              <Button 
+                onClick={handleRegisterOnChain}
+                disabled={isRegistering || !ipfsHash || !currentSerial}
+                className="w-full"
+              >
+                {isRegistering ? 'Registrando...' : 'Registrar en Blockchain'}
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -133,8 +155,8 @@ export default function HardwareAuditPage() {
           <ol className="list-decimal list-inside space-y-2 text-sm">
             <li><strong>Complete el formulario</strong>: Ingrese todos los detalles del dispositivo y sus hallazgos</li>
             <li><strong>Suba a IPFS</strong>: Los datos completos se almacenan de forma descentralizada</li>
-            <li><strong>Registre el hash en blockchain</strong>: Solo el identificador único (hash) se guarda en la blockchain</li>
-            <li><strong>Verificación</strong>: Cualquier parte puede verificar la integridad del informe comparando el hash</li>
+            <li><strong>Registre en blockchain</strong>: Complete los campos y registre en la blockchain</li>
+            <li><strong>Verificación</strong>: Cualquiera puede verificar la integridad del informe comparando el hash</li>
           </ol>
           <div className="mt-4 p-4 bg-muted rounded-md">
             <h4 className="font-medium mb-2">Ventajas de este enfoque:</h4>
