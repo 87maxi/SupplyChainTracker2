@@ -36,12 +36,6 @@ export function HardwareAuditForm({ isOpen, onOpenChange, onComplete, initialSer
     }
   }, [initialSerial]);
 
-  useEffect(() => {
-    if (initialSerial) {
-      setSerial(initialSerial);
-    }
-  }, [initialSerial]);
-
   const handleAudit = async () => {
     if (!serial || !reportHash) {
       toast({
