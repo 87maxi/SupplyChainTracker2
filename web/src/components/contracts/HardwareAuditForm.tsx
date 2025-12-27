@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useSupplyChainService } from '@/hooks/useSupplyChainService';
-import { FormUploader } from '@/components/ipfs/FormUploader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -104,11 +104,100 @@ export function HardwareAuditForm({ isOpen, onOpenChange, onComplete, initialSer
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <FormUploader 
-                onUploadComplete={handleUploadComplete}
-                formTitle="Formulario de Auditoría de Hardware"
-                formDescription="Complete los detalles de la inspección del dispositivo"
-              />
+              <div className="space-y-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="auditSerial" className="text-right">
+                    Serial
+                  </Label>
+                  <Input
+                    id="auditSerial"
+                    value={serial}
+                    onChange={(e) => setSerial(e.target.value)}
+                    className="col-span-3"
+                    placeholder="NB-001"
+                    required
+                  />
+                </div>
+                
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="deviceModel" className="text-right">
+                    Modelo
+                  </Label>
+                  <Input
+                    id="deviceModel"
+                    className="col-span-3"
+                    placeholder="Intel N100, 8GB RAM, 256GB SSD"
+                    required
+                  />
+                </div>
+                
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="auditDate" className="text-right">
+                    Fecha
+                  </Label>
+                  <Input
+                    id="auditDate"
+                    type="date"
+                    className="col-span-3"
+                    required
+                  />
+                </div>
+                
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="auditorName" className="text-right">
+                    Auditor
+                  </Label>
+                  <Input
+                    id="auditorName"
+                    className="col-span-3"
+                    placeholder="Nombre del auditor"
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Componentes Verificados</Label>
+                  <div className="space-y-2 pl-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="cpu" />
+                      <Label htmlFor="cpu">CPU</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="ram" />
+                      <Label htmlFor="ram">RAM</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="storage" />
+                      <Label htmlFor="storage">Almacenamiento</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="display" />
+                      <Label htmlFor="display">Pantalla</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="keyboard" />
+                      <Label htmlFor="keyboard">Teclado</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="ports" />
+                      <Label htmlFor="ports">Puertos</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="battery" />
+                      <Label htmlFor="battery">Batería</Label>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="observations">Observaciones</Label>
+                  <Textarea
+                    id="observations"
+                    className="min-h-20"
+                    placeholder="Observaciones adicionales sobre el estado del dispositivo"
+                  />
+                </div>
+              </div>
             </CardContent>
           </Card>
 
@@ -148,34 +237,13 @@ export function HardwareAuditForm({ isOpen, onOpenChange, onComplete, initialSer
                 </label>
               </div>
 
-              {ipfsHash ? (
-                <div className="p-4 bg-muted rounded-md">
-                  <h3 className="font-medium mb-2">Hash IPFS</h3>
-                  <p className="text-sm font-mono break-all">{ipfsHash}</p>
-                  <div className="mt-2">
-                    <a 
-                      href={`https://ipfs.io/ipfs/${ipfsHash}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline text-sm"
-                    >
-                      Ver informe completo
-                    </a>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center text-muted-foreground">
-                  <p>Primero suba el informe a IPFS</p>
-                </div>
-              )}
-            
-              <Button 
-                onClick={handleAudit}
-                disabled={loading || !ipfsHash || !serial}
-                className="w-full"
-              >
-                {loading ? 'Registrando...' : 'Registrar en Blockchain'}
-              </Button>
+                <Button 
+                  onClick={handleAudit}
+                  disabled={loading || !serial}
+                  className="w-full"
+                >
+                  {loading ? 'Registrando...' : 'Registrar en Blockchain'}
+                </Button>
             </CardContent>
           </Card>
         </div>
