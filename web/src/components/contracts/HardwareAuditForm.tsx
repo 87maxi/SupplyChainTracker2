@@ -29,6 +29,13 @@ export function HardwareAuditForm({ isOpen, onOpenChange, onComplete, initialSer
   const { toast } = useToast();
   const { auditHardware } = useSupplyChainService();
 
+  // Añadir efecto para actualizar el serial cuando cambie initialSerial
+  useEffect(() => {
+    if (initialSerial) {
+      setSerial(initialSerial);
+    }
+  }, [initialSerial]);
+
   useEffect(() => {
     if (initialSerial) {
       setSerial(initialSerial);
