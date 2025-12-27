@@ -86,7 +86,11 @@ function TrackingCard({ netbook, onAction }: { netbook: Netbook, onAction?: (act
               <span className="font-bold tracking-tight">{netbook.serialNumber}</span>
             </div>
             <div className="text-xs text-muted-foreground">
-              Última actualización: {new Date(Number(netbook.distributionTimestamp) * 1000).toLocaleDateString()}
+              {netbook.currentState === 'FABRICADA' ? (
+                <>Fecha de registro: {new Date(netbook.setTimestamp).toLocaleDateString()}</>
+              ) : (
+                <>Última actualización: {new Date(Number(netbook.distributionTimestamp) * 1000).toLocaleDateString()}</>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -161,12 +165,26 @@ export default function ManagerDashboard() {
   const [showValidationForm, setShowValidationForm] = useState(false);
   const [showAssignmentForm, setShowAssignmentForm] = useState(false);
 
-  const handleAction = (action: string, serial: string) => {
+  // Enhanced action handler with debugging
+  const handleAction = useCallback((action: string, serial: string) => {
+    console.log('Handling action:', { action, serial });
     setSelectedSerial(serial);
-    if (action === 'audit') setShowAuditForm(true);
-    if (action === 'validate') setShowValidationForm(true);
-    if (action === 'assign') setShowAssignmentForm(true);
-  };
+    
+    switch (action) {
+      case 'audit':
+        setShowAuditForm(true);
+        console.log('Audit form state set to:', true);
+        break;
+      case 'validate':
+        setShowValidationForm(true);
+        console.log('Validation form state set to:', true);
+        break;
+      case 'assign':
+        setShowAssignmentForm(true);
+        console.log('Assignment form state set to:', true);
+        break;
+    }
+  }, []);
 
   const fetchDashboardData = useCallback(async () => {
     if (!isConnected) {
@@ -190,7 +208,9 @@ export default function ManagerDashboard() {
               return {
                 ...report,
                 currentState: state,
-                serialNumber: serial
+                serialNumber: serial,
+                // Añadir timestamp de registro si no existe en el reporte
+                setTimestamp: report.setTimestamp || 0
               };
             }
             return null;
@@ -221,22 +241,8 @@ export default function ManagerDashboard() {
     fetchDashboardData();
   }, [fetchDashboardData]);
 
-  const [initialized, setInitialized] = useState(false);
-
-  useEffect(() => {
-    setInitialized(true);
-  }, []);
-
-  if (!initialized) {
-    return (
-      <div className="container mx-auto px-4 py-12">
-        <div className="flex flex-col items-center justify-center py-24 space-y-4">
-          <Loader2 className="h-12 w-12 text-primary animate-spin" />
-          <p className="text-lg text-muted-foreground animate-pulse">Iniciando aplicación...</p>
-        </div>
-      </div>
-    );
-  }
+  // Remove the initialized state since it's not needed
+  // The component should render based on isConnected and loading states only
 
   if (!isConnected) {
     return <TempDashboard onConnect={connectWallet} />;
@@ -330,25 +336,49 @@ export default function ManagerDashboard() {
         </>
       )}
 
-      {/* Forms */}
-      <HardwareAuditForm
-        isOpen={showAuditForm}
-        onOpenChange={setShowAuditForm}
-        onComplete={fetchDashboardData}
-        initialSerial={selectedSerial}
-      />
-      <SoftwareValidationForm
-        isOpen={showValidationForm}
-        onOpenChange={setShowValidationForm}
-        onComplete={fetchDashboardData}
-        initialSerial={selectedSerial}
-      />
-      <StudentAssignmentForm
-        isOpen={showAssignmentForm}
-        onOpenChange={setShowAssignmentForm}
-        onComplete={fetchDashboardData}
-        initialSerial={selectedSerial}
-      />
+        {/* Forms - Conditional rendering to ensure proper state management */}
+  {showAuditForm && (
+    <HardwareAuditForm
+      isOpen={showAuditForm}
+      onOpenChange={setShowAuditForm}
+      onComplete={() => {
+        console.log('Audit form completed, refetching data');
+        fetchDashboardData();
+        // Reset form state
+        setSelectedSerial('');
+        setShowAuditForm(false);
+      }}
+      initialSerial={selectedSerial}
+    />
+  )}
+  {showValidationForm && (
+    <SoftwareValidationForm
+      isOpen={showValidationForm}
+      onOpenChange={setShowValidationForm}
+      onComplete={() => {
+        console.log('Validation form completed, refetching data');
+        fetchDashboardData();
+        // Reset form state
+        setSelectedSerial('');
+        setShowValidationForm(false);
+      }}
+      initialSerial={selectedSerial}
+    />
+  )}
+  {showAssignmentForm && (
+    <StudentAssignmentForm
+      isOpen={showAssignmentForm}
+      onOpenChange={setShowAssignmentForm}
+      onComplete={() => {
+        console.log('Assignment form completed, refetching data');
+        fetchDashboardData();
+        // Reset form state
+        setSelectedSerial('');
+        setShowAssignmentForm(false);
+      }}
+      initialSerial={selectedSerial}
+    />
+  )}
     </div>
   );
 }

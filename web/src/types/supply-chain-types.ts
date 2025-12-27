@@ -18,6 +18,7 @@ export interface Netbook {
   studentIdHash: string;
   distributionTimestamp: string;
   currentState: NetbookState;
+  setTimestamp?: number; // Add setTimestamp as optional property
 }
 
 // Roles del contrato
