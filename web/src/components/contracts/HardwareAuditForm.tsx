@@ -125,69 +125,53 @@ export function HardwareAuditForm({
                 Complete el informe de auditoría y regístrelo en la blockchain
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-6 py-4">
+            <div className="grid gap-2 py-2">
               <Card>
                 <CardHeader>
-                  <CardTitle>1. Complete el Informe</CardTitle>
+                  <CardTitle>Complete el Informe de Auditoría</CardTitle>
                   <CardDescription>
-                    Ingrese los datos del dispositivo y sus hallazgos
+                    Complete los campos para registrar la auditoría de hardware
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="auditSerial" className="text-right">
-                        Serial
-                      </Label>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="auditSerial">Serial</Label>
                       <Input
                         id="auditSerial"
                         value={serial}
                         onChange={(e) => setSerial(e.target.value)}
-                        className="col-span-3"
                         placeholder="NB-001"
                         required
                       />
                     </div>
 
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="deviceModel" className="text-right">
-                        Modelo
-                      </Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="deviceModel">Modelo</Label>
                       <Input
                         id="deviceModel"
-                        className="col-span-3"
                         placeholder="Intel N100, 8GB RAM, 256GB SSD"
                         required
                       />
                     </div>
 
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="auditDate" className="text-right">
-                        Fecha
-                      </Label>
-                      <Input
-                        id="auditDate"
-                        type="date"
-                        className="col-span-3"
-                        required
-                      />
+                    <div className="space-y-2">
+                      <Label htmlFor="auditDate">Fecha</Label>
+                      <Input id="auditDate" type="date" required />
                     </div>
 
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="auditorName" className="text-right">
-                        Auditor
-                      </Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="auditorName">Auditor</Label>
                       <Input
                         id="auditorName"
-                        className="col-span-3"
                         placeholder="Nombre del auditor"
                         required
                       />
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-2 md:col-span-2">
                       <Label>Componentes Verificados</Label>
-                      <div className="space-y-2 pl-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <div className="flex items-center space-x-2">
                           <Checkbox id="cpu" />
                           <Label htmlFor="cpu">CPU</Label>
@@ -219,12 +203,11 @@ export function HardwareAuditForm({
                       </div>
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-2 md:col-span-2">
                       <Label htmlFor="observations">Observaciones</Label>
                       <Textarea
                         id="observations"
-                        className="min-h-20"
-                        placeholder="                    Observaciones adicionales sobre el estado del dispositivo"
+                        placeholder="Observaciones adicionales sobre el estado del dispositivo"
                       />
                     </div>
                   </div>
