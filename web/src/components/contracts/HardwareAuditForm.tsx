@@ -99,18 +99,18 @@ export function HardwareAuditForm({ isOpen, onOpenChange, onComplete, initialSer
     return "sm:max-w-[900px] h-[90vh] max-h-[90vh] flex flex-col"; // Default
   };
 
-  return (
+      return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[900px] h-[90vh] max-h-[90vh] flex flex-col">
         <div className="flex-1 overflow-y-auto">
-          
-          <DialogHeader>
-            <DialogTitle>Auditoría de Hardware</DialogTitle>
-            <DialogDescription>
-              Complete el informe de auditoría y regístrelo en la blockchain
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-6 py-4">
+          <div className="container mx-auto px-4 py-6">
+            <DialogHeader>
+              <DialogTitle>Auditoría de Hardware</DialogTitle>
+              <DialogDescription>
+                Complete el informe de auditoría y regístrelo en la blockchain
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-6 py-4">
           <Card>
             <CardHeader>
               <CardTitle>1. Complete el Informe</CardTitle>
