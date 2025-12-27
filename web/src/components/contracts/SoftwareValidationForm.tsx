@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { 
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -12,20 +12,28 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { SupplyChainContract } from '@/lib/contracts/SupplyChainContract';
+import { useSupplyChainService } from '@/hooks/useSupplyChainService';
 
 interface SoftwareValidationFormProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onComplete: () => void;
+  initialSerial?: string;
 }
 
-export function SoftwareValidationForm({ isOpen, onOpenChange, onComplete }: SoftwareValidationFormProps) {
-  const [serial, setSerial] = useState('');
+export function SoftwareValidationForm({ isOpen, onOpenChange, onComplete, initialSerial }: SoftwareValidationFormProps) {
+  const [serial, setSerial] = useState(initialSerial || '');
   const [version, setVersion] = useState('');
   const [passed, setPassed] = useState(true);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { validateSoftware } = useSupplyChainService();
+
+  useEffect(() => {
+    if (initialSerial) {
+      setSerial(initialSerial);
+    }
+  }, [initialSerial]);
 
   const handleValidate = async () => {
     if (!serial || !version) {
@@ -39,20 +47,19 @@ export function SoftwareValidationForm({ isOpen, onOpenChange, onComplete }: Sof
 
     try {
       setLoading(true);
-      
-      const tx = await SupplyChainContract.validateSoftware(serial, version, passed);
-      await tx.wait();
-      
+
+      await validateSoftware(serial, version, passed);
+
       toast({
         title: "Éxito",
         description: `Validación de software ${passed ? 'aprobada' : 'rechazada'} para netbook ${serial}`,
       });
-      
+
       // Reset form
-      setSerial('');
+      if (!initialSerial) setSerial('');
       setVersion('');
       setPassed(true);
-      
+
       onComplete();
       onOpenChange(false);
     } catch (error: any) {
@@ -102,10 +109,10 @@ export function SoftwareValidationForm({ isOpen, onOpenChange, onComplete }: Sof
             />
           </div>
           <div className="flex items-center space-x-2">
-            <Checkbox 
-              id="passed" 
-              checked={passed} 
-              onCheckedChange={(checked: boolean) => setPassed(checked)} 
+            <Checkbox
+              id="passed"
+              checked={passed}
+              onCheckedChange={(checked: boolean) => setPassed(checked)}
             />
             <label
               htmlFor="passed"

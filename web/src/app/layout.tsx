@@ -3,6 +3,7 @@ import '@rainbow-me/rainbowkit/styles.css';
 import { Web3Providers } from '@/components/Web3Providers';
 import { Header } from '@/components/layout/Header';
 import { Toaster } from '@/components/ui/toaster';
+import { NotificationContainer } from '@/components/ui/NotificationContainer';
 import { RequireWallet } from '@/components/auth/RequireWallet';
 
 export const metadata = {
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
               </RequireWallet>
             </main>
             <Toaster />
+            <NotificationContainer />
           </div>
         </Web3Providers>
       </body>

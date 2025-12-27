@@ -1,6 +1,7 @@
 // web/src/hooks/use-notifications.ts
+"use client";
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 export interface Notification {
   id: string;
@@ -26,6 +27,15 @@ export interface UseNotificationsReturn {
   notify: NotificationMethods;
 }
 
+// Global state for notifications
+let memoryNotifications: Notification[] = [];
+const listeners = new Set<(notifications: Notification[]) => void>();
+const timeoutRefs: Record<string, NodeJS.Timeout> = {};
+
+const emit = () => {
+  listeners.forEach((listener) => listener([...memoryNotifications]));
+};
+
 // Duración por defecto para cada tipo de notificación
 const DEFAULT_DURATIONS = {
   success: 5000,
@@ -35,8 +45,26 @@ const DEFAULT_DURATIONS = {
 };
 
 export const useNotifications = (): UseNotificationsReturn => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const timeoutRefs = useRef<Record<string, NodeJS.Timeout>>({});
+  const [notifications, setNotifications] = useState<Notification[]>(memoryNotifications);
+
+  useEffect(() => {
+    listeners.add(setNotifications);
+    return () => {
+      listeners.delete(setNotifications);
+    };
+  }, []);
+
+  const removeNotification = useCallback((id: string) => {
+    memoryNotifications = memoryNotifications.filter(notif => notif.id !== id);
+
+    // Limpiar timeout si existe
+    if (timeoutRefs[id]) {
+      clearTimeout(timeoutRefs[id]);
+      delete timeoutRefs[id];
+    }
+
+    emit();
+  }, []);
 
   const addNotification = useCallback((
     notification: Omit<Notification, 'id' | 'timestamp'>
@@ -51,48 +79,41 @@ export const useNotifications = (): UseNotificationsReturn => {
       timestamp
     };
 
-    setNotifications(prev => [...prev, newNotification]);
+    memoryNotifications = [...memoryNotifications, newNotification];
+    emit();
 
     // Auto-remover notificación después de la duración
     if (duration > 0) {
-      timeoutRefs.current[id] = setTimeout(() => {
+      timeoutRefs[id] = setTimeout(() => {
         removeNotification(id);
       }, duration);
     }
 
     return id;
-  }, []);
-
-  const removeNotification = useCallback((id: string) => {
-    setNotifications(prev => prev.filter(notif => notif.id !== id));
-    
-    // Limpiar timeout si existe
-    if (timeoutRefs.current[id]) {
-      clearTimeout(timeoutRefs.current[id]);
-      delete timeoutRefs.current[id];
-    }
-  }, []);
+  }, [removeNotification]);
 
   const clearNotifications = useCallback(() => {
-    setNotifications([]);
-    
+    memoryNotifications = [];
+
     // Limpiar todos los timeouts
-    Object.values(timeoutRefs.current).forEach(clearTimeout);
-    timeoutRefs.current = {};
+    Object.values(timeoutRefs).forEach(clearTimeout);
+    Object.keys(timeoutRefs).forEach(key => delete timeoutRefs[key]);
+
+    emit();
   }, []);
 
   // Helper functions para tipos específicos
   const notify = {
-    success: (title: string, message: string, duration?: number) => 
+    success: (title: string, message: string, duration?: number) =>
       addNotification({ type: 'success', title, message, duration }),
-    
-    error: (title: string, message: string, duration?: number) => 
+
+    error: (title: string, message: string, duration?: number) =>
       addNotification({ type: 'error', title, message, duration }),
-    
-    warning: (title: string, message: string, duration?: number) => 
+
+    warning: (title: string, message: string, duration?: number) =>
       addNotification({ type: 'warning', title, message, duration }),
-    
-    info: (title: string, message: string, duration?: number) => 
+
+    info: (title: string, message: string, duration?: number) =>
       addNotification({ type: 'info', title, message, duration })
   };
 

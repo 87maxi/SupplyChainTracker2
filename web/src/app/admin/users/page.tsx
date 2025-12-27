@@ -15,7 +15,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Loader2, ShieldAlert, UserPlus, UserMinus, Users, ArrowLeft, ClipboardCopy } from 'lucide-react';
-import { ContractRoles } from '@/types/supply-chain-types';
+import { ContractRoles } from '@/types/contract';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -162,10 +162,10 @@ export default function AdminUsersPage() {
   const onGrantRoleSubmit: SubmitHandler<RoleManagementInputs> = async (data) => {
     setIsSubmittingGrant(true);
     try {
-      const receipt = await grantRole(data.role, data.userAddress as Address);
+      const result = await grantRole(data.role, data.userAddress as Address);
       toast({
         title: "Rol Otorgado",
-        description: `Se otorgó el rol ${data.role} a ${data.userAddress}. Tx: ${receipt?.transactionHash}`,
+        description: `Se otorgó el rol ${data.role} a ${data.userAddress}.${result.hash ? ' Tx: ' + result.hash : ''}`,
       });
       form.reset({ userAddress: '', role: 'FABRICANTE_ROLE' });
       await fetchUsersAndRoles(); // Refrescar la lista de usuarios
@@ -184,10 +184,10 @@ export default function AdminUsersPage() {
   const onRevokeRoleSubmit: SubmitHandler<RoleManagementInputs> = async (data) => {
     setIsSubmittingRevoke(true);
     try {
-      const receipt = await revokeRole(data.role, data.userAddress as Address);
+      const result = await revokeRole(data.role, data.userAddress as Address);
       toast({
         title: "Rol Revocado",
-        description: `Se revocó el rol ${data.role} a ${data.userAddress}. Tx: ${receipt?.transactionHash}`,
+        description: `Se revocó el rol ${data.role} a ${data.userAddress}.${result.hash ? ' Tx: ' + result.hash : ''}`,
       });
       form.reset({ userAddress: '', role: 'FABRICANTE_ROLE' });
       await fetchUsersAndRoles(); // Refrescar la lista de usuarios

@@ -4,7 +4,7 @@ import { useCallback, useState } from 'react';
 import { RoleService } from '@/services/contracts/role.service';
 import { useToast } from '@/hooks/use-toast';
 import { ActivityLogger } from '@/lib/activity-logger';
-import { ContractRoles } from '@/types/supply-chain-types';
+import { ContractRoles } from '@/types/contract';
 import { Address } from 'viem';
 
 // Instancia única del servicio (singleton)

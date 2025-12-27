@@ -1,6 +1,6 @@
 // web/src/lib/role-validation.ts
 
-import { ContractRoles } from '@/types/supply-chain-types';
+import { ContractRoles } from '@/types/contract';
 
 // Permisos específicos para cada rol
 export const ROLE_PERMISSIONS: Record<ContractRoles, string[]> = {

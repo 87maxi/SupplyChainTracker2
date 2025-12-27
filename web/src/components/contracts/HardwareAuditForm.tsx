@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { 
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -12,20 +12,28 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { SupplyChainContract } from '@/lib/contracts/SupplyChainContract';
+import { useSupplyChainService } from '@/hooks/useSupplyChainService';
 
 interface HardwareAuditFormProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onComplete: () => void;
+  initialSerial?: string;
 }
 
-export function HardwareAuditForm({ isOpen, onOpenChange, onComplete }: HardwareAuditFormProps) {
-  const [serial, setSerial] = useState('');
+export function HardwareAuditForm({ isOpen, onOpenChange, onComplete, initialSerial }: HardwareAuditFormProps) {
+  const [serial, setSerial] = useState(initialSerial || '');
   const [passed, setPassed] = useState(true);
   const [reportHash, setReportHash] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { auditHardware } = useSupplyChainService();
+
+  useEffect(() => {
+    if (initialSerial) {
+      setSerial(initialSerial);
+    }
+  }, [initialSerial]);
 
   const handleAudit = async () => {
     if (!serial || !reportHash) {
@@ -39,20 +47,19 @@ export function HardwareAuditForm({ isOpen, onOpenChange, onComplete }: Hardware
 
     try {
       setLoading(true);
-      
-      const tx = await SupplyChainContract.auditHardware(serial, passed, reportHash);
-      await tx.wait();
-      
+
+      await auditHardware(serial, passed, reportHash);
+
       toast({
         title: "Éxito",
         description: `Auditoría de hardware ${passed ? 'aprobada' : 'rechazada'} para netbook ${serial}`,
       });
-      
+
       // Reset form
-      setSerial('');
+      if (!initialSerial) setSerial('');
       setPassed(true);
       setReportHash('');
-      
+
       onComplete();
       onOpenChange(false);
     } catch (error: any) {
@@ -90,10 +97,10 @@ export function HardwareAuditForm({ isOpen, onOpenChange, onComplete }: Hardware
             />
           </div>
           <div className="flex items-center space-x-2">
-            <Checkbox 
-              id="passed" 
-              checked={passed} 
-              onCheckedChange={(checked: boolean) => setPassed(checked)} 
+            <Checkbox
+              id="passed"
+              checked={passed}
+              onCheckedChange={(checked: boolean) => setPassed(checked)}
             />
             <label
               htmlFor="passed"

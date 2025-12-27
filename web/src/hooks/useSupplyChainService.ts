@@ -1,40 +1,79 @@
 // web/src/hooks/useSupplyChainService.ts
 import { useCallback } from 'react';
 import * as SupplyChainService from '@/services/SupplyChainService';
-import { useWeb3 } from '@/contexts/Web3Context';
+import { useAccount } from 'wagmi';
 import { Address } from 'viem';
-import { ContractRoles, AllRolesSummary } from '@/types/supply-chain-types';
+import { ContractRoles, AllRolesSummary } from '@/types/contract';
 
 export const useSupplyChainService = () => {
-  const { address } = useWeb3();
+  const { address } = useAccount();
 
+  // Role hash mapping utility
+  const getRoleHashForName = useCallback(async (role: string): Promise<string> => {
+    // If it's already a hash, just return it
+    if (role.startsWith('0x') && role.length === 66) {
+      return role;
+    }
+
+    try {
+      // Import RoleMap type for type safety
+      type RoleMap = import('@/lib/roleUtils').RoleMap;
+      const roleHashes: RoleMap = await import('@/lib/roleUtils').then(({ getRoleHashes }) => getRoleHashes());
+
+      // Normalize input: remove _ROLE suffix and uppercase
+      const normalizedInput = role.toUpperCase().replace('_ROLE', '');
+
+      // Find matching key in roleHashes (which are like FABRICANTE, ADMIN, etc.)
+      const matchedKey = Object.keys(roleHashes).find(key => {
+        const normalizedKey = key.toUpperCase().replace('_ROLE', '');
+        return normalizedKey === normalizedInput;
+      }) as keyof RoleMap | undefined;
+
+      // Special case for English aliases if needed, or handle them via a small map if strictly required.
+      // For now, dynamic matching covers FABRICANTE -> FABRICANTE, FABRICANTE_ROLE -> FABRICANTE.
+
+      if (!matchedKey) {
+        // Fallback for English aliases if they are being used in the UI
+        const aliases: Record<string, string> = {
+          'MANUFACTURER': 'FABRICANTE',
+          'HARDWARE_AUDITOR': 'AUDITOR_HW',
+          'SOFTWARE_TECHNICIAN': 'TECNICO_SW',
+          'SCHOOL': 'ESCUELA',
+          'DEFAULT_ADMIN': 'ADMIN',
+          'SUPER_ADMIN': 'ADMIN'
+        };
+        const aliasKey = aliases[normalizedInput];
+        if (aliasKey && (aliasKey in roleHashes)) {
+          const roleHash = roleHashes[aliasKey as keyof RoleMap];
+          return roleHash;
+        }
+
+        console.error('❌ Role mapping failed for:', role);
+        throw new Error(`Role "${role}" not found in role hashes.`);
+      }
+
+      const roleHash = roleHashes[matchedKey];
+      if (!roleHash) {
+        throw new Error(`Role hash is empty for key: ${matchedKey}`);
+      }
+
+      return roleHash;
+    } catch (error) {
+      console.error('💥 Error getting role hash:', error);
+      throw error;
+    }
+  }, []);
+
+  // Read operations
   const hasRole = useCallback(async (role: string, userAddress: Address): Promise<boolean> => {
     try {
-      const roleHashes = await import('@/lib/roleUtils').then(({ getRoleHashes }) => getRoleHashes());
-
-      // Mapeo de nombres de rol a keys de roleHashes
-      const roleKeyMap: Record<string, keyof typeof roleHashes> = {
-        'FABRICANTE': 'FABRICANTE',
-        'FABRICANTE_ROLE': 'FABRICANTE',
-        'AUDITOR_HW': 'AUDITOR_HW',
-        'AUDITOR_HW_ROLE': 'AUDITOR_HW',
-        'TECNICO_SW': 'TECNICO_SW',
-        'TECNICO_SW_ROLE': 'TECNICO_SW',
-        'ESCUELA': 'ESCUELA',
-        'ESCUELA_ROLE': 'ESCUELA',
-        'ADMIN': 'ADMIN',
-        'DEFAULT_ADMIN_ROLE': 'ADMIN'
-      };
-
-      const roleKey = roleKeyMap[role] || role as keyof typeof roleHashes;
-      const roleHash = roleHashes[roleKey] || role;
-
+      const roleHash = await getRoleHashForName(role);
       return await SupplyChainService.hasRole(roleHash, userAddress);
     } catch (error) {
       console.error('Error in hasRole:', error);
       return false;
     }
-  }, []);
+  }, [getRoleHashForName]);
 
   const getRoleCounts = useCallback(async () => {
     try {
@@ -54,145 +93,144 @@ export const useSupplyChainService = () => {
     }
   }, []);
 
-  // Implementation of role management functions
-  const getAllRolesSummary = useCallback(async () => {
+  const getRoleMembers = useCallback(async (role: string) => {
     try {
+      const roleHash = await getRoleHashForName(role);
+      const members = await SupplyChainService.getAllMembers(roleHash);
+      return { role, members, count: members.length };
+    } catch (error) {
+      console.error('Error in getRoleMembers:', error);
+      return { role, members: [], count: 0 };
+    }
+  }, [getRoleHashForName]);
+
+  const getAllRolesSummary = useCallback(async (forceRefresh = false): Promise<AllRolesSummary | null> => {
+    try {
+      const CACHE_KEY = 'supply_chain_roles_summary';
+      const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+      // 1. Try to load from localStorage first
+      if (typeof window !== 'undefined' && !forceRefresh) {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+          try {
+            const { data, timestamp } = JSON.parse(cached);
+            if (Date.now() - timestamp < CACHE_DURATION) {
+              return data as AllRolesSummary;
+            }
+          } catch (e) {
+            // Ignore parse errors
+          }
+        }
+      }
+
+      // 2. Fetch fresh data
       const roleHashes = await import('@/lib/roleUtils').then(({ getRoleHashes }) => getRoleHashes());
 
-      const roleEntries = Object.entries(roleHashes);
+      // Map roleUtils keys (FABRICANTE) to ContractRoles (FABRICANTE_ROLE)
+      const roleMapping: Record<keyof typeof roleHashes, ContractRoles> = {
+        FABRICANTE: 'FABRICANTE_ROLE',
+        AUDITOR_HW: 'AUDITOR_HW_ROLE',
+        TECNICO_SW: 'TECNICO_SW_ROLE',
+        ESCUELA: 'ESCUELA_ROLE',
+        ADMIN: 'DEFAULT_ADMIN_ROLE'
+      };
 
-      // Fetch members for each role concurrently
+      const roleEntries = Object.entries(roleHashes) as [keyof typeof roleHashes, string][];
+
       const roleResults = await Promise.all(
-        roleEntries.map(async ([roleName, roleHash]) => {
+        roleEntries.map(async ([key, hash]) => {
           try {
-            // Use the service function instead of direct contract calls
-            const members = await SupplyChainService.getAllMembers(roleHash);
+            const members = await SupplyChainService.getAllMembers(hash, forceRefresh);
+            const contractRoleName = roleMapping[key];
 
             return [
-              roleName as ContractRoles,
+              contractRoleName,
               {
-                name: roleName,
+                name: contractRoleName, // Use the official role name
                 count: members.length,
                 members
               }
-            ];
+            ] as const;
           } catch (error) {
-            console.error(`Error fetching members for role ${roleName}:`, error);
-            return [roleName as ContractRoles, { name: roleName, count: 0, members: [] }];
+            console.error(`Error fetching members for ${key}:`, error);
+            return [roleMapping[key], { name: roleMapping[key], count: 0, members: [] }] as const;
           }
         })
       );
 
-      return Object.fromEntries(roleResults) as AllRolesSummary;
+      const summary = Object.fromEntries(roleResults) as AllRolesSummary;
+
+      // 3. Persist to localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(CACHE_KEY, JSON.stringify({
+          data: summary,
+          timestamp: Date.now()
+        }));
+      }
+
+      return summary;
     } catch (error) {
       console.error('Error in getAllRolesSummary:', error);
-      return {};
+      return null;
     }
   }, []);
 
-  const grantRole = useCallback(async (role: string, userAddress: Address) => {
+  // Write operations
+  const grantRole = useCallback(async (role: string, userAddress: Address): Promise<{ success: boolean; hash?: `0x${string}`; error?: string }> => {
     try {
-      const roleHashes = await import('@/lib/roleUtils').then(({ getRoleHashes }) => getRoleHashes());
-
-      // Mapeo de nombres de rol a keys de roleHashes
-      const roleKeyMap: Record<string, keyof typeof roleHashes> = {
-        'FABRICANTE': 'FABRICANTE',
-        'FABRICANTE_ROLE': 'FABRICANTE',
-        'AUDITOR_HW': 'AUDITOR_HW',
-        'AUDITOR_HW_ROLE': 'AUDITOR_HW',
-        'TECNICO_SW': 'TECNICO_SW',
-        'TECNICO_SW_ROLE': 'TECNICO_SW',
-        'ESCUELA': 'ESCUELA',
-        'ESCUELA_ROLE': 'ESCUELA',
-        'ADMIN': 'ADMIN'
-      };
-
-      const roleKey = roleKeyMap[role];
-      if (!roleKey || !roleHashes[roleKey]) {
-        throw new Error(`Role ${role} not found in role hashes`);
-      }
-
-      const hash = roleHashes[roleKey];
-      console.log(`Granting role ${role} (hash: ${hash}) to ${userAddress}`);
-
-      // Use the service function instead of direct contract calls
-      return await SupplyChainService.grantRole(hash, userAddress);
+      console.log(`🔄 Attempting to grant role: "${role}" to ${userAddress}`);
+      const roleHash = await getRoleHashForName(role);
+      // Returns transaction hash (string)
+      const result = await SupplyChainService.grantRole(roleHash, userAddress);
+      return result;
     } catch (error) {
-      console.error('Error in grantRole:', error);
+      console.error('❌ Error in grantRole:', error);
       throw error;
     }
+  }, [getRoleHashForName]);
+
+  const revokeRole = useCallback(async (role: string, userAddress: Address): Promise<{ success: boolean; hash?: `0x${string}`; error?: string }> => {
+    try {
+      console.log(`🔄 Attempting to revoke role: "${role}" from ${userAddress}`);
+      const roleHash = await getRoleHashForName(role);
+      // Returns transaction hash (string)
+      const result = await SupplyChainService.revokeRole(roleHash, userAddress);
+      return result;
+    } catch (error) {
+      console.error('❌ Error in revokeRole:', error);
+      throw error;
+    }
+  }, [getRoleHashForName]);
+
+  const registerNetbooks = useCallback(async (serials: string[], batches: string[], specs: string[]) => {
+    return await SupplyChainService.registerNetbooks(serials, batches, specs);
   }, []);
-
-  const revokeRole = useCallback(async (role: string, userAddress: Address) => {
-    try {
-      const roleHashes = await import('@/lib/roleUtils').then(({ getRoleHashes }) => getRoleHashes());
-
-      // Mapeo de nombres de rol a keys de roleHashes
-      const roleKeyMap: Record<string, keyof typeof roleHashes> = {
-        'FABRICANTE': 'FABRICANTE',
-        'FABRICANTE_ROLE': 'FABRICANTE',
-        'AUDITOR_HW': 'AUDITOR_HW',
-        'AUDITOR_HW_ROLE': 'AUDITOR_HW',
-        'TECNICO_SW': 'TECNICO_SW',
-        'TECNICO_SW_ROLE': 'TECNICO_SW',
-        'ESCUELA': 'ESCUELA',
-        'ESCUELA_ROLE': 'ESCUELA',
-        'ADMIN': 'ADMIN'
-      };
-
-      const roleKey = roleKeyMap[role];
-      if (!roleKey || !roleHashes[roleKey]) {
-        throw new Error(`Role ${role} not found in role hashes`);
-      }
-
-      const hash = roleHashes[roleKey];
-      console.log(`Revoking role ${role} (hash: ${hash}) from ${userAddress}`);
-
-      // Use the service function instead of direct contract calls
-      return await SupplyChainService.revokeRole(hash, userAddress);
-    } catch (error) {
-      console.error('Error in revokeRole:', error);
-      throw error;
-    }
-  }, [])
 
   const getNetbookBySerial = useCallback(async (serial: string) => {
-    console.warn('getNetbookBySerial is not yet implemented');
-    return {};
+    return await SupplyChainService.getNetbookReport(serial);
   }, []);
 
   const auditHardware = useCallback(async (serial: string, passed: boolean, reportHash: string) => {
-    console.warn('auditHardware is not yet implemented');
-    return {};
+    return await SupplyChainService.auditHardware(serial, passed, reportHash);
   }, []);
 
   const validateSoftware = useCallback(async (serial: string, osVersion: string, passed: boolean) => {
-    console.warn('validateSoftware is not yet implemented');
-    return {};
+    return await SupplyChainService.validateSoftware(serial, osVersion, passed);
   }, []);
 
   const assignToStudent = useCallback(async (serial: string, schoolHash: string, studentHash: string) => {
-    console.warn('assignToStudent is not yet implemented');
-    return {};
+    return await SupplyChainService.assignToStudent(serial, schoolHash, studentHash);
   }, []);
 
   const getAllSerialNumbers = useCallback(async () => {
-    console.warn('getAllSerialNumbers is not yet implemented');
-    return [];
-  }, []);
-
-  const registerNetbooks = useCallback(async (serials: string[], batches: string[], specs: string[]) => {
-    try {
-      return await SupplyChainService.registerNetbooks(serials, batches, specs);
-    } catch (error) {
-      console.error('Error in registerNetbooks:', error);
-      throw error;
-    }
+    return await SupplyChainService.getAllSerialNumbers();
   }, []);
 
   return {
     hasRole,
     getRoleCounts,
+    getRoleMembers,
     getAllRolesSummary,
     grantRole,
     revokeRole,

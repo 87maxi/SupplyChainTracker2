@@ -12,7 +12,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Wallet, User, ShieldQuestion, ClipboardCopy, Link as LinkIcon, Send } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { ContractRoles } from '@/types/supply-chain-types';
+import { ContractRoles } from '@/types/contract';
 import { getRoleHashes } from '@/lib/roleUtils';
 import Link from 'next/link';
 import { Address } from 'viem';

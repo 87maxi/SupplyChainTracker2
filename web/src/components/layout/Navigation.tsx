@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useUserRoles } from '@/hooks/useUserRoles';
-import { ContractRoles } from '@/types/supply-chain-types'; // Importación corregida
+import { ContractRoles } from '@/types/contract';
 import { cn } from '@/lib/utils';
 import {
   BarChart3,

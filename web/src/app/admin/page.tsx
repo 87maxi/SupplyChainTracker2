@@ -16,7 +16,9 @@ import { PendingRoleRequests } from './components/PendingRoleRequests';
 import { ActivityLogs } from '@/components/admin/activity-logs';
 import { DashboardMetrics } from './components/DashboardMetrics';
 import { RoleManagementSection } from './components/RoleManagementSection';
+import { ApprovedAccountsList } from './components/ApprovedAccountsList';
 import { NetbookStateMetrics } from './components/NetbookStateMetrics';
+import { SystemHealth } from './components/SystemHealth';
 import { useRoleRequests } from '@/hooks/useRoleRequests';
 import { getActivityLogs } from '@/lib/activity-logger';
 import { getLogStats } from '@/lib/activity-logger';
@@ -29,7 +31,23 @@ export default function AdminPage() {
 
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [rolesSummary, setRolesSummary] = useState<AllRolesSummary | null>(null);
+  const [rolesSummary, setRolesSummary] = useState<AllRolesSummary | null>(() => {
+    // Initial load from localStorage for instant UI
+    if (typeof window !== 'undefined') {
+      const cached = localStorage.getItem('supply_chain_roles_summary');
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          // Handle new format { data, timestamp }
+          return parsed.data || parsed;
+        } catch (e) {
+          return null;
+        }
+      }
+    }
+    return null;
+  });
+
   const { requests } = useRoleRequests();
   const pendingRequestsCount = requests.filter(req => req.status === 'pending').length;
   const [logs, setLogs] = useState(getActivityLogs());
@@ -42,7 +60,6 @@ export default function AdminPage() {
       return;
     }
 
-    setLoading(true);
     try {
       const userIsAdmin = await hasRole("DEFAULT_ADMIN_ROLE", address);
       setIsAdmin(userIsAdmin);
@@ -50,6 +67,8 @@ export default function AdminPage() {
       if (userIsAdmin) {
         const summary = await getAllRolesSummary();
         setRolesSummary(summary);
+      } else {
+        setRolesSummary(null);
       }
     } catch (err: any) {
       console.error('Error fetching admin data:', err);
@@ -75,6 +94,16 @@ export default function AdminPage() {
     fetchAdminData();
   }, [fetchAdminData]);
 
+  // Listen for role updates to refresh summary
+  useEffect(() => {
+    const { eventBus, EVENTS } = require('@/lib/events');
+    const unsubscribe = eventBus.on(EVENTS.ROLE_UPDATED, () => {
+      console.log('[AdminPage] Role update detected, refreshing data...');
+      fetchAdminData();
+    });
+    return () => unsubscribe();
+  }, [fetchAdminData]);
+
   if (!isConnected) {
     return (
       <div className="container mx-auto px-4 py-12">
@@ -93,7 +122,7 @@ export default function AdminPage() {
     );
   }
 
-  if (loading) {
+  if (loading && !rolesSummary) {
     return (
       <div className="container mx-auto px-4 py-12">
         <div className="flex flex-col items-center justify-center py-24 space-y-4">
@@ -104,7 +133,7 @@ export default function AdminPage() {
     );
   }
 
-  if (!isAdmin) {
+  if (!isAdmin && !loading) {
     return (
       <div className="container mx-auto px-4 py-12">
         <Card className="border-dashed border-2">
@@ -133,17 +162,21 @@ export default function AdminPage() {
         </div>
       </div>
 
+      <SystemHealth />
+
       <DashboardMetrics
         rolesSummary={rolesSummary}
         pendingRequestsCount={pendingRequestsCount}
         logs={logs}
-        loading={loading}
+        loading={loading && !rolesSummary}
       />
 
       {/* Estado de Netbooks por Etapa */}
       <NetbookStateMetrics />
 
       <RoleManagementSection />
+
+      <ApprovedAccountsList />
 
       {/* Sección de Solicitudes Pendientes */}
       <div id="pending-requests" className="space-y-6">

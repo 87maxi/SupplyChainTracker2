@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { 
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -11,20 +11,28 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { SupplyChainContract } from '@/lib/contracts/SupplyChainContract';
+import { useSupplyChainService } from '@/hooks/useSupplyChainService';
 
 interface StudentAssignmentFormProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onComplete: () => void;
+  initialSerial?: string;
 }
 
-export function StudentAssignmentForm({ isOpen, onOpenChange, onComplete }: StudentAssignmentFormProps) {
-  const [serial, setSerial] = useState('');
+export function StudentAssignmentForm({ isOpen, onOpenChange, onComplete, initialSerial }: StudentAssignmentFormProps) {
+  const [serial, setSerial] = useState(initialSerial || '');
   const [schoolHash, setSchoolHash] = useState('');
   const [studentHash, setStudentHash] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { assignToStudent } = useSupplyChainService();
+
+  useEffect(() => {
+    if (initialSerial) {
+      setSerial(initialSerial);
+    }
+  }, [initialSerial]);
 
   const handleAssign = async () => {
     if (!serial || !schoolHash || !studentHash) {
@@ -38,20 +46,19 @@ export function StudentAssignmentForm({ isOpen, onOpenChange, onComplete }: Stud
 
     try {
       setLoading(true);
-      
-      const tx = await SupplyChainContract.assignToStudent(serial, schoolHash, studentHash);
-      await tx.wait();
-      
+
+      await assignToStudent(serial, schoolHash, studentHash);
+
       toast({
         title: "Éxito",
         description: `Netbook ${serial} asignada al estudiante`,
       });
-      
+
       // Reset form
-      setSerial('');
+      if (!initialSerial) setSerial('');
       setSchoolHash('');
       setStudentHash('');
-      
+
       onComplete();
       onOpenChange(false);
     } catch (error: any) {

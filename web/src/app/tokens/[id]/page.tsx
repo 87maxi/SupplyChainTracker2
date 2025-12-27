@@ -6,15 +6,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import Link from 'next/link';
 import * as SupplyChainService from '@/services/SupplyChainService';
 import { useParams, useRouter } from 'next/navigation';
-import { NetbookState } from '@/types/supply-chain-types';
+import { NetbookState } from '@/types/contract';
 import { useState, useEffect } from 'react';
-import { Netbook } from '@/types/contract';
+import type { Netbook } from '@/types/contract';
 
 export default function NetbookDetailsPage() {
   const { id } = useParams();
   const { isConnected } = useWeb3();
   const router = useRouter();
-  const [netbook, setNetbook] = useState<Omit<Netbook, 'currentState'> & { currentState: number } | null>(null);
+  const [netbook, setNetbook] = useState<Omit<Netbook, 'currentState'> & { currentState: NetbookState } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -44,10 +44,11 @@ export default function NetbookDetailsPage() {
         const state = await SupplyChainService.getNetbookState(serial);
         const report = await SupplyChainService.getNetbookReport(serial);
 
+        const stateLabel = [NetbookState.FABRICADA, NetbookState.HW_APROBADO, NetbookState.SW_VALIDADO, NetbookState.DISTRIBUIDA][state];
         setNetbook({
           ...(report as Netbook),
           serialNumber: serial,
-          currentState: state as number
+          currentState: stateLabel
         });
       } catch (err) {
         console.error('Error fetching netbook:', err);

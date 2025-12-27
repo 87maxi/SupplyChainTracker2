@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { 
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -11,8 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
-import { SupplyChainContract } from '@/lib/contracts/SupplyChainContract';
+import { useSupplyChainService } from '@/hooks/useSupplyChainService';
 
 interface NetbookFormProps {
   isOpen: boolean;
@@ -26,6 +25,7 @@ export function NetbookForm({ isOpen, onOpenChange, onComplete }: NetbookFormPro
   const [specs, setSpecs] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { registerNetbooks } = useSupplyChainService();
 
   const handleRegister = async () => {
     if (!serial || !batch || !specs) {
@@ -39,21 +39,20 @@ export function NetbookForm({ isOpen, onOpenChange, onComplete }: NetbookFormPro
 
     try {
       setLoading(true);
-      
-      // Register single netbook
-      const tx = await SupplyChainContract.registerNetbooks([serial], [batch], [specs]);
-      await tx.wait();
-      
+
+      // Register single netbook using the hook
+      await registerNetbooks([serial], [batch], [specs]);
+
       toast({
         title: "Éxito",
         description: `Netbook ${serial} registrada correctamente`,
       });
-      
+
       // Reset form
       setSerial('');
       setBatch('');
       setSpecs('');
-      
+
       onComplete();
       onOpenChange(false);
     } catch (error: any) {

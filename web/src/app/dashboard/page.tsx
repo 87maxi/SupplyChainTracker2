@@ -8,6 +8,7 @@ import { Netbook, NetbookState } from '@/types/supply-chain-types'; // Usar el t
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useEffect, useState, useCallback } from 'react'; // Asegurar useCallback para funciones
+import { RoleActions } from './components/RoleActions';
 
 import {
   Package,
@@ -21,8 +22,13 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
+import { useUserRoles } from '@/hooks/useUserRoles';
+import { HardwareAuditForm } from '@/components/contracts/HardwareAuditForm';
+import { SoftwareValidationForm } from '@/components/contracts/SoftwareValidationForm';
+import { StudentAssignmentForm } from '@/components/contracts/StudentAssignmentForm';
+
 // Reusable Status Badge Component
-function StatusBadge({ status }: { status: NetbookState }) { // Tipado de status como NetbookState
+function StatusBadge({ status }: { status: NetbookState }) {
   const getStatusConfig = (status: NetbookState) => {
     switch (status) {
       case 'FABRICADA':
@@ -43,12 +49,12 @@ function StatusBadge({ status }: { status: NetbookState }) { // Tipado de status
   return (
     <Badge variant={variant} className="gap-1.5 px-3 py-1">
       <Icon className="h-3.5 w-3.5" />
-      {status.replace(/_/g, ' ')} {/* Formatear el texto del estado */}
+      {status.replace(/_/g, ' ')}
     </Badge>
   );
 }
 
-// Summary Card Component (no necesita cambios directos relacionados con Web3, solo ajustes de tipo)
+// Summary Card Component
 function SummaryCard({ title, count, description, icon: Icon, color }: { title: string, count: number, description: string, icon: any, color: string }) {
   return (
     <Card className="relative overflow-hidden group">
@@ -67,8 +73,9 @@ function SummaryCard({ title, count, description, icon: Icon, color }: { title: 
 }
 
 // Tracking Card Component
-function TrackingCard({ netbook }: { netbook: Netbook }) {
-  // El estado ya viene como NetbookState (string) gracias a getNetbookBySerial
+function TrackingCard({ netbook, onAction }: { netbook: Netbook, onAction?: (action: string, serial: string) => void }) {
+  const { isHardwareAuditor, isSoftwareTechnician, isSchool, isAdmin } = useUserRoles();
+
   return (
     <Card className="hover:bg-white/5 transition-colors border-white/5">
       <CardContent className="p-5">
@@ -82,7 +89,28 @@ function TrackingCard({ netbook }: { netbook: Netbook }) {
               Última actualización: {new Date(Number(netbook.distributionTimestamp) * 1000).toLocaleDateString()}
             </div>
           </div>
-          <StatusBadge status={netbook.currentState} />
+          <div className="flex items-center gap-3">
+            <StatusBadge status={netbook.currentState} />
+            {onAction && (
+              <div className="flex gap-2">
+                {netbook.currentState === 'FABRICADA' && (isHardwareAuditor || isAdmin) && (
+                  <Button size="sm" variant="outline" className="h-8 text-xs border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10" onClick={() => onAction('audit', netbook.serialNumber)}>
+                    Auditar
+                  </Button>
+                )}
+                {netbook.currentState === 'HW_APROBADO' && (isSoftwareTechnician || isAdmin) && (
+                  <Button size="sm" variant="outline" className="h-8 text-xs border-purple-500/50 text-purple-400 hover:bg-purple-500/10" onClick={() => onAction('validate', netbook.serialNumber)}>
+                    Validar
+                  </Button>
+                )}
+                {netbook.currentState === 'SW_VALIDADO' && (isSchool || isAdmin) && (
+                  <Button size="sm" variant="outline" className="h-8 text-xs border-amber-500/50 text-amber-400 hover:bg-amber-500/10" onClick={() => onAction('assign', netbook.serialNumber)}>
+                    Asignar
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -116,35 +144,8 @@ function TempDashboard({ onConnect }: { onConnect: () => void }) {
 export default function ManagerDashboard() {
   const { isConnected, connectWallet } = useWeb3();
   const { getAllSerialNumbers, getNetbookBySerial } = useSupplyChainService();
-  
-  // Fallback functions in case the service functions are not implemented
-  const fetchAllSerialNumbers = useCallback(async () => {
-    console.warn('getAllSerialNumbers is not implemented, using mock data');
-    // Return mock data for now
-    return ['S12345', 'S67890', 'S11223'];
-  }, []);
-  
-  const fetchNetbookBySerial = useCallback(async (serial: string) => {
-    console.warn('getNetbookBySerial is not implemented, using mock data for', serial);
-    // Return mock data for now
-    return {
-      serialNumber: serial,
-      batchId: `Batch-${serial.slice(-3)}`,
-      initialModelSpecs: 'Model A',
-      hwAuditor: '0x742d35Cc6634C0532925a3b8D4C01512D82A2c3d',
-      hwIntegrityPassed: true,
-      hwReportHash: '0x8f62b5e4d7c3d1e2a5f6b8c9d0e1f2a3b4c5d6e7f8g9h0i1j2k3l4m5n6o7p8',
-      swTechnician: '0x2a1d46A2e881C86B6894bC5B6A9Be66D6e1f2a3b',
-      osVersion: 'Linux 5.15',
-      swValidationPassed: true,
-      destinationSchoolHash: '0x3b2c1d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8g9h0i1j2k3l4m5n6o7p8q9r0s',
-      studentIdHash: '0x4c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a7b8c9d0e1f',
-      distributionTimestamp: Date.now().toString(),
-      currentState: 'DISTRIBUIDA' as const
-    };
-  }, []);
+  const { isHardwareAuditor, isSoftwareTechnician, isSchool, isAdmin } = useUserRoles();
 
-  const [serialNumbers, setSerialNumbers] = useState<string[]>([]);
   const [netbooks, setNetbooks] = useState<Netbook[]>([]);
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState({
@@ -154,66 +155,67 @@ export default function ManagerDashboard() {
     DISTRIBUIDA: 0
   });
 
+  // Form states
+  const [selectedSerial, setSelectedSerial] = useState<string>('');
+  const [showAuditForm, setShowAuditForm] = useState(false);
+  const [showValidationForm, setShowValidationForm] = useState(false);
+  const [showAssignmentForm, setShowAssignmentForm] = useState(false);
+
+  const handleAction = (action: string, serial: string) => {
+    setSelectedSerial(serial);
+    if (action === 'audit') setShowAuditForm(true);
+    if (action === 'validate') setShowValidationForm(true);
+    if (action === 'assign') setShowAssignmentForm(true);
+  };
+
+  const fetchDashboardData = useCallback(async () => {
+    if (!isConnected) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const serials = await getAllSerialNumbers();
+
+      const netbookData = await Promise.all(
+        serials.map(async (serial) => {
+          try {
+            return await getNetbookBySerial(serial);
+          } catch (error) {
+            console.error(`Error fetching data for ${serial}:`, error);
+            return null;
+          }
+        })
+      );
+
+      const validNetbooks = netbookData.filter((n): n is Netbook => n !== null);
+      setNetbooks(validNetbooks);
+
+      setSummary({
+        FABRICADA: validNetbooks.filter(n => n.currentState === "FABRICADA").length,
+        HW_APROBADO: validNetbooks.filter(n => n.currentState === "HW_APROBADO").length,
+        SW_VALIDADO: validNetbooks.filter(n => n.currentState === "SW_VALIDADO").length,
+        DISTRIBUIDA: validNetbooks.filter(n => n.currentState === "DISTRIBUIDA").length
+      });
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [isConnected, getAllSerialNumbers, getNetbookBySerial]);
+
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      if (!isConnected) {
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
-      try {
-        // Use the service function if available, otherwise use mock data
-        const serials = getAllSerialNumbers ? await getAllSerialNumbers() : await fetchAllSerialNumbers();
-        setSerialNumbers(serials);
-
-        const netbookData = await Promise.all(
-          serials.map(async (serial) => {
-            try {
-              // Use the service function if available, otherwise use mock data
-              const report = getNetbookBySerial ? await getNetbookBySerial(serial) : await fetchNetbookBySerial(serial);
-              return report;
-            } catch (error) {
-              console.error(`Error fetching data for ${serial}:`, error);
-              return null;
-            }
-          })
-        );
-
-        const validNetbooks = netbookData.filter((n): n is Netbook => n !== null);
-        setNetbooks(validNetbooks);
-
-        // Actualizar el resumen usando los estados tipados
-        setSummary({
-          FABRICADA: validNetbooks.filter(n => n.currentState === "FABRICADA").length,
-          HW_APROBADO: validNetbooks.filter(n => n.currentState === "HW_APROBADO").length,
-          SW_VALIDADO: validNetbooks.filter(n => n.currentState === "SW_VALIDADO").length,
-          DISTRIBUIDA: validNetbooks.filter(n => n.currentState === "DISTRIBUIDA").length
-        });
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-        // Podríamos añadir un estado de error para mostrar al usuario
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchDashboardData();
-  }, [isConnected, getAllSerialNumbers, getNetbookBySerial]); // Asegurar dependencias del useEffect
+  }, [fetchDashboardData]);
 
-  // Show temporary dashboard when not connected
-  // Initialize loading state to true for SSR compatibility
-  // This ensures server and client render matching content initially
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
-    // This will only run on the client side
     setInitialized(true);
   }, []);
 
-  // Prevent rendering dynamic content until client-side initialization
   if (!initialized) {
-    // Return null or minimal placeholder during SSR and initial render
     return (
       <div className="container mx-auto px-4 py-12">
         <div className="flex flex-col items-center justify-center py-24 space-y-4">
@@ -224,10 +226,17 @@ export default function ManagerDashboard() {
     );
   }
 
-  // Show temporary dashboard when not connected
   if (!isConnected) {
     return <TempDashboard onConnect={connectWallet} />;
   }
+
+  // Filter pending tasks based on roles
+  const pendingTasks = netbooks.filter(n => {
+    if (n.currentState === 'FABRICADA' && (isHardwareAuditor || isAdmin)) return true;
+    if (n.currentState === 'HW_APROBADO' && (isSoftwareTechnician || isAdmin)) return true;
+    if (n.currentState === 'SW_VALIDADO' && (isSchool || isAdmin)) return true;
+    return false;
+  });
 
   return (
     <div className="container mx-auto px-4 py-12 space-y-12">
@@ -242,6 +251,8 @@ export default function ManagerDashboard() {
         </div>
       </div>
 
+      <RoleActions />
+
       {loading ? (
         <div className="flex flex-col items-center justify-center py-24 space-y-4">
           <Loader2 className="h-12 w-12 text-primary animate-spin" />
@@ -251,35 +262,31 @@ export default function ManagerDashboard() {
         <>
           {/* Summary Cards */}
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            <SummaryCard
-              title="En fabricación"
-              count={summary.FABRICADA}
-              description="Netbooks registradas pendientes de auditoría."
-              icon={Package}
-              color="text-blue-400"
-            />
-            <SummaryCard
-              title="HW Aprobado"
-              count={summary.HW_APROBADO}
-              description="Hardware verificado por auditores."
-              icon={ShieldCheck}
-              color="text-emerald-400"
-            />
-            <SummaryCard
-              title="SW Validado"
-              count={summary.SW_VALIDADO}
-              description="Software instalado y certificado."
-              icon={Monitor}
-              color="text-purple-400"
-            />
-            <SummaryCard
-              title="Entregadas"
-              count={summary.DISTRIBUIDA}
-              description="Distribuidas a instituciones finales."
-              icon={Truck}
-              color="text-amber-400"
-            />
+            <SummaryCard title="En fabricación" count={summary.FABRICADA} description="Netbooks registradas pendientes de auditoría." icon={Package} color="text-blue-400" />
+            <SummaryCard title="HW Aprobado" count={summary.HW_APROBADO} description="Hardware verificado por auditores." icon={ShieldCheck} color="text-emerald-400" />
+            <SummaryCard title="SW Validado" count={summary.SW_VALIDADO} description="Software instalado y certificado." icon={Monitor} color="text-purple-400" />
+            <SummaryCard title="Entregadas" count={summary.DISTRIBUIDA} description="Distribuidas a instituciones finales." icon={Truck} color="text-amber-400" />
           </div>
+
+          {/* Pending Tasks Section */}
+          {pendingTasks.length > 0 && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+                  <ShieldCheck className="h-6 w-6 text-emerald-400" />
+                  Tareas Pendientes
+                </h2>
+                <Badge variant="success" className="px-3">
+                  {pendingTasks.length} Acciones requeridas
+                </Badge>
+              </div>
+              <div className="grid gap-4">
+                {pendingTasks.map((netbook) => (
+                  <TrackingCard key={netbook.serialNumber} netbook={netbook} onAction={handleAction} />
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Tracking List */}
           <div className="space-y-6">
@@ -294,9 +301,9 @@ export default function ManagerDashboard() {
             </div>
 
             <div className="grid gap-4">
-              {Array.isArray(netbooks) && netbooks.length > 0 ? (
+              {netbooks.length > 0 ? (
                 netbooks.map((netbook) => (
-                  <TrackingCard key={netbook.serialNumber || Math.random()} netbook={netbook} />
+                  <TrackingCard key={netbook.serialNumber} netbook={netbook} />
                 ))
               ) : (
                 <Card className="border-dashed">
@@ -310,6 +317,26 @@ export default function ManagerDashboard() {
           </div>
         </>
       )}
+
+      {/* Forms */}
+      <HardwareAuditForm
+        isOpen={showAuditForm}
+        onOpenChange={setShowAuditForm}
+        onComplete={fetchDashboardData}
+        initialSerial={selectedSerial}
+      />
+      <SoftwareValidationForm
+        isOpen={showValidationForm}
+        onOpenChange={setShowValidationForm}
+        onComplete={fetchDashboardData}
+        initialSerial={selectedSerial}
+      />
+      <StudentAssignmentForm
+        isOpen={showAssignmentForm}
+        onOpenChange={setShowAssignmentForm}
+        onComplete={fetchDashboardData}
+        initialSerial={selectedSerial}
+      />
     </div>
   );
 }

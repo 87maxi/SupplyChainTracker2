@@ -1,26 +1,97 @@
 [
   {
-    "id": "u8ie9d",
-    "address": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
-    "role": "auditor_hw",
-    "status": "rejected",
-    "timestamp": 1766779713122,
-    "signature": "0x1a280c1b9178a538fd942d7e25c887e96dd185f77146979133376a215435b0097286b8af38f5590b7d7d8cb55617fd195878423393932a17af2da384332db8451c"
-  },
-  {
-    "id": "kc9ggg",
+    "id": "wreuon",
     "address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
-    "role": "tecnico_sw",
-    "status": "rejected",
-    "timestamp": 1766779730197,
-    "signature": "0x762edf063a5b2498c9c3a094bb05298fa466867bd3780363f8290b542547590d5c6dbacd133022aba051107fdde9a7894f9041b22667d0e5c359c79f031753a11b"
+    "role": "AUDITOR_HW_ROLE",
+    "status": "pending",
+    "timestamp": 1766832932021,
+    "signature": "0x346c0227bcd0d0ff96da70e258725d0e9a5bad502464b34dbce9cd7f14bae9101730c022b179847293a827b956ed1de294b8305875ec2164c9fe09b4824ffa4d1c"
   },
   {
-    "id": "lqfa",
-    "address": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
-    "role": "escuela",
+    "id": "wa3rco",
+    "address": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+    "role": "ESCUELA_ROLE",
     "status": "pending",
-    "timestamp": 1766779755232,
-    "signature": "0xb5e0caa7f7313f7bb5205ac589c287b67be523510bc630bf241fd20860ecea23348e3330aa26f2ebaf1b3fa78dbb96e4c4c63f61cb677f450e8dddd2473f8fb41b"
+    "timestamp": 1766834426709,
+    "signature": "0x8286a552a8abb4c69a6b39c23b303a5eae10bd5b549aa220cd53d719be6549875999c2ea16876b4285439d0ecf33dad56e1c4bf149ab86088c8b2047c8367e8c1b"
+  },
+  {
+    "id": "f7s2o",
+    "address": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+    "role": "FABRICANTE_ROLE",
+    "status": "rejected",
+    "timestamp": 1766835396064,
+    "signature": "0xbc245e527b8bc956e7877ab74ee51bbdf84363fc6ecd4d5099e243eb9191a26075ef62c23d6b50502c35a1645b6c4c257fa11a4334d7044cf60f3b0bbdd6429e1b"
+  },
+  {
+    "id": "no5yaf",
+    "address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+    "role": "TECNICO_SW_ROLE",
+    "status": "pending",
+    "timestamp": 1766839244850,
+    "signature": "0xb93a0f4297a95d65ee1a235d62d9d786d6047401a542dbdefaf8e2525f85586205970ef7d87991e07bd041cd1b857e3c6749259ff9262272f3414892c8c46b1f1b"
+  },
+  {
+    "id": "z4ius9",
+    "address": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+    "role": "TECNICO_SW_ROLE",
+    "status": "pending",
+    "timestamp": 1766841641541,
+    "signature": "0xef2c39f03afd841d0eaf289f9f421d6265f3a17f86d1277a8860c2f1afbcfc8a60225bf7e37d30a0e9dd9608a45af8590365d30d169fbcc0f5a8363d2dd03b841c"
+  },
+  {
+    "id": "mmwjcq",
+    "address": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+    "role": "AUDITOR_HW_ROLE",
+    "status": "pending",
+    "timestamp": 1766842687905,
+    "signature": "0xa5be8c31263964be9f2d25d2371dfb17f524829a5f885aaf18c8e0183553e01c53258f053b78d15e7cbe125b56ba12e823f00166e121e343b3e60c963fc826f01c"
+  },
+  {
+    "id": "h1ysf8",
+    "address": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+    "role": "TECNICO_SW_ROLE",
+    "status": "pending",
+    "timestamp": 1766843779051,
+    "signature": "0xb98450eb8b126e1f389f39cbfd63e72013456bd2a28c3aa79aab6183f752cd447a36fa2f5bbae8ae750a78a35bccf695a078e80afb3efab0d03fdda2e15e0bc81c"
+  },
+  {
+    "id": "27xnyn",
+    "address": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
+    "role": "FABRICANTE_ROLE",
+    "status": "pending",
+    "timestamp": 1766844085495,
+    "signature": "0x52a5248048fbd863f1fdb8eb16020f1bff8b51b227890a87f8aae31b9c29b7af4f2ab16f5d88629e01ce8e8021f6e2f2c4c35fc4588321b872147b15110d1a481c"
+  },
+  {
+    "id": "727s2w",
+    "address": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
+    "role": "TECNICO_SW_ROLE",
+    "status": "pending",
+    "timestamp": 1766845174582,
+    "signature": "0xff2d1b52f7696a491bc054345d90f29917101565700d642c1ce4458930b65b2f4d3715939b0b57f69628b9ab614d95c2d05bb8b1425fb6b637fb48db4998e49e1b"
+  },
+  {
+    "id": "3bjajm",
+    "address": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
+    "role": "ESCUELA_ROLE",
+    "status": "pending",
+    "timestamp": 1766849587511,
+    "signature": "0x8286a552a8abb4c69a6b39c23b303a5eae10bd5b549aa220cd53d719be6549875999c2ea16876b4285439d0ecf33dad56e1c4bf149ab86088c8b2047c8367e8c1b"
+  },
+  {
+    "id": "7dhatg",
+    "address": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
+    "role": "TECNICO_SW",
+    "status": "pending",
+    "timestamp": 1766856904815
+  },
+  {
+    "id": "9undc",
+    "address": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
+    "role": "AUDITOR_HW_ROLE",
+    "status": "pending",
+    "timestamp": 1766856971292,
+    "signature": "0xafc3e8c975999fed299d756ee7f4f1d7d12b3c78b4c4b098adf13a2ebf6b97285e9e5c476614021f4550ad64cef691a527d8ce29fe1360f9b09e0e16e82ed4e01b"
   }
 ]

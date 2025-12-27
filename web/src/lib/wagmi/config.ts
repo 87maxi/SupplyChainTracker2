@@ -1,12 +1,11 @@
 // web/src/lib/wagmi/config.ts
-import { getDefaultConfig } from '@rainbow-me/rainbowkit';
-import { http } from 'wagmi';
-import { mainnet, polygon, bscTestnet } from 'wagmi/chains';
-// import { NEXT_PUBLIC_RPC_URL, NEXT_PUBLIC_NETWORK_ID, NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID } from '@/lib/env'; // Eliminar o ajustar la importación
+import { createConfig, http } from 'wagmi';
+import { mainnet } from 'wagmi/chains';
+import { injected, walletConnect, coinbaseWallet } from 'wagmi/connectors';
 
 // Define Anvil chain
 const anvilChain = {
-  id: 31337, // Anvil siempre usa chain ID 31337 por defecto
+  id: 31337,
   name: 'Anvil Local',
   network: 'anvil',
   nativeCurrency: {
@@ -16,28 +15,29 @@ const anvilChain = {
   },
   rpcUrls: {
     default: {
-      http: [process.env.NEXT_PUBLIC_ANVIL_RPC_URL || 'http://127.0.0.1:8545'], // Unificar el nombre de la variable
+      http: [process.env.NEXT_PUBLIC_ANVIL_RPC_URL || 'http://127.0.0.1:8545'],
     },
     public: {
-      http: [process.env.NEXT_PUBLIC_ANVIL_RPC_URL || 'http://127.0.0.1:8545'], // Unificar el nombre de la variable
+      http: [process.env.NEXT_PUBLIC_ANVIL_RPC_URL || 'http://127.0.0.1:8545'],
     },
   },
   testnet: true,
 } as const;
 
-export const config = getDefaultConfig({
-  appName: 'Supply Chain Tracker',
-  projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || '', // Usar directamente process.env
-  chains: [anvilChain, mainnet, polygon, bscTestnet],
+// Validar projectId de WalletConnect
+const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
+
+// Configuración para desarrollo local con soporte para Rabby Wallet
+export const config = createConfig({
+  chains: [anvilChain],
+  connectors: [
+    injected({ target: 'metaMask' }),
+    injected({ target: 'rabby' }),
+    coinbaseWallet(),
+    walletConnect({ projectId: projectId || 'local-development' }),
+  ],
   transports: {
     [anvilChain.id]: http(),
-    [mainnet.id]: http(),
-    [polygon.id]: http(),
-    [bscTestnet.id]: http(),
   },
   ssr: true,
 });
-
-export function createWagmiConfig() {
-  return config;
-}

@@ -4,7 +4,7 @@ import { BaseContractService } from './base-contract.service';
 import SupplyChainTrackerABI from '@/contracts/abi/SupplyChainTracker.json';
 import { NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS } from '@/lib/env';
 import { CacheService } from '@/lib/cache/cache-service';
-import { ContractRoles } from '@/types/supply-chain-types';
+import { ContractRoles } from '@/types/contract';
 import { getRoleHashes } from '@/lib/roleUtils';
 import { Address } from 'viem';
 
@@ -43,10 +43,21 @@ export class RoleService extends BaseContractService {
     try {
       // Obtener hash del rol
       const roleHashes = await getRoleHashes();
-      const roleHash = roleHashes[roleName.replace('_ROLE', '') as keyof typeof roleHashes];
+      
+      // Mapeo directo de nombres de roles a sus keys en roleHashes
+      const roleKeyMap: Record<ContractRoles, keyof typeof roleHashes> = {
+        'DEFAULT_ADMIN_ROLE': 'ADMIN',
+        'FABRICANTE_ROLE': 'FABRICANTE',
+        'AUDITOR_HW_ROLE': 'AUDITOR_HW',
+        'TECNICO_SW_ROLE': 'TECNICO_SW',
+        'ESCUELA_ROLE': 'ESCUELA'
+      };
+      
+      const roleKey = roleKeyMap[roleName];
+      const roleHash = roleHashes[roleKey];
       
       if (!roleHash) {
-        throw new Error(`Rol ${roleName} no encontrado`);
+        throw new Error(`Rol ${roleName} no encontrado. Hash: ${roleHash}`);
       }
       
       // Leer del contrato
@@ -67,10 +78,21 @@ export class RoleService extends BaseContractService {
     try {
       // Obtener hash del rol
       const roleHashes = await getRoleHashes();
-      const roleHash = roleHashes[roleName.replace('_ROLE', '') as keyof typeof roleHashes];
+      
+      // Mapeo directo de nombres de roles a sus keys en roleHashes
+      const roleKeyMap: Record<ContractRoles, keyof typeof roleHashes> = {
+        'DEFAULT_ADMIN_ROLE': 'ADMIN',
+        'FABRICANTE_ROLE': 'FABRICANTE',
+        'AUDITOR_HW_ROLE': 'AUDITOR_HW',
+        'TECNICO_SW_ROLE': 'TECNICO_SW',
+        'ESCUELA_ROLE': 'ESCUELA'
+      };
+      
+      const roleKey = roleKeyMap[roleName];
+      const roleHash = roleHashes[roleKey];
       
       if (!roleHash) {
-        throw new Error(`Rol ${roleName} no encontrado`);
+        throw new Error(`Rol ${roleName} no encontrado. Role key: ${roleKey}`);
       }
       
       // Realizar transacción
@@ -105,10 +127,21 @@ export class RoleService extends BaseContractService {
     try {
       // Obtener hash del rol
       const roleHashes = await getRoleHashes();
-      const roleHash = roleHashes[roleName.replace('_ROLE', '') as keyof typeof roleHashes];
+      
+      // Mapeo directo de nombres de roles a sus keys en roleHashes
+      const roleKeyMap: Record<ContractRoles, keyof typeof roleHashes> = {
+        'DEFAULT_ADMIN_ROLE': 'ADMIN',
+        'FABRICANTE_ROLE': 'FABRICANTE',
+        'AUDITOR_HW_ROLE': 'AUDITOR_HW',
+        'TECNICO_SW_ROLE': 'TECNICO_SW',
+        'ESCUELA_ROLE': 'ESCUELA'
+      };
+      
+      const roleKey = roleKeyMap[roleName];
+      const roleHash = roleHashes[roleKey];
       
       if (!roleHash) {
-        throw new Error(`Rol ${roleName} no encontrado`);
+        throw new Error(`Rol ${roleName} no encontrado. Hash: ${roleHash}`);
       }
       
       // Realizar transacción
@@ -149,10 +182,21 @@ export class RoleService extends BaseContractService {
       
       // Obtener hash del rol
       const roleHashes = await getRoleHashes();
-      const roleHash = roleHashes[roleName.replace('_ROLE', '') as keyof typeof roleHashes];
+      
+      // Mapeo directo de nombres de roles a sus keys en roleHashes
+      const roleKeyMap: Record<ContractRoles, keyof typeof roleHashes> = {
+        'DEFAULT_ADMIN_ROLE': 'ADMIN',
+        'FABRICANTE_ROLE': 'FABRICANTE',
+        'AUDITOR_HW_ROLE': 'AUDITOR_HW',
+        'TECNICO_SW_ROLE': 'TECNICO_SW',
+        'ESCUELA_ROLE': 'ESCUELA'
+      };
+      
+      const roleKey = roleKeyMap[roleName];
+      const roleHash = roleHashes[roleKey];
       
       if (!roleHash) {
-        throw new Error(`Rol ${roleName} no encontrado`);
+        throw new Error(`Rol ${roleName} no encontrado. Hash: ${roleHash}`);
       }
       
       // Leer del contrato

@@ -57,7 +57,9 @@ export function RoleRequestModal({ isOpen, onOpenChange }: RoleRequestModalProps
             setLoading(true);
 
             // 1. Prompt user to sign a message
-            const message = `Solicito el rol de ${role} para mi dirección ${address} en SupplyChainTracker.`;
+            const roleName = role.replace(/_ROLE/g, '').replace(/_/g, ' ').toLowerCase()
+                .split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+            const message = `Solicito el rol de ${roleName} para mi dirección ${address} en SupplyChainTracker.`;
             const signature = await signMessageAsync({ message });
 
             // 2. Submit request with signature
@@ -106,10 +108,10 @@ export function RoleRequestModal({ isOpen, onOpenChange }: RoleRequestModalProps
                             <SelectValue placeholder="Seleccione un rol" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="fabricante">Fabricante</SelectItem>
-                            <SelectItem value="auditor_hw">Auditor HW</SelectItem>
-                            <SelectItem value="tecnico_sw">Técnico SW</SelectItem>
-                            <SelectItem value="escuela">Escuela</SelectItem>
+                            <SelectItem value="FABRICANTE_ROLE">Fabricante</SelectItem>
+                            <SelectItem value="AUDITOR_HW_ROLE">Auditor HW</SelectItem>
+                            <SelectItem value="TECNICO_SW_ROLE">Técnico SW</SelectItem>
+                            <SelectItem value="ESCUELA_ROLE">Escuela</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
