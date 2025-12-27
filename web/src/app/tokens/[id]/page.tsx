@@ -6,30 +6,31 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import Link from 'next/link';
 import * as SupplyChainService from '@/services/SupplyChainService';
 import { useParams, useRouter } from 'next/navigation';
-import { NetbookState } from '@/types/contract';
+// import { NetbookState } from '@/types/supply-chain-types'; // Removed because it's not available as a value
+// Using enum values directly from the contract or string literals
 import { useState, useEffect } from 'react';
-import type { Netbook } from '@/types/contract';
+import type { Netbook } from '@/types/supply-chain-types';
 
 export default function NetbookDetailsPage() {
   const { id } = useParams();
   const { isConnected } = useWeb3();
   const router = useRouter();
-  const [netbook, setNetbook] = useState<Omit<Netbook, 'currentState'> & { currentState: NetbookState } | null>(null);
+  const [netbook, setNetbook] = useState<Omit<Netbook, 'currentState'> & { currentState: 'FABRICADA' | 'HW_APROBADO' | 'SW_VALIDADO' | 'DISTRIBUIDA' } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const stateLabels = {
-    0: 'FABRICADA',
-    1: 'HW_APROBADO',
-    2: 'SW_VALIDADO',
-    3: 'DISTRIBUIDA'
+    'FABRICADA': 'FABRICADA',
+    'HW_APROBADO': 'HW_APROBADO',
+    'SW_VALIDADO': 'SW_VALIDADO',
+    'DISTRIBUIDA': 'DISTRIBUIDA'
   } as const;
 
   const stateColors = {
-    0: 'bg-gray-100 text-gray-800',
-    1: 'bg-blue-100 text-blue-800',
-    2: 'bg-yellow-100 text-yellow-800',
-    3: 'bg-green-100 text-green-800'
+    'FABRICADA': 'bg-gray-100 text-gray-800',
+    'HW_APROBADO': 'bg-blue-100 text-blue-800',
+    'SW_VALIDADO': 'bg-yellow-100 text-yellow-800',
+    'DISTRIBUIDA': 'bg-green-100 text-green-800'
   } as const;
 
   useEffect(() => {
@@ -44,7 +45,7 @@ export default function NetbookDetailsPage() {
         const state = await SupplyChainService.getNetbookState(serial);
         const report = await SupplyChainService.getNetbookReport(serial);
 
-        const stateLabel = [NetbookState.FABRICADA, NetbookState.HW_APROBADO, NetbookState.SW_VALIDADO, NetbookState.DISTRIBUIDA][state];
+        const stateLabel = (['FABRICADA', 'HW_APROBADO', 'SW_VALIDADO', 'DISTRIBUIDA'][Number(state)]) as 'FABRICADA' | 'HW_APROBADO' | 'SW_VALIDADO' | 'DISTRIBUIDA';
         setNetbook({
           ...(report as Netbook),
           serialNumber: serial,
@@ -123,8 +124,8 @@ export default function NetbookDetailsPage() {
         <CardHeader>
           <CardTitle>{netbook?.serialNumber}</CardTitle>
           <CardDescription>
-            <span className={`px-2 py-1 rounded text-xs ${stateColors[netbook?.currentState as keyof typeof stateColors || 0]}`}>
-              {stateLabels[netbook?.currentState as keyof typeof stateLabels || 0]}
+            <span className={`px-2 py-1 rounded text-xs ${stateColors[netbook?.currentState as keyof typeof stateColors || 'FABRICADA']}`}>
+              {stateLabels[netbook?.currentState as keyof typeof stateLabels || 'FABRICADA']}
             </span>
           </CardDescription>
         </CardHeader>
@@ -165,7 +166,7 @@ export default function NetbookDetailsPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Distribución:</span>
-                  <span>{netbook?.currentState === 3 ? 'Completada' : 'Pendiente'}</span>
+                  <span>{netbook?.currentState === 'DISTRIBUIDA' ? 'Completada' : 'Pendiente'}</span>
                 </div>
               </div>
             </div>

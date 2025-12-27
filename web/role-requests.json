@@ -93,5 +93,13 @@
     "status": "pending",
     "timestamp": 1766856971292,
     "signature": "0xafc3e8c975999fed299d756ee7f4f1d7d12b3c78b4c4b098adf13a2ebf6b97285e9e5c476614021f4550ad64cef691a527d8ce29fe1360f9b09e0e16e82ed4e01b"
+  },
+  {
+    "id": "wt33rh",
+    "address": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
+    "role": "TECNICO_SW_ROLE",
+    "status": "pending",
+    "timestamp": 1766872527521,
+    "signature": "0x3769fe29ed90a7faa5ccc8c7f9c5e3d793da92879cb4d537ee5918fdbc4d3feb7ecb7e0d3565206b13319a35a79566daa6259944f64dc93ca681a9d6ba670a991c"
   }
 ]

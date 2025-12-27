@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useSupplyChainService } from '@/hooks/useSupplyChainService';
+import { useToast } from '@/hooks/use-toast';
 
 interface NetbookFormProps {
   isOpen: boolean;

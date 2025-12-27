@@ -225,8 +225,27 @@ export const clearMembersCache = (roleHash?: string) => {
 };
 
 // Grant a role to a user
-export const grantRole = async (roleHash: string, userAddress: Address) => {
+export const grantRole = async (roleName: string, userAddress: Address) => {
   try {
+    // Get role hash from name using roleUtils
+    const roleHashes = await import('@/lib/roleUtils').then(({ getRoleHashes }) => getRoleHashes());
+    
+    // Map role name to role hash
+    const roleKeyMap: Record<string, keyof typeof roleHashes> = {
+      'FABRICANTE': 'FABRICANTE',
+      'AUDITOR_HW': 'AUDITOR_HW',
+      'TECNICO_SW': 'TECNICO_SW',
+      'ESCUELA': 'ESCUELA',
+      'DEFAULT_ADMIN': 'ADMIN'
+    };
+    
+    const roleKey = roleKeyMap[roleName] || roleName;
+    const roleHash = roleHashes[roleKey];
+    
+    if (!roleHash) {
+      throw new Error(`Role ${roleName} not found in role hashes`);
+    }
+
     const account = getAccount(config);
     const { request } = await import('@wagmi/core').then(mod => mod.simulateContract(config, {
       address: contractAddress,
@@ -236,14 +255,17 @@ export const grantRole = async (roleHash: string, userAddress: Address) => {
       account: account.address // Explicitly set the sender
     }));
 
-    // 2. Execute the transaction using the simulated request
+    // Execute the transaction using the simulated request
     // Force gas limit to avoid estimation hanging
     const transactionHash = await writeContract(config, {
       ...request,
       gas: BigInt(500000), // Hardcoded high gas limit for Anvil
     });
 
-    return transactionHash;
+    return {
+      success: true,
+      hash: transactionHash
+    };
   } catch (error: any) {
     console.error('❌ Error granting role:', error);
 
@@ -251,7 +273,10 @@ export const grantRole = async (roleHash: string, userAddress: Address) => {
     if (error.cause) console.error('Error cause:', error.cause);
     if (error.shortMessage) console.error('Short message:', error.shortMessage);
 
-    throw error;
+    return {
+      success: false,
+      error: error.message || 'Failed to grant role'
+    };
   }
 };
 

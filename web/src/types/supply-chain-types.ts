@@ -33,27 +33,22 @@ export interface RoleMembers {
 // Resumen de todos los roles
 export interface AllRolesSummary {
   DEFAULT_ADMIN_ROLE?: {
-    name: string;
     count: number;
     members: string[];
   };
   FABRICANTE_ROLE?: {
-    name: string;
     count: number;
     members: string[];
   };
   AUDITOR_HW_ROLE?: {
-    name: string;
     count: number;
     members: string[];
   };
   TECNICO_SW_ROLE?: {
-    name: string;
     count: number;
     members: string[];
   };
   ESCUELA_ROLE?: {
-    name: string;
     count: number;
     members: string[];
   };

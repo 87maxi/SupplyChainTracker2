@@ -70,7 +70,11 @@ export function useRoleRequests() {
 
       // A. Blockchain Transaction (The ONLY thing that matters for success)
       // useSupplyChainService.grantRole handles the hash lookup internally
-      const hash = await grantRole(normalizedRole, userAddress as `0x${string}`);
+      const result = await grantRole(normalizedRole, userAddress as `0x${string}`);
+      if (!result.success || !result.hash) {
+        throw new Error(result.error || 'Transaction failed');
+      }
+      const hash = result.hash;
       console.log('[useRoleRequests] Transaction submitted:', hash);
 
       // Fire-and-forget waiter for user feedback
@@ -82,8 +86,7 @@ export function useRoleRequests() {
           toast({
             title: 'Confirmado en Blockchain',
             description: 'La asignación de rol ha sido confirmada.',
-            variant: 'default',
-            className: 'bg-green-50 border-green-200 text-green-800'
+            variant: 'default'
           });
         } catch (e) {
           console.error('Background receipt wait failed:', e);

@@ -12,18 +12,18 @@ import { Laptop, Plus } from 'lucide-react';
 
 export default function TokensPage() {
   const { isConnected } = useWeb3();
-  const [netbooks, setNetbooks] = useState<Array<{serialNumber: string, currentState: number, hwAuditor: string, swTechnician: string}>>([]);
+  const [netbooks, setNetbooks] = useState<Array<{serialNumber: string, currentState: 'FABRICADA' | 'HW_APROBADO' | 'SW_VALIDADO' | 'DISTRIBUIDA', hwAuditor: string, swTechnician: string}>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const stateLabels: Record<number, string> = {
+  const stateLabels: Record<string, string> = {
     0: 'FABRICADA',
     1: 'HW_APROBADO',
     2: 'SW_VALIDADO',
     3: 'DISTRIBUIDA'
   };
 
-  const stateColors: Record<number, string> = {
+  const stateColors: Record<string, string> = {
     0: 'bg-blue-100 text-blue-800 border border-blue-200',
     1: 'bg-green-100 text-green-800 border border-green-200',
     2: 'bg-yellow-100 text-yellow-800 border border-yellow-200',
@@ -47,7 +47,7 @@ export default function TokensPage() {
             
             return { 
               serialNumber: serial, 
-              currentState: state as number,
+              currentState: (['FABRICADA', 'HW_APROBADO', 'SW_VALIDADO', 'DISTRIBUIDA'][Number(state)]) as 'FABRICADA' | 'HW_APROBADO' | 'SW_VALIDADO' | 'DISTRIBUIDA',
               hwAuditor: report.hwAuditor,
               swTechnician: report.swTechnician
             };

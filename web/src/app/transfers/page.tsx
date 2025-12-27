@@ -31,11 +31,12 @@ export default function TransfersPage() {
         const pendingTransfers: Array<{ serial: string, from: string, to: string, status: string }> = [];
 
         for (const serial of serials) {
-          const state = await SupplyChainService.getNetbookState(serial);
+          const stateValue = await SupplyChainService.getNetbookState(serial);
+          const state = ['FABRICADA', 'HW_APROBADO', 'SW_VALIDADO', 'DISTRIBUIDA'][Number(stateValue)];
 
           // In our state machine, transfers happen when moving from SW_VALIDADO to DISTRIBUIDA
           // We'll consider these as "pending" until confirmed
-          if (state === 3) { // DISTRIBUIDA
+          if (state === 'DISTRIBUIDA') { // DISTRIBUIDA
             // This is a completed transfer, not pending
             // In a real implementation, we'd have a separate pending transfers mapping
             // For now, we'll show all transfers as completed

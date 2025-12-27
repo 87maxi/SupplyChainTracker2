@@ -8,6 +8,16 @@ import { ContractRoles, AllRolesSummary } from '@/types/contract';
 export const useSupplyChainService = () => {
   const { address } = useAccount();
 
+  // Get all serial numbers
+  const getAllSerialNumbers = useCallback(async () => {
+    try {
+      return await SupplyChainService.getAllSerialNumbers();
+    } catch (error) {
+      console.error('Error in getAllSerialNumbers:', error);
+      return [];
+    }
+  }, []);
+
   // Role hash mapping utility
   const getRoleHashForName = useCallback(async (role: string): Promise<string> => {
     // If it's already a hash, just return it
@@ -138,6 +148,7 @@ export const useSupplyChainService = () => {
 
       const roleEntries = Object.entries(roleHashes) as [keyof typeof roleHashes, string][];
 
+      // Fetch all role members concurrently
       const roleResults = await Promise.all(
         roleEntries.map(async ([key, hash]) => {
           try {
@@ -147,26 +158,36 @@ export const useSupplyChainService = () => {
             return [
               contractRoleName,
               {
-                name: contractRoleName, // Use the official role name
                 count: members.length,
                 members
               }
             ] as const;
           } catch (error) {
-            console.error(`Error fetching members for ${key}:`, error);
-            return [roleMapping[key], { name: roleMapping[key], count: 0, members: [] }] as const;
+            console.error(`Error fetching members for role ${key}:`, error);
+            const contractRoleName = roleMapping[key];
+            return [
+              contractRoleName,
+              {
+                count: 0,
+                members: []
+              }
+            ] as const;
           }
         })
       );
 
+      // Convert to object format
       const summary = Object.fromEntries(roleResults) as AllRolesSummary;
 
-      // 3. Persist to localStorage
+      // Cache the result
       if (typeof window !== 'undefined') {
-        localStorage.setItem(CACHE_KEY, JSON.stringify({
-          data: summary,
-          timestamp: Date.now()
-        }));
+        localStorage.setItem(
+          CACHE_KEY,
+          JSON.stringify({
+            data: summary,
+            timestamp: Date.now()
+          })
+        );
       }
 
       return summary;
@@ -174,72 +195,58 @@ export const useSupplyChainService = () => {
       console.error('Error in getAllRolesSummary:', error);
       return null;
     }
-  }, []);
-
-  // Write operations
-  const grantRole = useCallback(async (role: string, userAddress: Address): Promise<{ success: boolean; hash?: `0x${string}`; error?: string }> => {
-    try {
-      console.log(`🔄 Attempting to grant role: "${role}" to ${userAddress}`);
-      const roleHash = await getRoleHashForName(role);
-      // Returns transaction hash (string)
-      const result = await SupplyChainService.grantRole(roleHash, userAddress);
-      return result;
-    } catch (error) {
-      console.error('❌ Error in grantRole:', error);
-      throw error;
-    }
   }, [getRoleHashForName]);
 
-  const revokeRole = useCallback(async (role: string, userAddress: Address): Promise<{ success: boolean; hash?: `0x${string}`; error?: string }> => {
+  // Netbook operations
+  const getNetbookState = useCallback(async (serial: string) => {
     try {
-      console.log(`🔄 Attempting to revoke role: "${role}" from ${userAddress}`);
-      const roleHash = await getRoleHashForName(role);
-      // Returns transaction hash (string)
-      const result = await SupplyChainService.revokeRole(roleHash, userAddress);
-      return result;
+      return await SupplyChainService.getNetbookState(serial);
     } catch (error) {
-      console.error('❌ Error in revokeRole:', error);
+      console.error('Error in getNetbookState:', error);
+      return 'FABRICADA';
+    }
+  }, []);
+
+  const getNetbookReport = useCallback(async (serial: string) => {
+    try {
+      return await SupplyChainService.getNetbookReport(serial);
+    } catch (error) {
+      console.error('Error in getNetbookReport:', error);
+      return null;
+    }
+  }, []);
+
+  // Write operations - these require wallet connection and return promise with transaction hash
+  const grantRole = useCallback(async (roleName: string, userAddress: Address) => {
+    try {
+      return await SupplyChainService.grantRole(roleName, userAddress);
+    } catch (error) {
+      console.error('Error in grantRole:', error);
       throw error;
     }
-  }, [getRoleHashForName]);
-
-  const registerNetbooks = useCallback(async (serials: string[], batches: string[], specs: string[]) => {
-    return await SupplyChainService.registerNetbooks(serials, batches, specs);
   }, []);
 
-  const getNetbookBySerial = useCallback(async (serial: string) => {
-    return await SupplyChainService.getNetbookReport(serial);
+  const revokeRole = useCallback(async (roleHash: string, userAddress: Address) => {
+    try {
+      return await SupplyChainService.revokeRole(roleHash, userAddress);
+    } catch (error) {
+      console.error('Error in revokeRole:', error);
+      throw error;
+    }
   }, []);
 
-  const auditHardware = useCallback(async (serial: string, passed: boolean, reportHash: string) => {
-    return await SupplyChainService.auditHardware(serial, passed, reportHash);
-  }, []);
-
-  const validateSoftware = useCallback(async (serial: string, osVersion: string, passed: boolean) => {
-    return await SupplyChainService.validateSoftware(serial, osVersion, passed);
-  }, []);
-
-  const assignToStudent = useCallback(async (serial: string, schoolHash: string, studentHash: string) => {
-    return await SupplyChainService.assignToStudent(serial, schoolHash, studentHash);
-  }, []);
-
-  const getAllSerialNumbers = useCallback(async () => {
-    return await SupplyChainService.getAllSerialNumbers();
-  }, []);
-
+  // Export all functions
   return {
+    getRoleHashForName,
     hasRole,
     getRoleCounts,
+    getAccountBalance,
     getRoleMembers,
     getAllRolesSummary,
-    grantRole,
-    revokeRole,
-    getNetbookBySerial,
-    auditHardware,
-    validateSoftware,
-    assignToStudent,
     getAllSerialNumbers,
-    getAccountBalance,
-    registerNetbooks
+    getNetbookState,
+    getNetbookReport,
+    grantRole,
+    revokeRole
   };
-};
+}

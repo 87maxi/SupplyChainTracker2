@@ -143,7 +143,7 @@ function TempDashboard({ onConnect }: { onConnect: () => void }) {
 
 export default function ManagerDashboard() {
   const { isConnected, connectWallet } = useWeb3();
-  const { getAllSerialNumbers, getNetbookBySerial } = useSupplyChainService();
+  const { getAllSerialNumbers, getNetbookState, getNetbookReport } = useSupplyChainService();
   const { isHardwareAuditor, isSoftwareTechnician, isSchool, isAdmin } = useUserRoles();
 
   const [netbooks, setNetbooks] = useState<Netbook[]>([]);
@@ -181,7 +181,19 @@ export default function ManagerDashboard() {
       const netbookData = await Promise.all(
         serials.map(async (serial) => {
           try {
-            return await getNetbookBySerial(serial);
+            // Obtener el estado y el reporte por separado
+            const state = await getNetbookState(serial);
+            const report = await getNetbookReport(serial);
+            
+            // Combinar en un solo objeto netbook
+            if (report) {
+              return {
+                ...report,
+                currentState: state,
+                serialNumber: serial
+              };
+            }
+            return null;
           } catch (error) {
             console.error(`Error fetching data for ${serial}:`, error);
             return null;
@@ -203,7 +215,7 @@ export default function ManagerDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [isConnected, getAllSerialNumbers, getNetbookBySerial]);
+  }, [isConnected, getAllSerialNumbers, getNetbookState, getNetbookReport]);
 
   useEffect(() => {
     fetchDashboardData();
