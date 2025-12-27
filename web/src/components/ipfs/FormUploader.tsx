@@ -32,9 +32,22 @@ export function FormUploader({ onUploadComplete, formTitle = "Subir Formulario a
     setIsSubmitting(true);
     
     try {
+      // Validar JSON
+      let jsonContent;
+      try {
+        jsonContent = JSON.parse(data.content);
+      } catch (e) {
+        toast({
+          title: "Error",
+          description: "El contenido debe ser JSON válido",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       // Subir a IPFS
       const result = await uploadToIPFS({
-        ...JSON.parse(data.content),
+        ...jsonContent,
         timestamp: new Date().toISOString()
       });
       

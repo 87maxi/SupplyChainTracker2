@@ -187,6 +187,47 @@ export const getAllSerialNumbers = async () => {
   }
 };
 
+// Get netbook state with proper error handling
+export const getNetbookState = async (serial: string): Promise<string> => {
+  try {
+    const result = await readContract(config, {
+      address: contractAddress,
+      abi,
+      functionName: 'getNetbookState',
+      args: [serial]
+    }) as number;
+    
+    const NETBOOK_STATES = ['FABRICADA', 'HW_APROBADO', 'SW_VALIDADO', 'DISTRIBUIDA'] as const;
+    return NETBOOK_STATES[result] || 'FABRICADA';
+  } catch (error) {
+    console.error('Error getting netbook state:', error);
+    throw error;
+  }
+};
+
+// Get netbook report with proper error handling
+export const getNetbookReport = async (serial: string) => {
+  try {
+    const result = await readContract(config, {
+      address: contractAddress,
+      abi,
+      functionName: 'getNetbookReport',
+      args: [serial]
+    }) as any;
+
+    const NETBOOK_STATES = ['FABRICADA', 'HW_APROBADO', 'SW_VALIDADO', 'DISTRIBUIDA'] as const;
+    
+    return {
+      ...result,
+      currentState: NETBOOK_STATES[result.currentState] || 'FABRICADA',
+      distributionTimestamp: result.distributionTimestamp.toString()
+    };
+  } catch (error) {
+    console.error('Error getting netbook report:', error);
+    throw error;
+  }
+};
+
 // Cache for role members
 const membersCache: Record<string, { members: string[], timestamp: number }> = {};
 const CACHE_DURATION = 30000; // 30 seconds
