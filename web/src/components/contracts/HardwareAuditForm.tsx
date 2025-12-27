@@ -110,7 +110,7 @@ export function HardwareAuditForm({ isOpen, onOpenChange, onComplete, initialSer
               Complete el informe de auditoría y regístrelo en la blockchain
             </DialogDescription>
           </DialogHeader>
-        <div className="grid gap-6 py-4">
+          <div className="grid gap-6 py-4">
           <Card>
             <CardHeader>
               <CardTitle>1. Complete el Informe</CardTitle>
