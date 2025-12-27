@@ -263,7 +263,13 @@ export function HardwareAuditForm({ isOpen, onOpenChange, onComplete, initialSer
                       </Card>
           </div>
         </div>
-        <DialogFooter className="flex-shrink-0 mt-4">
+        <div className="px-6 pb-6 flex-shrink-0">
+          <DialogFooter className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancelar
+            </Button>
+          </DialogFooter>
+        </div>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
