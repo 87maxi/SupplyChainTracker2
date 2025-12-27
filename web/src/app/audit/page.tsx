@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { FormUploader } from '@/components/ipfs/FormUploader';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { registerAuditReport } from '@/services/SupplyChainService';
+import { auditHardware, registerAuditReport } from '@/services/SupplyChainService';
 
 export default function HardwareAuditPage() {
   const { toast } = useToast();
