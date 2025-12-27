@@ -130,8 +130,11 @@ export const getRoleCounts = async () => {
 // to ensure the file saves completely. In a real implementation,
 // all the functions from the original file would be included.
 
+// Mapping for NetbookState enum
+const NETBOOK_STATES = ['FABRICADA', 'HW_APROBADO', 'SW_VALIDADO', 'DISTRIBUIDA'] as const;
+
 // Get netbook state by serial number
-export const getNetbookState = async (serial: string) => {
+export const getNetbookState = async (serial: string): Promise<string> => {
   try {
     const result = await readContract(config, {
       address: contractAddress,
@@ -145,9 +148,6 @@ export const getNetbookState = async (serial: string) => {
     throw error;
   }
 };
-
-// Mapping for NetbookState enum
-const NETBOOK_STATES = ['FABRICADA', 'HW_APROBADO', 'SW_VALIDADO', 'DISTRIBUIDA'] as const;
 
 // Get netbook report by serial number
 export const getNetbookReport = async (serial: string) => {
@@ -183,47 +183,6 @@ export const getAllSerialNumbers = async () => {
     return result as string[];
   } catch (error) {
     console.error('Error getting serial numbers:', error);
-    throw error;
-  }
-};
-
-// Get netbook state with proper error handling
-export const getNetbookState = async (serial: string): Promise<string> => {
-  try {
-    const result = await readContract(config, {
-      address: contractAddress,
-      abi,
-      functionName: 'getNetbookState',
-      args: [serial]
-    }) as number;
-    
-    const NETBOOK_STATES = ['FABRICADA', 'HW_APROBADO', 'SW_VALIDADO', 'DISTRIBUIDA'] as const;
-    return NETBOOK_STATES[result] || 'FABRICADA';
-  } catch (error) {
-    console.error('Error getting netbook state:', error);
-    throw error;
-  }
-};
-
-// Get netbook report with proper error handling
-export const getNetbookReport = async (serial: string) => {
-  try {
-    const result = await readContract(config, {
-      address: contractAddress,
-      abi,
-      functionName: 'getNetbookReport',
-      args: [serial]
-    }) as any;
-
-    const NETBOOK_STATES = ['FABRICADA', 'HW_APROBADO', 'SW_VALIDADO', 'DISTRIBUIDA'] as const;
-    
-    return {
-      ...result,
-      currentState: NETBOOK_STATES[result.currentState] || 'FABRICADA',
-      distributionTimestamp: result.distributionTimestamp.toString()
-    };
-  } catch (error) {
-    console.error('Error getting netbook report:', error);
     throw error;
   }
 };
