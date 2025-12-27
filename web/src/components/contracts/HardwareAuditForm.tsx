@@ -94,6 +94,7 @@ export function HardwareAuditForm({ isOpen, onOpenChange, onComplete, initialSer
               onChange={(e) => setSerial(e.target.value)}
               className="col-span-3"
               placeholder="NB-001"
+              required
             />
           </div>
           <div className="flex items-center space-x-2">
@@ -119,11 +120,12 @@ export function HardwareAuditForm({ isOpen, onOpenChange, onComplete, initialSer
               onChange={(e) => setReportHash(e.target.value)}
               className="col-span-3"
               placeholder="0x... (SHA256 del reporte)"
+              required
             />
           </div>
         </div>
         <DialogFooter>
-          <Button type="submit" onClick={handleAudit} disabled={loading}>
+          <Button type="button" onClick={handleAudit} disabled={loading}>
             {loading ? 'Registrando...' : 'Registrar Auditoría'}
           </Button>
         </DialogFooter>
