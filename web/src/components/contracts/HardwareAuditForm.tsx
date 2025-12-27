@@ -86,9 +86,24 @@ export function HardwareAuditForm({ isOpen, onOpenChange, onComplete, initialSer
     }
   };
 
+  // Calcular altura máxima según el tamaño de pantalla
+  const getDialogContentClass = () => {
+    if (typeof window === 'undefined') return "sm:max-w-[900px] h-[90vh] max-h-[90vh] flex flex-col";
+    
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    
+    if (width < 640) return "max-w-full h-[95vh] max-h-[95vh] flex flex-col p-2"; // Mobile
+    if (width < 768) return "max-w-[85vw] h-[90vh] max-h-[90vh] flex flex-col"; // Tablet
+    if (height < 768) return "sm:max-w-[900px] h-[85vh] max-h-[85vh] flex flex-col"; // Small screens
+    return "sm:max-w-[900px] h-[90vh] max-h-[90vh] flex flex-col"; // Default
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[800px]">
+      <DialogContent className="sm:max-w-[900px] h-[90vh] max-h-[90vh] flex flex-col">
+        <div className="flex-1 overflow-y-auto">
+          <DialogHeader>
         <DialogHeader>
           <DialogTitle>Auditoría de Hardware</DialogTitle>
           <DialogDescription>
@@ -245,14 +260,16 @@ export function HardwareAuditForm({ isOpen, onOpenChange, onComplete, initialSer
                   {loading ? 'Registrando...' : 'Registrar en Blockchain'}
                 </Button>
             </CardContent>
-          </Card>
+                      </Card>
+          </div>
         </div>
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0 mt-4">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
         </DialogFooter>
-      </DialogContent>
+                </div>
+        </DialogContent>
     </Dialog>
   );
 }
