@@ -116,9 +116,9 @@ export function HardwareAuditForm({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[900px] h-[90vh] max-h-[90vh] flex flex-col">
-        <div className="flex-1 overflow-y-auto">
-          <div className="container mx-auto px-4 py-6">
+      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex flex-col h-full">
             <DialogHeader>
               <DialogTitle>Auditoría de Hardware</DialogTitle>
               <DialogDescription>
@@ -224,70 +224,31 @@ export function HardwareAuditForm({
                       <Textarea
                         id="observations"
                         className="min-h-20"
-                        placeholder="Observaciones adicionales sobre el estado del dispositivo"
+                        placeholder="                    Observaciones adicionales sobre el estado del dispositivo"
                       />
                     </div>
                   </div>
                 </CardContent>
               </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>2. Registre en Blockchain</CardTitle>
-                  <CardDescription>
-                    Complete los campos y registre en la blockchain
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="serial" className="text-right">
-                      Serial
-                    </Label>
-                    <Input
-                      id="serial"
-                      value={serial}
-                      onChange={(e) => setSerial(e.target.value)}
-                      className="col-span-3"
-                      placeholder="NB-001"
-                      required
-                    />
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="passed"
-                      checked={passed}
-                      onCheckedChange={(checked: boolean) => setPassed(checked)}
-                    />
-                    <label
-                      htmlFor="passed"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
-                      Auditoría Aprobada
-                    </label>
-                  </div>
-
-                  <Button
-                    onClick={handleAudit}
-                    disabled={loading || !serial}
-                    className="w-full"
-                  >
-                    {loading ? "Registrando..." : "Registrar en Blockchain"}
-                  </Button>
-                </CardContent>
-              </Card>
             </div>
           </div>
-          <div className="px-6 pb-6 flex-shrink-0">
-            <DialogFooter className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-              >
-                Cancelar
-              </Button>
-            </DialogFooter>
+        </div>
+        <div className="px-6 pb-6 flex-shrink-0 bg-background border-t">
+          <div className="flex justify-end gap-2 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleAudit}
+              disabled={loading || !serial}
+              className="w-auto"
+            >
+              {loading ? "Registrando..." : "Registrar en Blockchain"}
+            </Button>
           </div>
         </div>
       </DialogContent>
