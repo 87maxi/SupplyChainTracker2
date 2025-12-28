@@ -213,16 +213,12 @@ export async function getRoleByName(roleType: string): Promise<string> {
     // Si el roleType tiene sufijo _ROLE, intentamos mapearlo
     const mappedRoleType = roleMap[roleType] || roleType;
     
-    console.log(`[getRoleByName] Mapping roleType: ${roleType} -> ${mappedRoleType}`);
-    
     const result = await readContract(config, {
       address: contractAddress,
       abi,
       functionName: 'getRoleByName',
       args: [mappedRoleType]
     });
-    
-    console.log(`[getRoleByName] Successfully got role hash: ${result} for role: ${mappedRoleType}`);
     return result as string;
   } catch (error) {
     console.error('Error al obtener rol por nombre:', error);
