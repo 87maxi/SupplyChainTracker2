@@ -200,15 +200,17 @@ export async function hasRole(roleHash: string, address: string): Promise<boolea
 export async function getRoleByName(roleType: string): Promise<string> {
   try {
     // Map roleType to the expected values in the contract
+    // Mapeo de nombres de roles con sufijo _ROLE a los nombres que acepta el contrato
     const roleMap: Record<string, string> = {
-      'FABRICANTE': 'FABRICANTE',
-      'AUDITOR_HW': 'AUDITOR_HW',
-      'TECNICO_SW': 'TECNICO_SW',
-      'ESCUELA': 'ESCUELA',
-      'ADMIN': 'DEFAULT_ADMIN_ROLE',
-      'DEFAULT_ADMIN_ROLE': 'DEFAULT_ADMIN_ROLE'
+      'FABRICANTE_ROLE': 'FABRICANTE',
+      'AUDITOR_HW_ROLE': 'AUDITOR_HW',
+      'TECNICO_SW_ROLE': 'TECNICO_SW',
+      'ESCUELA_ROLE': 'ESCUELA',
+      'DEFAULT_ADMIN_ROLE': 'ADMIN', // El contrato mapea ADMIN -> DEFAULT_ADMIN_ROLE
+      'ADMIN': 'ADMIN' // Caso directo para ADMIN
     };
     
+    // Si el roleType tiene sufijo _ROLE, intentamos mapearlo
     const mappedRoleType = roleMap[roleType] || roleType;
     
     console.log(`[getRoleByName] Mapping roleType: ${roleType} -> ${mappedRoleType}`);
