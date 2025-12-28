@@ -139,13 +139,13 @@ export const useRoleTransaction = () => {
   }, [transaction]);
 
   const revokeRole = useCallback(async (
-    revokeRoleFn: (role: string, address: string) => Promise<any>,
+    revokeRoleFn: (role: `0x${string}`, address: string) => Promise<any>,
     role: string,
     userAddress: string,
     roleName: string
   ) => {
     return transaction.execute(
-      () => revokeRoleFn(role, userAddress),
+      () => revokeRoleFn(role as `0x${string}`, userAddress as `0x${string}`),
       {
         successMessage: `Rol ${roleName} revocado exitosamente`,
         errorMessage: `Error al revocar el rol ${roleName}`,

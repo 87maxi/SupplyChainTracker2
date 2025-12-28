@@ -93,12 +93,16 @@ export default function CreateTokensPage() {
         return;
       }
 
-      const receipt = await registerNetbooks(serialArray, batchArray, modelArray);
+      const result = await registerNetbooks(serialArray, batchArray, modelArray);
 
-      toast({
-        title: "Registro Exitoso",
-        description: `Se registraron ${serialArray.length} netbooks. Transacción: ${receipt?.transactionHash}`,
-      });
+      if (result.success && result.hash) {
+        toast({
+          title: "Registro Exitoso",
+          description: `Se registraron ${serialArray.length} netbooks. Transacción: ${result.hash.transactionHash}`,
+        });
+      } else {
+        throw new Error(result.error || 'Unknown error');
+      }
       reset(); // Limpiar formulario
       router.push('/tokens'); // Redirigir a la lista de tokens
     } catch (error: any) {

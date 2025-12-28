@@ -55,9 +55,8 @@ export class RoleService extends BaseContractService {
       
       const roleKey = roleKeyMap[roleName];
       const roleHash = roleHashes[roleKey];
-      
       if (!roleHash) {
-        throw new Error(`Rol ${roleName} no encontrado. Hash: ${roleHash}`);
+        throw new Error(`Rol ${roleName} no encontrado: ${roleKey}`);
       }
       
       // Leer del contrato
@@ -139,9 +138,8 @@ export class RoleService extends BaseContractService {
       
       const roleKey = roleKeyMap[roleName];
       const roleHash = roleHashes[roleKey];
-      
       if (!roleHash) {
-        throw new Error(`Rol ${roleName} no encontrado. Hash: ${roleHash}`);
+        throw new Error(`Rol ${roleName} no encontrado: ${roleKey}`);
       }
       
       // Realizar transacción
@@ -194,9 +192,8 @@ export class RoleService extends BaseContractService {
       
       const roleKey = roleKeyMap[roleName];
       const roleHash = roleHashes[roleKey];
-      
       if (!roleHash) {
-        throw new Error(`Rol ${roleName} no encontrado. Hash: ${roleHash}`);
+        throw new Error(`Rol ${roleName} no encontrado: ${roleKey}`);
       }
       
       // Leer del contrato

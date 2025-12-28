@@ -66,7 +66,7 @@ export async function registerNetbooks(
   specs: string[]
 ): Promise<string> {
   try {
-    const { request } = await writeContract(config, {
+    const result = await writeContract(config, {
       address: contractAddress,
       abi,
       functionName: 'registerNetbooks',
@@ -74,7 +74,7 @@ export async function registerNetbooks(
     });
     
     // Simular transacción exitosa
-    return '0x' + '1234567890abcdef'.repeat(8);
+    return result as `0x${string}`;
   } catch (error) {
     console.error('Error al registrar netbooks:', error);
     throw error;
@@ -88,7 +88,7 @@ export async function auditHardware(
   reportHash: string
 ): Promise<string> {
   try {
-    const { request } = await writeContract(config, {
+    const result = await writeContract(config, {
       address: contractAddress,
       abi,
       functionName: 'auditHardware',
@@ -96,7 +96,7 @@ export async function auditHardware(
     });
     
     // Simular transacción exitosa
-    return '0x' + '1234567890abcdef'.repeat(8);
+    return result as `0x${string}`;
   } catch (error) {
     console.error('Error al auditar hardware:', error);
     throw error;
@@ -110,7 +110,7 @@ export async function validateSoftware(
   passed: boolean
 ): Promise<string> {
   try {
-    const { request } = await writeContract(config, {
+    const result = await writeContract(config, {
       address: contractAddress,
       abi,
       functionName: 'validateSoftware',
@@ -118,7 +118,7 @@ export async function validateSoftware(
     });
     
     // Simular transacción exitosa
-    return '0x' + '1234567890abcdef'.repeat(8);
+    return result as `0x${string}`;
   } catch (error) {
     console.error('Error al validar software:', error);
     throw error;
@@ -132,7 +132,7 @@ export async function assignToStudent(
   studentHash: string
 ): Promise<string> {
   try {
-    const { request } = await writeContract(config, {
+    const result = await writeContract(config, {
       address: contractAddress,
       abi,
       functionName: 'assignToStudent',
@@ -140,26 +140,108 @@ export async function assignToStudent(
     });
     
     // Simular transacción exitosa
-    return '0x' + '1234567890abcdef'.repeat(8);
+    return result as `0x${string}`;
   } catch (error) {
     console.error('Error al asignar a estudiante:', error);
     throw error;
   }
 }
 
-// Función para obtener el balance
-export async function getBalance(address: string): Promise<string> {
+// Función para obtener miembros de un rol
+export async function getAllMembers(roleHash: string): Promise<string[]> {
   try {
-    const balance = await readContract(config, {
+    const result = await readContract(config, {
       address: contractAddress,
       abi,
-      functionName: 'balanceOf',
-      args: [address]
+      functionName: 'getAllMembers',
+      args: [roleHash]
+    });
+    return result as string[];
+  } catch (error) {
+    console.error('Error al obtener miembros del rol:', error);
+    throw error;
+  }
+}
+
+// Función para obtener conteo de miembros de un rol
+export async function getRoleMemberCount(roleHash: string): Promise<number> {
+  try {
+    const result = await readContract(config, {
+      address: contractAddress,
+      abi,
+      functionName: 'getRoleMemberCount',
+      args: [roleHash]
+    });
+    return result as number;
+  } catch (error) {
+    console.error('Error al obtener conteo de miembros del rol:', error);
+    throw error;
+  }
+}
+
+// Función para verificar si una cuenta tiene un rol
+export async function hasRole(roleHash: string, address: string): Promise<boolean> {
+  try {
+    const result = await readContract(config, {
+      address: contractAddress,
+      abi,
+      functionName: 'hasRole',
+      args: [roleHash, address]
+    });
+    return result as boolean;
+  } catch (error) {
+    console.error('Error al verificar rol:', error);
+    return false;
+  }
+}
+
+// Funciones para gestión de roles
+export async function grantRole(roleHash: string, account: string): Promise<string> {
+  try {
+    const result = await writeContract(config, {
+      address: contractAddress,
+      abi,
+      functionName: 'grantRole',
+      args: [roleHash, account]
     });
     
-    return formatEther(balance as bigint);
+    // Simular transacción exitosa
+    return result as `0x${string}`;
   } catch (error) {
-    console.error('Error al obtener balance:', error);
-    return '0';
+    console.error('Error al otorgar rol:', error);
+    throw error;
+  }
+}
+
+export async function revokeRole(roleHash: string, account: string): Promise<string> {
+  try {
+    const result = await writeContract(config, {
+      address: contractAddress,
+      abi,
+      functionName: 'revokeRole',
+      args: [roleHash, account]
+    });
+    
+    // Simular transacción exitosa
+    return result as `0x${string}`;
+  } catch (error) {
+    console.error('Error al revocar rol:', error);
+    throw error;
+  }
+}
+
+// Función para obtener netbooks por estado
+export async function getNetbooksByState(state: number): Promise<string[]> {
+  try {
+    const result = await readContract(config, {
+      address: contractAddress,
+      abi,
+      functionName: 'getNetbooksByState',
+      args: [state]
+    });
+    return result as string[];
+  } catch (error) {
+    console.error('Error al obtener netbooks por estado:', error);
+    throw error;
   }
 }

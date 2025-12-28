@@ -1,4 +1,16 @@
-// Este archivo ha sido eliminado para evitar conflictos
-// Usar el hook useWeb3 desde '@/hooks/useWeb3' en su lugar
+import { useAccount, useConnect, useDisconnect } from 'wagmi';
 
-export {};
+// Hook personalizado para manejar la cuenta y la conexión
+export const useWeb3 = () => {
+  const { address, isConnected } = useAccount();
+  const { connect, connectors } = useConnect();
+  const { disconnect } = useDisconnect();
+
+  return {
+    address,
+    isConnected,
+    connect,
+    connectors,
+    disconnect,
+  };
+};

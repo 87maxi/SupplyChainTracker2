@@ -5,7 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { FormUploader } from '@/components/ipfs/FormUploader';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { auditHardware, registerAuditReport } from '@/services/SupplyChainService';
+import { useSupplyChainService } from '@/hooks/useSupplyChainService';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 
 export default function HardwareAuditPage() {
   const { toast } = useToast();

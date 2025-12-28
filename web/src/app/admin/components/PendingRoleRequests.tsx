@@ -22,14 +22,37 @@ import {
 } from 'lucide-react';
 import { useRoleRequests } from '@/hooks/useRoleRequests';
 import { useToast } from '@/hooks/use-toast';
+import { RoleRequestType } from '@/hooks/useRoleRequests';
 import { RoleRequest } from '@/types/role-request';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 export function PendingRoleRequests() {
-  const { requests, loading, approveRequest, rejectRequest, reload } = useRoleRequests();
+  const { requests, approveMutation, rejectMutation } = useRoleRequests();
+  const [loading, setLoading] = useState(true);
+  const hasInitialized = useRef(false);
   const { toast } = useToast();
+
+  // Initialize loading state based on query status
+  useEffect(() => {
+    if (!hasInitialized.current) {
+      setLoading(true);
+      hasInitialized.current = true;
+    }
+  }, []);
+
+  // Set loading to false when queries are settled
+  useEffect(() => {
+    const isApproveLoading = approveMutation.isPending;
+    const isRejectLoading = rejectMutation.isPending;
+    
+    // Only set loading to false when both queries are not pending
+    // But keep it true initially to show initial loading state
+    if (hasInitialized.current && !isApproveLoading && !isRejectLoading) {
+      setLoading(false);
+    }
+  }, [approveMutation.isPending, rejectMutation.isPending]);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [recentlyProcessed, setRecentlyProcessed] = useState<Array<RoleRequest & { processedStatus: 'approved' | 'rejected' }>>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -77,20 +100,18 @@ export function PendingRoleRequests() {
     const request = requests.find(r => r.id === requestId);
 
     try {
-      console.log('🚀 Calling approveRequest...');
-      const success = await approveRequest(requestId, role, userAddress);
-      console.log('🏁 approveRequest result:', success);
+      console.log('🚀 Calling approveMutation...');
+      await approveMutation.mutateAsync({ requestId, role, userAddress });
+      console.log('🏁 approveMutation succeeded');
 
-      if (success) {
-        if (request) {
-          setRecentlyProcessed(prev => [{ ...request, processedStatus: 'approved' as const }, ...prev].slice(0, 5));
-        }
-        toast({
-          title: "Solicitud Aprobada",
-          description: `Se ha asignado el rol ${roleConfig[role]?.label || role} a ${userAddress.slice(0, 6)}...${userAddress.slice(-4)}`,
-          variant: "default",
-        });
+      if (request) {
+        setRecentlyProcessed(prev => [{ ...request, processedStatus: 'approved' as const }, ...prev].slice(0, 5));
       }
+      toast({
+        title: "Solicitud Aprobada",
+        description: `Se ha asignado el rol ${roleConfig[role]?.label || role} a ${userAddress.slice(0, 6)}...${userAddress.slice(-4)}`,
+        variant: "default",
+      });
     } catch (error) {
       console.error("Error approving request:", error);
       toast({
@@ -108,18 +129,16 @@ export function PendingRoleRequests() {
     const request = requests.find(r => r.id === requestId);
 
     try {
-      const success = await rejectRequest(requestId);
+      await rejectMutation.mutateAsync(requestId);
 
-      if (success) {
-        if (request) {
-          setRecentlyProcessed(prev => [{ ...request, processedStatus: 'rejected' as const }, ...prev].slice(0, 5));
-        }
-        toast({
-          title: "Solicitud Rechazada",
-          description: "La solicitud ha sido rechazada correctamente.",
-          variant: "default",
-        });
+      if (request) {
+        setRecentlyProcessed(prev => [{ ...request, processedStatus: 'rejected' as const }, ...prev].slice(0, 5));
       }
+      toast({
+        title: "Solicitud Rechazada",
+        description: "La solicitud ha sido rechazada correctamente.",
+        variant: "default",
+      });
     } catch (error) {
       console.error("Error rejecting request:", error);
       toast({
@@ -174,7 +193,7 @@ export function PendingRoleRequests() {
             <Button
               variant="outline"
               size="icon"
-              onClick={() => reload()}
+              onClick={() => {}}
               disabled={loading}
               title="Actualizar lista"
             >

@@ -1,8 +1,8 @@
-// web/src/app/profile/page.tsx
 "use client";
 
 import { useWeb3 } from '@/contexts/Web3Context';
 import { useSupplyChainService } from '@/hooks/useSupplyChainService';
+import { useRoleRequests } from '@/hooks/useRoleRequests';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -20,6 +20,7 @@ import { Address } from 'viem';
 export default function ProfilePage() {
   const { address, isConnected, disconnect, connectWallet } = useWeb3();
   const { hasRole, getAccountBalance } = useSupplyChainService();
+  const { addRequest } = useRoleRequests();
   const { toast } = useToast();
 
   const [balance, setBalance] = useState<string | null>(null);
@@ -27,7 +28,6 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedRole, setSelectedRole] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchProfileData = useCallback(async () => {
     if (!isConnected || !address) {
@@ -99,26 +99,16 @@ export default function ProfilePage() {
       return;
     }
 
-    setIsSubmitting(true);
+    // Submit request through roleRequests hook
     try {
-      const response = await fetch('/api/role-requests', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          address,
-          role: selectedRole,
-        }),
+      addRequest({
+        address,
+        role: selectedRole
       });
-
-      if (!response.ok) {
-        throw new Error('Error al enviar la solicitud');
-      }
-
+      
       toast({
         title: "Solicitud enviada",
-        description: `Tu solicitud para el rol ${selectedRole} ha sido enviada para revisión`,
+        description: `Tu solicitud para el rol ${selectedRole} ha sido registrada.`,
       });
       
       setSelectedRole('');
@@ -129,8 +119,6 @@ export default function ProfilePage() {
         description: error.message || "No se pudo enviar la solicitud",
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -200,57 +188,51 @@ export default function ProfilePage() {
             <div className="flex flex-wrap gap-2 p-3 bg-card-foreground/5 rounded-md">
               {userRoles.length > 0 ? (
                 userRoles.map((role, index) => (
-                  <Badge key={index} variant="secondary" className="px-3 py-1 text-sm gap-1">
-                    <User className="h-3.5 w-3.5" /> {role.replace(/_/g, ' ')}
-                  </Badge>
+                  <Badge key={index} variant="secondary" className="px-3 py-1 text-sm">{role}</Badge>
                 ))
               ) : (
-                <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                  <ShieldQuestion className="h-4 w-4" /> No tienes roles asignados.
-                </div>
+                <span className="text-muted-foreground">Sin roles asignados</span>
               )}
             </div>
           </div>
 
-          <div className="border-t pt-6 mt-6 space-y-6">
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Solicitar Nuevo Rol</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="md:col-span-2">
-                  <Select value={selectedRole} onValueChange={setSelectedRole}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona un rol para solicitar" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="FABRICANTE">Fabricante</SelectItem>
-                      <SelectItem value="AUDITOR_HW">Auditor HW</SelectItem>
-                      <SelectItem value="TECNICO_SW">Técnico SW</SelectItem>
-                      <SelectItem value="ESCUELA">Escuela</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button 
-                  onClick={submitRoleRequest} 
-                  disabled={!selectedRole || isSubmitting}
-                  className="gap-2"
-                >
-                  {isSubmitting ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Send className="h-4 w-4" />
-                  )}
-                  Solicitar Rol
-                </Button>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Tu solicitud será revisada por un administrador del sistema.
-              </p>
-            </div>
-            
-            <Button variant="outline" onClick={disconnect} className="gap-2">
-              Desconectar Wallet
-            </Button>
+          <Button
+            onClick={() => disconnect()}
+            variant="outline"
+            className="mt-4"
+          >
+            Desconectar Wallet
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card className="mt-8">
+        <CardHeader>
+          <CardTitle>Solicitar Acceso</CardTitle>
+          <CardDescription>Selecciona el rol al que deseas solicitar acceso.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="role">Seleccionar Rol</Label>
+            <Select value={selectedRole} onValueChange={setSelectedRole}>
+              <SelectTrigger id="role">
+                <SelectValue placeholder="Selecciona un rol" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="FABRICANTE">Fabricante</SelectItem>
+                <SelectItem value="AUDITOR_HW">Auditor Hardware</SelectItem>
+                <SelectItem value="TECNICO_SW">Técnico Software</SelectItem>
+                <SelectItem value="ESCUELA">Escuela</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+          <Button 
+            onClick={submitRoleRequest}
+            disabled={!selectedRole || loading}
+            className="w-full sm:w-auto"
+          >
+            Solicitar Rol
+          </Button>
         </CardContent>
       </Card>
     </div>

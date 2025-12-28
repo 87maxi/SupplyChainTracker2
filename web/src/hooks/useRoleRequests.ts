@@ -2,10 +2,19 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { RoleRequest } from '@/types/role-request';
 import { eventBus, EVENTS } from '@/lib/events';
 import { useSupplyChainService } from '@/hooks/useSupplyChainService';
 import { useState, useEffect } from 'react';
+
+// Types for role requests
+export interface RoleRequest {
+  id: string;
+  address: string;
+  role: string;
+  status: 'pending' | 'approved' | 'rejected';
+  timestamp: number;
+  signature?: string;
+}
 
 // Keys for React Query
 const QUERY_KEYS = {
@@ -14,109 +23,125 @@ const QUERY_KEYS = {
 
 export function useRoleRequests() {
   const { toast } = useToast();
-  const { grantRole } = useSupplyChainService();
+  const supplyChainService = useSupplyChainService();
   const queryClient = useQueryClient();
 
-  // Local state for processed IDs to persist across reloads
-  const [processedIds, setProcessedIds] = useState<string[]>([]);
+  // Local state for pending requests using localStorage as persistence
+  const [pendingRequests, setPendingRequests] = useState<RoleRequest[]>([]);
 
+  // Load requests from localStorage on component mount
   useEffect(() => {
     try {
-      const stored = localStorage.getItem('processed_request_ids');
+      const stored = localStorage.getItem('role_requests');
       if (stored) {
-        setProcessedIds(JSON.parse(stored));
+        const requests = JSON.parse(stored);
+        // Filter only pending requests
+        const pending = requests.filter((req: RoleRequest) => req.status === 'pending');
+        setPendingRequests(pending);
       }
-    } catch {
-      // Ignore error
+    } catch (error) {
+      console.error('Error loading role requests from localStorage:', error);
+      // Initialize with empty array if parsing fails
+      setPendingRequests([]);
     }
   }, []);
 
-  const addProcessedId = (id: string) => {
-    setProcessedIds(prev => {
-      if (prev.includes(id)) return prev;
-      const updated = [...prev, id];
-      localStorage.setItem('processed_request_ids', JSON.stringify(updated));
-      return updated;
+  // Save requests to localStorage whenever they change
+  useEffect(() => {
+    try {
+      // Get all requests (including non-pending) from localStorage
+      const stored = localStorage.getItem('role_requests');
+      const allRequests = stored ? JSON.parse(stored) : [];
+      
+      // Update pending requests
+      const updatedRequests = allRequests.map((req: RoleRequest) => 
+        pendingRequests.find(p => p.id === req.id) || req
+      );
+      
+      // Add new pending requests
+      pendingRequests.forEach(req => {
+        if (!updatedRequests.find((r: RoleRequest) => r.id === req.id)) {
+          updatedRequests.push(req);
+        }
+      });
+      
+      localStorage.setItem('role_requests', JSON.stringify(updatedRequests));
+    } catch (error) {
+      console.error('Error saving role requests to localStorage:', error);
+    }
+  }, [pendingRequests]);
+
+  // Add a new role request
+  const addRequest = (request: Omit<RoleRequest, 'id' | 'status' | 'timestamp'>) => {
+    const newRequest: RoleRequest = {
+      ...request,
+      id: Math.random().toString(36).substring(7),
+      status: 'pending',
+      timestamp: Date.now()
+    };
+    
+    setPendingRequests(prev => [...prev, newRequest]);
+    
+    toast({
+      title: "Solicitud enviada",
+      description: `Tu solicitud para el rol ${request.role} ha sido registrada.`,
     });
+    
+    return newRequest;
   };
 
-  // 1. Fetch Requests (Source of Truth + Local Filter)
-  const { data: rawRequests = [], isLoading: loading, refetch } = useQuery({
-    queryKey: QUERY_KEYS.requests,
-    queryFn: async () => {
-      const response = await fetch('/api/role-requests', { cache: 'no-store' });
-      if (!response.ok) {
-        throw new Error('Failed to fetch role requests');
-      }
-      return response.json() as Promise<RoleRequest[]>;
-    },
-    staleTime: 1000 * 60, // Cache for 1 minute
-  });
-
-  // Filter out locally processed requests
-  const requests = rawRequests.filter(req => !processedIds.includes(req.id));
-
-  // 2. Approve Mutation (Direct Transaction + Silent Cleanup + Local Persistence)
+  // Approve a role request
   const approveMutation = useMutation({
     mutationFn: async ({ requestId, role, userAddress }: { requestId: string, role: string, userAddress: string }) => {
       console.log(`[useRoleRequests] Approving request ${requestId}...`);
 
-      // Mark as processed locally IMMEDIATELY
-      addProcessedId(requestId);
-
-      // Normalize role name (remove _ROLE suffix if present) to match roleUtils keys
-      const normalizedRole = role.replace('_ROLE', '');
-      console.log(`[useRoleRequests] Normalized role: ${role} -> ${normalizedRole}`);
-
-      // A. Blockchain Transaction (The ONLY thing that matters for success)
-      // useSupplyChainService.grantRole handles the hash lookup internally
-      const result = await grantRole(normalizedRole, userAddress as `0x${string}`);
+      // Ensure role name is in the correct format with _ROLE suffix
+      const roleToSend = role.endsWith('_ROLE') ? role : `${role}_ROLE`;
+      console.log(`[useRoleRequests] Using role name: ${roleToSend}`);
+      
+      // Blockchain Transaction
+      const result = await supplyChainService.grantRole(roleToSend, userAddress as `0x\${string}`);
       if (!result.success || !result.hash) {
         throw new Error(result.error || 'Transaction failed');
       }
       const hash = result.hash;
       console.log('[useRoleRequests] Transaction submitted:', hash);
 
-      // Fire-and-forget waiter for user feedback
-      (async () => {
-        try {
-          const { waitForTransactionReceipt } = await import('@wagmi/core');
-          const { config } = await import('@/lib/wagmi/config');
-          await waitForTransactionReceipt(config, { hash });
-          toast({
-            title: 'Confirmado en Blockchain',
-            description: 'La asignación de rol ha sido confirmada.',
-            variant: 'default'
-          });
-        } catch (e) {
-          console.error('Background receipt wait failed:', e);
-        }
-      })();
-
-      // B. Server Cleanup (Silent Side Effect)
-      // We try to delete the request from the pending list.
-      // If this fails, we DO NOT fail the mutation, because the TX was sent.
+      // Wait for transaction confirmation
       try {
-        await fetch(`/api/role-requests/${requestId}`, {
-          method: 'DELETE',
+        const { waitForTransactionReceipt } = await import('@wagmi/core');
+        const { config } = await import('@/lib/wagmi/config');
+        await waitForTransactionReceipt(config, { 
+          hash, 
+          confirmations: 1,
+          timeout: 120000 // Increased to 120 seconds for Anvil
         });
-      } catch (error) {
-        console.warn('[useRoleRequests] Failed to clean up request from server, but TX was sent:', error);
+        console.log('[useRoleRequests] Transaction confirmed on blockchain');
+        
+        toast({
+          title: 'Confirmado en Blockchain',
+          description: 'La asignación de rol ha sido confirmada.',
+          variant: 'default'
+        });
+      } catch (e) {
+        console.error('Transaction confirmation failed:', e);
+        throw e;
       }
+
+      // Update request status to approved
+      setPendingRequests(prev => prev.filter(req => req.id !== requestId));
 
       return hash;
     },
     onMutate: async ({ requestId, role, userAddress }) => {
-      // Cancel outgoing refetches
+      // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: QUERY_KEYS.requests });
 
       // Snapshot previous value
-      const previousRequests = queryClient.getQueryData<RoleRequest[]>(QUERY_KEYS.requests);
+      const previousRequests = [...pendingRequests];
 
-      // Optimistically update: Remove the request from the list immediately
-      queryClient.setQueryData<RoleRequest[]>(QUERY_KEYS.requests, (old = []) =>
-        old.filter(req => req.id !== requestId)
-      );
+      // Optimistically remove the request
+      setPendingRequests(prev => prev.filter(req => req.id !== requestId));
 
       // Notify UI immediately
       toast({
@@ -127,20 +152,20 @@ export function useRoleRequests() {
       // Normalize role name for event emission
       const normalizedRole = role.replace('_ROLE', '');
 
-      // Emit event for other components with details
+      // Emit event for other components
       eventBus.emit(EVENTS.ROLE_UPDATED, {
         action: 'approved',
         address: userAddress,
-        role: normalizedRole // Use normalized role (e.g. AUDITOR_HW)
+        role: normalizedRole
       });
 
       return { previousRequests };
     },
     onError: (err, variables, context) => {
       console.error('[useRoleRequests] Approval failed:', err);
-      // Only rollback if the BLOCKCHAIN transaction failed.
+      // Rollback to previous state if mutation fails
       if (context?.previousRequests) {
-        queryClient.setQueryData(QUERY_KEYS.requests, context.previousRequests);
+        setPendingRequests(context.previousRequests);
       }
 
       // Rollback optimistic update in ApprovedAccountsList
@@ -168,42 +193,30 @@ export function useRoleRequests() {
         variant: 'destructive',
       });
     },
-    onSettled: () => {
-      // Do NOT invalidate queries immediately to preserve optimistic state
-    },
   });
 
-  // 3. Reject Mutation
+  // Reject a role request
   const rejectMutation = useMutation({
     mutationFn: async (requestId: string) => {
-      // Mark as processed locally
-      addProcessedId(requestId);
-
-      const response = await fetch(`/api/role-requests/${requestId}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'rejected' }),
-      });
-      if (!response.ok) throw new Error('Error al rechazar en el servidor');
-    },
-    onMutate: async (requestId) => {
-      await queryClient.cancelQueries({ queryKey: QUERY_KEYS.requests });
-      const previousRequests = queryClient.getQueryData<RoleRequest[]>(QUERY_KEYS.requests);
-
-      queryClient.setQueryData<RoleRequest[]>(QUERY_KEYS.requests, (old = []) =>
-        old.filter(req => req.id !== requestId)
-      );
-
+      // Update request status to rejected
+      setPendingRequests(prev => prev.filter(req => req.id !== requestId));
+      
       toast({
         title: 'Solicitud rechazada',
         description: 'La solicitud ha sido eliminada de la lista.',
       });
+    },
+    onMutate: async (requestId) => {
+      await queryClient.cancelQueries({ queryKey: QUERY_KEYS.requests });
+      const previousRequests = [...pendingRequests];
+
+      setPendingRequests(prev => prev.filter(req => req.id !== requestId));
 
       return { previousRequests };
     },
     onError: (err, variables, context) => {
       if (context?.previousRequests) {
-        queryClient.setQueryData(QUERY_KEYS.requests, context.previousRequests);
+        setPendingRequests(context.previousRequests);
       }
       toast({
         title: 'Error al rechazar',
@@ -211,79 +224,49 @@ export function useRoleRequests() {
         variant: 'destructive',
       });
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.requests });
-    },
   });
 
-  // 4. Delete Mutation
+  // Delete a role request
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      addProcessedId(id);
-      const response = await fetch(`/api/role-requests/${id}`, { method: 'DELETE' });
-      if (!response.ok) throw new Error('Failed to delete request');
-    },
-    onMutate: async (id) => {
-      await queryClient.cancelQueries({ queryKey: QUERY_KEYS.requests });
-      const previousRequests = queryClient.getQueryData<RoleRequest[]>(QUERY_KEYS.requests);
-
-      queryClient.setQueryData<RoleRequest[]>(QUERY_KEYS.requests, (old = []) =>
-        old.filter(req => req.id !== id)
-      );
-
+      setPendingRequests(prev => prev.filter(req => req.id !== id));
+      
       toast({
         title: 'Éxito',
         description: 'Solicitud eliminada correctamente',
       });
+    },
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: QUERY_KEYS.requests });
+      const previousRequests = [...pendingRequests];
+
+      setPendingRequests(prev => prev.filter(req => req.id !== id));
 
       return { previousRequests };
     },
     onError: (err, variables, context) => {
       if (context?.previousRequests) {
-        queryClient.setQueryData(QUERY_KEYS.requests, context.previousRequests);
+        setPendingRequests(context.previousRequests);
       }
+      toast({
+        title: 'Error al eliminar',
+        description: 'No se pudo eliminar la solicitud.',
+        variant: 'destructive',
+      });
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.requests });
-    },
+    }
   });
 
-  // Wrapper functions to match original interface
-  const approveRequest = async (requestId: string, role: string, userAddress: string) => {
-    console.log('⚡ approveRequest wrapper called', { requestId, role, userAddress });
-    try {
-      await approveMutation.mutateAsync({ requestId, role, userAddress });
-      return true;
-    } catch (e) {
-      console.error('❌ approveRequest wrapper failed:', e);
-      return false;
-    }
-  };
-
-  const rejectRequest = async (requestId: string) => {
-    try {
-      await rejectMutation.mutateAsync(requestId);
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
-  const deleteRequest = async (id: string) => {
-    try {
-      await deleteMutation.mutateAsync(id);
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
   return {
-    requests,
-    loading,
-    reload: () => refetch(),
-    approveRequest,
-    rejectRequest,
-    deleteRequest,
+    requests: pendingRequests,
+    addRequest,
+    approveMutation,
+    rejectMutation,
+    deleteMutation
   };
 }
+
+// Re-export types
+export type { RoleRequest as RoleRequestType };

@@ -163,10 +163,19 @@ export default function AdminUsersPage() {
     setIsSubmittingGrant(true);
     try {
       const result = await grantRole(data.role, data.userAddress as Address);
-      toast({
-        title: "Rol Otorgado",
-        description: `Se otorgó el rol ${data.role} a ${data.userAddress}.${result.hash ? ' Tx: ' + result.hash : ''}`,
-      });
+      if (result.success) {
+        toast({
+          title: "Rol Otorgado",
+          description: `Se otorgó el rol ${data.role} a ${data.userAddress}.${result.hash ? ' Tx: ' + result.hash : ''}`,
+        });
+      } else {
+        toast({
+          title: "Error al otorgar rol",
+          description: result.error || "Desconocido",
+          variant: "destructive"
+        });
+        return;
+      }
       form.reset({ userAddress: '', role: 'FABRICANTE_ROLE' });
       await fetchUsersAndRoles(); // Refrescar la lista de usuarios
     } catch (err: any) {
@@ -184,10 +193,11 @@ export default function AdminUsersPage() {
   const onRevokeRoleSubmit: SubmitHandler<RoleManagementInputs> = async (data) => {
     setIsSubmittingRevoke(true);
     try {
-      const result = await revokeRole(data.role, data.userAddress as Address);
+      const result = await revokeRole(data.role as `0x${string}`, data.userAddress as Address);
+      // revokeRole only returns hash if successful
       toast({
         title: "Rol Revocado",
-        description: `Se revocó el rol ${data.role} a ${data.userAddress}.${result.hash ? ' Tx: ' + result.hash : ''}`,
+        description: `Se revocó el rol ${data.role} a ${data.userAddress}.${result ? ' Tx: ' + result : ''}`,
       });
       form.reset({ userAddress: '', role: 'FABRICANTE_ROLE' });
       await fetchUsersAndRoles(); // Refrescar la lista de usuarios

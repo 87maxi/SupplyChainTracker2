@@ -4,6 +4,7 @@ import * as SupplyChainService from '@/services/SupplyChainService';
 import { useAccount } from 'wagmi';
 import { Address } from 'viem';
 import { ContractRoles, AllRolesSummary } from '@/types/contract';
+import { roleMapper } from '@/lib/roleMapping';
 
 export const useSupplyChainService = () => {
   const { address } = useAccount();
@@ -18,57 +19,19 @@ export const useSupplyChainService = () => {
     }
   }, []);
 
-  // Role hash mapping utility
-  const getRoleHashForName = useCallback(async (role: string): Promise<string> => {
+  // Role hash mapping utility - now uses centralized roleMapper
+  // For backward compatibility, this function maintains the same interface
+  // but delegates to the centralized roleMapper for consistency
+  const getRoleHashForName = useCallback(async (role: string): Promise<`0x${string}`> => {
     // If it's already a hash, just return it
     if (role.startsWith('0x') && role.length === 66) {
-      return role;
+      return role as `0x${string}`;
     }
-
+    
     try {
-      // Import RoleMap type for type safety
-      type RoleMap = import('@/lib/roleUtils').RoleMap;
-      const roleHashes: RoleMap = await import('@/lib/roleUtils').then(({ getRoleHashes }) => getRoleHashes());
-
-      // Normalize input: remove _ROLE suffix and uppercase
-      const normalizedInput = role.toUpperCase().replace('_ROLE', '');
-
-      // Find matching key in roleHashes (which are like FABRICANTE, ADMIN, etc.)
-      const matchedKey = Object.keys(roleHashes).find(key => {
-        const normalizedKey = key.toUpperCase().replace('_ROLE', '');
-        return normalizedKey === normalizedInput;
-      }) as keyof RoleMap | undefined;
-
-      // Special case for English aliases if needed, or handle them via a small map if strictly required.
-      // For now, dynamic matching covers FABRICANTE -> FABRICANTE, FABRICANTE_ROLE -> FABRICANTE.
-
-      if (!matchedKey) {
-        // Fallback for English aliases if they are being used in the UI
-        const aliases: Record<string, string> = {
-          'MANUFACTURER': 'FABRICANTE',
-          'HARDWARE_AUDITOR': 'AUDITOR_HW',
-          'SOFTWARE_TECHNICIAN': 'TECNICO_SW',
-          'SCHOOL': 'ESCUELA',
-          'DEFAULT_ADMIN': 'ADMIN',
-          'SUPER_ADMIN': 'ADMIN'
-        };
-        const aliasKey = aliases[normalizedInput];
-        if (aliasKey && (aliasKey in roleHashes)) {
-          const roleHash = roleHashes[aliasKey as keyof RoleMap];
-          return roleHash;
-        }
-
-        console.error('❌ Role mapping failed for:', role);
-        throw new Error(`Role "${role}" not found in role hashes.`);
-      }
-
-      const roleHash = roleHashes[matchedKey];
-      if (!roleHash) {
-        throw new Error(`Role hash is empty for key: ${matchedKey}`);
-      }
-
-      return roleHash;
-    } catch (error) {
+      // Delegate to centralized role mapper
+      return await roleMapper.getRoleHash(role);
+    } catch (error: any) {
       console.error('💥 Error getting role hash:', error);
       throw error;
     }
@@ -226,7 +189,7 @@ export const useSupplyChainService = () => {
     }
   }, []);
 
-  const revokeRole = useCallback(async (roleHash: string, userAddress: Address) => {
+  const revokeRole = useCallback(async (roleHash: `0x${string}`, userAddress: Address) => {
     try {
       return await SupplyChainService.revokeRole(roleHash, userAddress);
     } catch (error) {
@@ -235,6 +198,49 @@ export const useSupplyChainService = () => {
     }
   }, []);
 
+  // Netbook operations
+  const auditHardware = useCallback(async (serial: string, passed: boolean, reportHash: string) => {
+    try {
+      const transactionHash = await SupplyChainService.auditHardware(serial, passed, reportHash);
+      return { success: true, hash: transactionHash };
+    } catch (error) {
+      console.error('Error in auditHardware:', error);
+      return { success: false, error: (error as Error).message };
+    }
+  }, []);
+
+  const registerNetbooks = useCallback(async (serials: string[], batches: string[], specs: string[]) => {
+    try {
+      const transactionHash = await SupplyChainService.registerNetbooks(serials, batches, specs);
+      return { success: true, hash: transactionHash };
+    } catch (error) {
+      console.error('Error in registerNetbooks:', error);
+      return { success: false, error: (error as Error).message };
+    }
+  }, []);
+
+  // Netbook operations
+  const validateSoftware = useCallback(async (serial: string, osVersion: string, passed: boolean) => {
+    try {
+      const transactionHash = await SupplyChainService.validateSoftware(serial, osVersion, passed);
+      return { success: true, hash: transactionHash };
+    } catch (error) {
+      console.error('Error in validateSoftware:', error);
+      return { success: false, error: (error as Error).message };
+    }
+  }, []);
+  
+  // Netbook operations
+  const assignToStudent = useCallback(async (serial: string, schoolHash: string, studentHash: string) => {
+    try {
+      const transactionHash = await SupplyChainService.assignToStudent(serial, schoolHash, studentHash);
+      return { success: true, hash: transactionHash };
+    } catch (error) {
+      console.error('Error in assignToStudent:', error);
+      return { success: false, error: (error as Error).message };
+    }
+  }, []);
+  
   // Export all functions
   return {
     getRoleHashForName,
@@ -247,6 +253,10 @@ export const useSupplyChainService = () => {
     getNetbookState,
     getNetbookReport,
     grantRole,
-    revokeRole
+    revokeRole,
+    auditHardware,
+    registerNetbooks,
+    validateSoftware,
+    assignToStudent
   };
-}
+};

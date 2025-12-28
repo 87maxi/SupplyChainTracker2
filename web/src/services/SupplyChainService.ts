@@ -3,6 +3,7 @@
 import { readContract, writeContract, waitForTransactionReceipt, getBalance, getAccount } from '@wagmi/core';
 import { config } from '@/lib/wagmi/config';
 import { Address } from 'viem';
+import { roleMapper } from '@/lib/roleMapping';
 
 // Import contract ABI and address
 import SupplyChainTrackerABI from '@/contracts/abi/SupplyChainTracker.json';
@@ -224,44 +225,33 @@ export const clearMembersCache = (roleHash?: string) => {
   }
 };
 
-// Grant a role to a user
+  // Grant a role to a user
 export const grantRole = async (roleName: string, userAddress: Address) => {
   try {
-    // Get role hash from name using roleUtils
-    const roleHashes = await import('@/lib/roleUtils').then(({ getRoleHashes }) => getRoleHashes());
-    
-    // Map role name to role hash
-    const roleKeyMap: Record<string, keyof typeof roleHashes> = {
-      'FABRICANTE': 'FABRICANTE',
-      'AUDITOR_HW': 'AUDITOR_HW',
-      'TECNICO_SW': 'TECNICO_SW',
-      'ESCUELA': 'ESCUELA',
-      'DEFAULT_ADMIN': 'ADMIN'
-    };
-    
-    const roleKey = roleKeyMap[roleName] || roleName;
-    const roleHash = roleHashes[roleKey];
+    // Delegate to our centralized roleMapper for consistent role hash mapping
+    const roleHash = await roleMapper.getRoleHash(roleName);
     
     if (!roleHash) {
       throw new Error(`Role ${roleName} not found in role hashes`);
     }
 
-    const account = getAccount(config);
-    const { request } = await import('@wagmi/core').then(mod => mod.simulateContract(config, {
+    // Direct transaction without simulation to ensure correct execution
+    const transactionHash = await writeContract(config, {
       address: contractAddress,
       abi,
       functionName: 'grantRole',
       args: [roleHash, userAddress],
-      account: account.address // Explicitly set the sender
-    }));
-
-    // Execute the transaction using the simulated request
-    // Force gas limit to avoid estimation hanging
-    const transactionHash = await writeContract(config, {
-      ...request,
-      gas: BigInt(500000), // Hardcoded high gas limit for Anvil
+      gas: BigInt(500000) // High gas limit for Anvil
     });
 
+    // Wait for transaction confirmation with extended timeout
+    const receipt = await waitForTransactionReceipt(config, {
+      hash: transactionHash,
+      timeout: 120000 // Wait up to 120 seconds for Anvil
+    });
+
+    console.log('grantRole transaction confirmed:', receipt);
+    
     return {
       success: true,
       hash: transactionHash
@@ -281,17 +271,17 @@ export const grantRole = async (roleName: string, userAddress: Address) => {
 };
 
 // Revoke a role from a user
-export const revokeRole = async (roleHash: string, userAddress: Address) => {
+export const revokeRole = async (roleHash: `0x${string}`, userAddress: Address) => {
   try {
-    const transactionHash = await writeContract(config, {
+    const result = await writeContract(config, {
       address: contractAddress,
       abi,
       functionName: 'revokeRole',
       args: [roleHash, userAddress]
     });
-
-    // Return hash immediately - DO NOT WAIT
-    return transactionHash;
+    
+    // Return hash immediately
+    return result;
   } catch (error) {
     console.error('Error revoking role:', error);
     throw error;

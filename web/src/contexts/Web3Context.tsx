@@ -1,7 +1,7 @@
 // web/src/contexts/Web3Context.tsx
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { Address } from 'viem';
 
@@ -22,11 +22,12 @@ interface Web3ProviderProps {
 }
 
 export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }) => {
-  const { address, isConnected, isConnecting } = useAccount();
+  const { address, isConnected, isConnecting, chain } = useAccount();
   const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
 
   const connectWallet = (connectorId?: string) => {
+    console.log('[Web3Context] connectWallet called');
     if (connectorId) {
       const selectedConnector = connectors.find(c => c.id === connectorId);
       if (selectedConnector) {
@@ -46,6 +47,16 @@ export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }) => {
   // In Next.js, environment variables are available directly in process.env on both server and client
   const defaultAdminAddress = process.env.NEXT_PUBLIC_DEFAULT_ADMIN_ADDRESS as Address | undefined;
 
+  // Add network info to debugging
+  useEffect(() => {
+    console.log('[Web3Context] Network changed:', chain?.name);
+  }, [chain]);
+
+  // Log address changes for debugging
+  useEffect(() => {
+    console.log('[Web3Context] Address changed:', address);
+  }, [address]);
+
   const value = {
     address,
     isConnected,
@@ -54,7 +65,6 @@ export const Web3Provider: React.FC<Web3ProviderProps> = ({ children }) => {
     connectWallet,
     defaultAdminAddress,
   };
-
   return <Web3Context.Provider value={value}>{children}</Web3Context.Provider>;
 };
 

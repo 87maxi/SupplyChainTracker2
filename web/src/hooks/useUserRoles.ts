@@ -19,19 +19,20 @@ interface UseUserRoles {
   isLoading: boolean;
   hasRole: (roleName: ContractRoles) => boolean;
   activeRoleNames: ContractRoles[];
+  refreshRoles: () => void;
 }
 
 export const useUserRoles = (): UseUserRoles => {
   const { address, isConnected } = useWeb3();
-  const [userRoles, setUserRoles] = useState<UseUserRoles>({
-    isAdmin: false,
+    const [userRoles, setUserRoles] = useState<UseUserRoles>({    isAdmin: false,
     isManufacturer: false,
     isHardwareAuditor: false,
     isSoftwareTechnician: false,
     isSchool: false,
     isLoading: true,
     hasRole: () => false,
-    activeRoleNames: []
+    activeRoleNames: [],
+    refreshRoles: () => {}
   });
 
   const checkRoles = useCallback(async () => {
@@ -80,13 +81,15 @@ export const useUserRoles = (): UseUserRoles => {
       if (isSoftwareTechnician) activeRoleNames.push('TECNICO_SW_ROLE');
       if (isSchool) activeRoleNames.push('ESCUELA_ROLE');
 
-      setUserRoles({
+      setUserRoles(prev => ({
+        ...prev,
         isAdmin,
         isManufacturer,
         isHardwareAuditor,
         isSoftwareTechnician,
         isSchool,
         isLoading: false,
+        activeRoleNames,
         hasRole: (roleName: ContractRoles) => {
           switch (roleName) {
             case 'DEFAULT_ADMIN_ROLE': return isAdmin;
@@ -96,9 +99,8 @@ export const useUserRoles = (): UseUserRoles => {
             case 'ESCUELA_ROLE': return isSchool;
             default: return false;
           }
-        },
-        activeRoleNames
-      });
+        }
+      }));
     } catch (error: any) {
       console.error('Error fetching user roles:', error);
 
@@ -125,5 +127,28 @@ export const useUserRoles = (): UseUserRoles => {
     return () => unsubscribe();
   }, [checkRoles]);
 
-  return userRoles;
+  // Force role refresh when address changes
+  useEffect(() => {
+    if (isConnected && address) {
+      console.log('Address changed, refreshing roles for:', address);
+      checkRoles();
+    }
+  }, [address, isConnected, checkRoles]);
+
+  // Return the roles and add a method to force refresh
+  // Effect to update refreshRoles
+  useEffect(() => {
+    setUserRoles(prev => {
+      // Only update refreshRoles if it's different
+      if (prev.refreshRoles !== checkRoles) {
+        return { ...prev, refreshRoles: checkRoles };
+      }
+      return prev;
+    });
+  }, [checkRoles]);
+
+  return {
+    ...userRoles,
+    refreshRoles: checkRoles
+  };
 };

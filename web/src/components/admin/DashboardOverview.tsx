@@ -36,7 +36,7 @@ import { truncateAddress } from '@/lib/utils';
 import { getRoleHashes } from '@/lib/roleUtils';
 import { getRoleRequests, updateRoleRequestStatus, deleteRoleRequest } from '@/services/RoleRequestService';
 import { RoleRequest } from '@/types/role-request';
-import { SupplyChainContract } from '@/lib/contracts/SupplyChainContract';
+import * as SupplyChainContract from '@/lib/contracts/SupplyChainContract';
 
 // Cache configuration
 const CACHE_CONFIG = {
@@ -277,8 +277,8 @@ export function DashboardOverview({ stats: initialStats }: { stats: DashboardSta
       }
 
       // Verify if current user is admin
-      const adminRole = await SupplyChainContract.getDefaultAdminRole();
-      const isAdmin = await SupplyChainContract.hasRole(adminRole, address);
+      const adminRoleHashes = await getRoleHashes();
+      const isAdmin = await SupplyChainContract.hasRole(adminRoleHashes.ADMIN, address);
 
       if (!isAdmin) {
         throw new Error("No tienes permisos de administrador (AccessControl)");
@@ -298,18 +298,24 @@ export function DashboardOverview({ stats: initialStats }: { stats: DashboardSta
 
       const result = await SupplyChainContract.grantRole(roleBytes32, request.address);
       
-      if ('hash' in result) {
+      // Wait for transaction receipt
+      if (result) {
         const { config } = await import('@/lib/wagmi/config');
         const { waitForTransactionReceipt } = await import('@wagmi/core');
-        const receipt = await waitForTransactionReceipt(config, { hash: result.hash });
+        const receipt = await waitForTransactionReceipt(config, { 
+          hash: result as `0x${string}`
+        });
         
         if (receipt.status !== 'success') {
           throw new Error(`Transacción fallida: ${receipt.transactionHash}`);
         }
       }
       
-
-      // Verify transaction on-chain
+      // El resultado ya es un hash de transacción (string)
+      // No es necesario verificar 'hash' en el objeto
+      
+      // Verificar transacción on-chain con retiro de caches
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Pequeño delay para asegurar confirmación
       const hasRole = await SupplyChainContract.hasRole(roleBytes32, request.address);
       if (!hasRole) {
         throw new Error("La transacción se confirmó pero el rol no fue asignado. Verifica los logs del contrato.");

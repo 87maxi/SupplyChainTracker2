@@ -14,6 +14,7 @@ import { truncateAddress } from '@/lib/utils';
 import { Copy, Search, RefreshCw, Trash2 } from 'lucide-react';
 import { eventBus, EVENTS } from '@/lib/events';
 import { ContractRoles } from '@/types/contract';
+import { roleMapper } from '@/lib/roleMapping';
 
 const availableRoles = [
     { value: 'ALL', label: 'Todos los Roles' },
@@ -143,8 +144,11 @@ export function ApprovedAccountsList() {
 
         setProcessingAddress(address);
         try {
-            // 1. Send transaction (now returns hash immediately)
-            const hash = await revokeRole(role, address as `0x${string}`);
+            // 1. Get the role hash using our centralized mapper
+            const roleHash = await roleMapper.getRoleHash(role);
+            
+            // 2. Send transaction with the proper role hash
+            const hash = await revokeRole(roleHash, address as `0x${string}`);
             console.log('[ApprovedAccountsList] Revoke TX submitted:', hash);
 
             toast({

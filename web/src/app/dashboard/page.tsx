@@ -87,9 +87,9 @@ function TrackingCard({ netbook, onAction }: { netbook: Netbook, onAction?: (act
             </div>
             <div className="text-xs text-muted-foreground">
               {netbook.currentState === 'FABRICADA' ? (
-                <>Fecha de registro: {new Date(netbook.setTimestamp).toLocaleDateString()}</>
+                <>Fecha de registro: {netbook.setTimestamp ? new Date(netbook.setTimestamp).toLocaleDateString() : 'N/A'}</>
               ) : (
-                <>Última actualización: {new Date(Number(netbook.distributionTimestamp) * 1000).toLocaleDateString()}</>
+                <>Última actualización: {Number.isFinite(netbook.distributionTimestamp) ? new Date(Number(netbook.distributionTimestamp) * 1000).toLocaleDateString() : 'N/A'}</>
               )}
             </div>
           </div>

@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidateTag } from 'next/cache';
-import { SupplyChainContract } from '@/lib/contracts/SupplyChainContract';
+import * as SupplyChainContract from '@/lib/contracts/SupplyChainContract';
 
 // Use local storage or cache for server-side data
 const cache = new Map();
