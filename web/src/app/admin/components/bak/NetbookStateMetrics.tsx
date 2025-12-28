@@ -55,33 +55,23 @@ const StateCard = ({
 
 export const NetbookStateMetrics = () => {
     const [loading, setLoading] = useState(true);
-    const [counts, setCounts] = useState<NetbookCounts>(() => {
-        if (typeof window !== 'undefined') {
-            const cached = localStorage.getItem('netbook_metrics_cache');
-            if (cached) {
-                try {
-                    return JSON.parse(cached);
-                } catch (e) {
-                    return { total: 0, fabricadas: 0, hwAprobado: 0, swValidado: 0, distribuidas: 0 };
-                }
-            }
-        }
-        return { total: 0, fabricadas: 0, hwAprobado: 0, swValidado: 0, distribuidas: 0 };
+    const [counts, setCounts] = useState<NetbookCounts>({
+        total: 0,
+        fabricadas: 0,
+        hwAprobado: 0,
+        swValidado: 0,
+        distribuidas: 0
     });
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // Only show loader if we don't have cached data
-                if (counts.total === 0) setLoading(true);
-
+                setLoading(true);
                 const serials = await SupplyChainService.getAllSerialNumbers();
                 const total = serials.length;
 
                 if (total === 0) {
-                    const newCounts = { total: 0, fabricadas: 0, hwAprobado: 0, swValidado: 0, distribuidas: 0 };
-                    setCounts(newCounts);
-                    localStorage.setItem('netbook_metrics_cache', JSON.stringify(newCounts));
+                    setCounts({ total: 0, fabricadas: 0, hwAprobado: 0, swValidado: 0, distribuidas: 0 });
                     return;
                 }
 
@@ -108,9 +98,7 @@ export const NetbookStateMetrics = () => {
                     }
                 });
 
-                const newCounts = { total, fabricadas, hwAprobado, swValidado, distribuidas };
-                setCounts(newCounts);
-                localStorage.setItem('netbook_metrics_cache', JSON.stringify(newCounts));
+                setCounts({ total, fabricadas, hwAprobado, swValidado, distribuidas });
             } catch (error) {
                 console.error('Error fetching netbook metrics:', error);
             } finally {
@@ -119,15 +107,6 @@ export const NetbookStateMetrics = () => {
         };
 
         fetchData();
-
-        // Listen for global refresh events
-        const { eventBus, EVENTS } = require('@/lib/events');
-        const unsubscribe = eventBus.on(EVENTS.REFRESH_DATA || 'REFRESH_DATA', () => {
-            console.log('[NetbookStateMetrics] Global refresh detected...');
-            fetchData();
-        });
-
-        return () => unsubscribe();
     }, []);
 
     if (loading) {

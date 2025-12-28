@@ -36,7 +36,6 @@ import { truncateAddress } from '@/lib/utils';
 import { getRoleHashes } from '@/lib/roleUtils';
 import { getRoleRequests, updateRoleRequestStatus, deleteRoleRequest } from '@/services/RoleRequestService';
 import { RoleRequest } from '@/types/role-request';
-import { useRoleRequests } from '@/hooks/useRoleRequests';
 import * as SupplyChainContract from '@/lib/contracts/SupplyChainContract';
 
 // Cache configuration
@@ -93,28 +92,24 @@ enum State {
   DISTRIBUIDA = 3
 }
 
-export default function PendingRoleRequests({ stats: initialStats }: { stats?: DashboardStats }) {
+export function DashboardOverview({ stats: initialStats }: { stats: DashboardStats }) {
   const { address, isConnected } = useWeb3();
   const { toast } = useToast();
-  const { requests: pendingRequests, approveMutation, rejectMutation } = useRoleRequests();
-
   const [showRoleManager, setShowRoleManager] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [stats, setStats] = useState<DashboardStats>(initialStats || {
-    fabricanteCount: 0,
-    auditorHwCount: 0,
-    tecnicoSwCount: 0,
-    escuelaCount: 0,
-    totalFabricadas: 0,
-    totalHwAprobadas: 0,
-    totalSwValidadas: 0,
-    totalDistribuidas: 0
-  });
+  const [stats, setStats] = useState<DashboardStats>(initialStats);
   // In a real app, this would be fetched from the contract
   const [userRoles, setUserRoles] = useState<UserRoleData[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<RoleRequest[]>([]);
 
-  // Removed redundant fetchRoleRequests as we use useRoleRequests hook now
-
+  const fetchRoleRequests = async () => {
+    try {
+      const requests = await getRoleRequests();
+      setPendingRequests(requests.filter(req => req.status === 'pending'));
+    } catch (error) {
+      console.error('Error fetching role requests:', error);
+    }
+  };
 
   const fetchUserRoles = async () => {
     try {
@@ -193,7 +188,7 @@ export default function PendingRoleRequests({ stats: initialStats }: { stats?: D
     try {
       // Get role hashes from the contract
       const roleHashes = await getRoleHashes();
-
+      
       const [
         fabricanteCount, auditorHwCount, tecnicoSwCount, escuelaCount,
         fabricadas, hwAprobadas, swValidadas, distribuidas
@@ -246,7 +241,8 @@ export default function PendingRoleRequests({ stats: initialStats }: { stats?: D
 
     await Promise.all([
       fetchDashboardData(silent),
-      fetchUserRoles()
+      fetchUserRoles(),
+      fetchRoleRequests()
     ]);
 
     setIsLoading(false);
@@ -276,13 +272,61 @@ export default function PendingRoleRequests({ stats: initialStats }: { stats?: D
   const handleApproveRequest = async (request: RoleRequest) => {
     try {
       setProcessingId(request.id);
-      await approveMutation.mutateAsync({
-        requestId: request.id,
-        role: request.role,
-        userAddress: request.address
-      });
+      if (!address) {
+        throw new Error("No hay una billetera conectada");
+      }
 
-      // Refresh stats and roles
+      // Verify if current user is admin
+      const adminRoleHashes = await getRoleHashes();
+      const isAdmin = await SupplyChainContract.hasRole(adminRoleHashes.ADMIN, address);
+
+      if (!isAdmin) {
+        throw new Error("No tienes permisos de administrador (AccessControl)");
+      }
+
+      // Get role hashes from the contract
+      const roleHashes = await getRoleHashes();
+      
+      let roleBytes32: string;
+      switch (request.role) {
+        case 'fabricante': roleBytes32 = roleHashes.FABRICANTE; break;
+        case 'auditor_hw': roleBytes32 = roleHashes.AUDITOR_HW; break;
+        case 'tecnico_sw': roleBytes32 = roleHashes.TECNICO_SW; break;
+        case 'escuela': roleBytes32 = roleHashes.ESCUELA; break;
+        default: throw new Error('Rol inválido');
+      }
+
+      const result = await SupplyChainContract.grantRole(roleBytes32, request.address);
+      
+      // Wait for transaction receipt
+      if (result) {
+        const { config } = await import('@/lib/wagmi/config');
+        const { waitForTransactionReceipt } = await import('@wagmi/core');
+        const receipt = await waitForTransactionReceipt(config, { 
+          hash: result as `0x${string}`
+        });
+        
+        if (receipt.status !== 'success') {
+          throw new Error(`Transacción fallida: ${receipt.transactionHash}`);
+        }
+      }
+      
+      // El resultado ya es un hash de transacción (string)
+      // No es necesario verificar 'hash' en el objeto
+      
+      // Verificar transacción on-chain con retiro de caches
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Pequeño delay para asegurar confirmación
+      const hasRole = await SupplyChainContract.hasRole(roleBytes32, request.address);
+      if (!hasRole) {
+        throw new Error("La transacción se confirmó pero el rol no fue asignado. Verifica los logs del contrato.");
+      }
+
+      // Optimistic update: Remove request from list immediately
+      setPendingRequests(prev => prev.filter(req => req.id !== request.id));
+
+      await updateRoleRequestStatus(request.id, 'approved');
+
+      // Refresh stats and roles, but NOT requests to avoid race condition with optimistic update
       fetchDashboardData(true);
       fetchUserRoles();
 
@@ -292,9 +336,15 @@ export default function PendingRoleRequests({ stats: initialStats }: { stats?: D
       });
     } catch (error: any) {
       console.error('Error approving request:', error);
+
+      let errorMessage = error.message || "No se pudo aprobar la solicitud";
+      if (error.message?.includes("AccessControl")) {
+        errorMessage = "No tienes permisos de administrador para realizar esta acción.";
+      }
+
       toast({
         title: "Error",
-        description: error.message || "No se pudo aprobar la solicitud",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -305,7 +355,10 @@ export default function PendingRoleRequests({ stats: initialStats }: { stats?: D
   const handleRejectRequest = async (id: string) => {
     try {
       setProcessingId(id);
-      await rejectMutation.mutateAsync(id);
+      await updateRoleRequestStatus(id, 'rejected');
+
+      // Optimistic update
+      setPendingRequests(prev => prev.filter(req => req.id !== id));
 
       toast({
         title: "Solicitud rechazada",
@@ -333,14 +386,12 @@ export default function PendingRoleRequests({ stats: initialStats }: { stats?: D
   useEffect(() => {
     refreshAllData();
 
-    // Listen for global refresh events
-    const { eventBus, EVENTS } = require('@/lib/events');
-    const unsubscribe = eventBus.on(EVENTS.REFRESH_DATA || 'REFRESH_DATA', () => {
-      console.log('[PendingRoleRequests] Global refresh detected...');
+    // Set up periodic refresh
+    const interval = setInterval(() => {
       refreshAllData(true);
-    });
+    }, CACHE_CONFIG.REFRESH_INTERVAL);
 
-    return () => unsubscribe();
+    return () => clearInterval(interval);
   }, [isConnected, address]);
 
   // Loading state
@@ -350,7 +401,7 @@ export default function PendingRoleRequests({ stats: initialStats }: { stats?: D
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div>
             <h2 className="text-4xl font-bold tracking-tight mb-2"><Skeleton className="h-8 w-64" /></h2>
-            <div className="text-muted-foreground text-lg"><Skeleton className="h-4 w-96" /></div>
+            <p className="text-muted-foreground text-lg"><Skeleton className="h-4 w-96" /></p>
           </div>
           <div className="flex gap-4">
             <Button size="lg" variant="outline" className="h-12 px-6">

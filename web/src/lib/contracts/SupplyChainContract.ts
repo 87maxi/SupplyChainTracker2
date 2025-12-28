@@ -3,6 +3,7 @@
 import { config } from '@/lib/wagmi/config';
 import { readContract, writeContract } from '@wagmi/core';
 import { formatEther } from 'viem';
+import { RoleMap } from '@/lib/roleUtils';
 
 // Importar el ABI y la dirección del contrato
 import SupplyChainTrackerABI from '@/contracts/abi/SupplyChainTracker.json';
@@ -195,6 +196,42 @@ export async function hasRole(roleHash: string, address: string): Promise<boolea
   }
 }
 
+// Función para obtener el rol por nombre
+export async function getRoleByName(roleType: string): Promise<string> {
+  try {
+    // Map roleType to the expected values in the contract
+    const roleMap: Record<string, string> = {
+      'FABRICANTE': 'FABRICANTE',
+      'AUDITOR_HW': 'AUDITOR_HW',
+      'TECNICO_SW': 'TECNICO_SW',
+      'ESCUELA': 'ESCUELA',
+      'ADMIN': 'DEFAULT_ADMIN_ROLE',
+      'DEFAULT_ADMIN_ROLE': 'DEFAULT_ADMIN_ROLE'
+    };
+    
+    const mappedRoleType = roleMap[roleType] || roleType;
+    
+    console.log(`[getRoleByName] Mapping roleType: ${roleType} -> ${mappedRoleType}`);
+    
+    const result = await readContract(config, {
+      address: contractAddress,
+      abi,
+      functionName: 'getRoleByName',
+      args: [mappedRoleType]
+    });
+    
+    console.log(`[getRoleByName] Successfully got role hash: ${result} for role: ${mappedRoleType}`);
+    return result as string;
+  } catch (error) {
+    console.error('Error al obtener rol por nombre:', error);
+    // For ADMIN role, return the known hash
+    if (roleType === 'ADMIN') {
+      return '0x0000000000000000000000000000000000000000000000000000000000000000';
+    }
+    throw error;
+  }
+}
+
 // Funciones para gestión de roles
 export async function grantRole(roleHash: string, account: string): Promise<string> {
   try {
@@ -202,7 +239,7 @@ export async function grantRole(roleHash: string, account: string): Promise<stri
       address: contractAddress,
       abi,
       functionName: 'grantRole',
-      args: [roleHash, account]
+      args: [account, roleHash]
     });
     
     // Simular transacción exitosa
@@ -219,7 +256,7 @@ export async function revokeRole(roleHash: string, account: string): Promise<str
       address: contractAddress,
       abi,
       functionName: 'revokeRole',
-      args: [roleHash, account]
+      args: [account, roleHash]
     });
     
     // Simular transacción exitosa

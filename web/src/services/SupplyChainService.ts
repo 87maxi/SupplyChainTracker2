@@ -18,7 +18,7 @@ export const registerAuditReport = async (reportHash: string) => {
   // This would call the auditHardware function on the smart contract
   // For now, we'll simulate it
   console.log('Registering audit report on-chain:', reportHash);
-  
+
   // In a real implementation, this would be:
   /*
   try {
@@ -40,7 +40,7 @@ export const registerAuditReport = async (reportHash: string) => {
     throw error;
   }
   */
-  
+
   // Simulate success
   await new Promise(resolve => setTimeout(resolve, 1000));
   return { success: true };
@@ -49,7 +49,7 @@ export const registerAuditReport = async (reportHash: string) => {
 // Function to register a software validation report on-chain
 export const registerSoftwareValidation = async (reportHash: string) => {
   console.log('Registering software validation on-chain:', reportHash);
-  
+
   // Simulate success
   await new Promise(resolve => setTimeout(resolve, 1000));
   return { success: true };
@@ -58,7 +58,7 @@ export const registerSoftwareValidation = async (reportHash: string) => {
 // Function to register a distribution record on-chain
 export const registerDistribution = async (reportHash: string) => {
   console.log('Registering distribution on-chain:', reportHash);
-  
+
   // Simulate success
   await new Promise(resolve => setTimeout(resolve, 1000));
   return { success: true };
@@ -77,12 +77,24 @@ export const getAccountBalance = async (address: string) => {
 // Function to check if a user has a specific role
 export const hasRole = async (role: string, userAddress: string): Promise<boolean> => {
   try {
+    // Delegate to our centralized roleMapper for consistent role hash mapping
+    const roleHash = await roleMapper.getRoleHash(role);
+
+    if (!contractAddress || !contractAddress.startsWith('0x')) {
+      console.error(`[SupplyChainService] Invalid contract address: "${contractAddress}"`);
+      return false;
+    }
+
+    console.log(`[SupplyChainService] Calling hasRole on contract: "${contractAddress}"`);
+    console.log(`[SupplyChainService] Parameters - Role: ${role} (hash: ${roleHash}), Account: ${userAddress}`);
+
     const result = await readContract(config, {
-      address: contractAddress,
-      abi,
+      address: contractAddress as `0x${string}`,
+      abi: abi as any,
       functionName: 'hasRole',
-      args: [role, userAddress]
+      args: [roleHash, userAddress]
     });
+    console.log(`[SupplyChainService] hasRole result: ${result}`);
     return result as boolean;
   } catch (error) {
     console.error('Error checking role:', error);
@@ -225,12 +237,12 @@ export const clearMembersCache = (roleHash?: string) => {
   }
 };
 
-  // Grant a role to a user
+// Grant a role to a user
 export const grantRole = async (roleName: string, userAddress: Address) => {
   try {
     // Delegate to our centralized roleMapper for consistent role hash mapping
     const roleHash = await roleMapper.getRoleHash(roleName);
-    
+
     if (!roleHash) {
       throw new Error(`Role ${roleName} not found in role hashes`);
     }
@@ -251,7 +263,7 @@ export const grantRole = async (roleName: string, userAddress: Address) => {
     });
 
     console.log('grantRole transaction confirmed:', receipt);
-    
+
     return {
       success: true,
       hash: transactionHash
@@ -279,7 +291,7 @@ export const revokeRole = async (roleHash: `0x${string}`, userAddress: Address) 
       functionName: 'revokeRole',
       args: [roleHash, userAddress]
     });
-    
+
     // Return hash immediately
     return result;
   } catch (error) {

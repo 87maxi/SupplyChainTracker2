@@ -44,7 +44,8 @@ export class RoleService extends BaseContractService {
       // Obtener hash del rol
       const roleHashes = await getRoleHashes();
       
-      // Mapeo directo de nombres de roles a sus keys en roleHashes
+      // Mapeo de nombres de roles ContractRoles a las claves esperadas por getRoleByName
+      // Remueve '_ROLE' del nombre para que coincida con lo esperado por getRoleByName
       const roleKeyMap: Record<ContractRoles, keyof typeof roleHashes> = {
         'DEFAULT_ADMIN_ROLE': 'ADMIN',
         'FABRICANTE_ROLE': 'FABRICANTE',
@@ -78,7 +79,8 @@ export class RoleService extends BaseContractService {
       // Obtener hash del rol
       const roleHashes = await getRoleHashes();
       
-      // Mapeo directo de nombres de roles a sus keys en roleHashes
+      // Mapeo de nombres de roles ContractRoles a las claves esperadas por getRoleByName
+      // Remueve '_ROLE' del nombre para que coincida con lo esperado por getRoleByName
       const roleKeyMap: Record<ContractRoles, keyof typeof roleHashes> = {
         'DEFAULT_ADMIN_ROLE': 'ADMIN',
         'FABRICANTE_ROLE': 'FABRICANTE',
@@ -127,7 +129,8 @@ export class RoleService extends BaseContractService {
       // Obtener hash del rol
       const roleHashes = await getRoleHashes();
       
-      // Mapeo directo de nombres de roles a sus keys en roleHashes
+      // Mapeo de nombres de roles ContractRoles a las claves esperadas por getRoleByName
+      // Remueve '_ROLE' del nombre para que coincida con lo esperado por getRoleByName
       const roleKeyMap: Record<ContractRoles, keyof typeof roleHashes> = {
         'DEFAULT_ADMIN_ROLE': 'ADMIN',
         'FABRICANTE_ROLE': 'FABRICANTE',
@@ -181,7 +184,8 @@ export class RoleService extends BaseContractService {
       // Obtener hash del rol
       const roleHashes = await getRoleHashes();
       
-      // Mapeo directo de nombres de roles a sus keys en roleHashes
+      // Mapeo de nombres de roles ContractRoles a las claves esperadas por getRoleByName
+      // Remueve '_ROLE' del nombre para que coincida con lo esperado por getRoleByName
       const roleKeyMap: Record<ContractRoles, keyof typeof roleHashes> = {
         'DEFAULT_ADMIN_ROLE': 'ADMIN',
         'FABRICANTE_ROLE': 'FABRICANTE',

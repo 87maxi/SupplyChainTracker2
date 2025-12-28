@@ -5,14 +5,14 @@ import { useWeb3 } from '@/contexts/Web3Context';
 import { useSupplyChainService } from '@/hooks/useSupplyChainService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, ShieldAlert, Users, Factory, Monitor, GraduationCap, Gavel, ArrowRight, ShieldCheck, Clock } from 'lucide-react';
+import { Loader2, ShieldAlert, Users, Factory, Monitor, GraduationCap, Gavel, ArrowRight, ShieldCheck, Clock, RefreshCw } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AllRolesSummary } from '@/types/supply-chain-types';
 import { cn } from '@/lib/utils';
-import { PendingRoleRequests } from './components/PendingRoleRequests';
+import PendingRoleRequests from './components/PendingRoleRequests';
 import { ActivityLogs } from '@/components/admin/activity-logs';
 import { DashboardMetrics } from './components/DashboardMetrics';
 import { RoleManagementSection } from './components/RoleManagementSection';
@@ -22,6 +22,7 @@ import { SystemHealth } from './components/SystemHealth';
 import { useRoleRequests } from '@/hooks/useRoleRequests';
 import { getActivityLogs } from '@/lib/activity-logger';
 import { getLogStats } from '@/lib/activity-logger';
+import { NEXT_PUBLIC_ADMIN_ADDRESS, NEXT_PUBLIC_DEFAULT_ADMIN_ADDRESS } from '@/lib/env';
 
 export default function AdminPage() {
   const { address, isConnected, connectWallet } = useWeb3();
@@ -61,12 +62,40 @@ export default function AdminPage() {
     }
 
     try {
-      const userIsAdmin = await hasRole("DEFAULT_ADMIN_ROLE", address);
+      // 1. Check if user has the admin role in the contract
+      let userIsAdmin = await hasRole("DEFAULT_ADMIN_ROLE", address);
+
+      // 2. Fallback: Check if the address matches the configured admin addresses (useful for development)
+      if (!userIsAdmin) {
+        const adminAddress = NEXT_PUBLIC_ADMIN_ADDRESS || '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
+        const defaultAdminAddress = NEXT_PUBLIC_DEFAULT_ADMIN_ADDRESS || '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
+
+        console.log(`[AdminPage] Checking fallback for connected address: "${address}"`);
+        console.log(`[AdminPage] Comparing against adminAddress: "${adminAddress}"`);
+        console.log(`[AdminPage] Comparing against defaultAdminAddress: "${defaultAdminAddress}"`);
+
+        const isMatch = address.toLowerCase() === adminAddress.toLowerCase() ||
+          address.toLowerCase() === defaultAdminAddress.toLowerCase();
+
+        console.log(`[AdminPage] Fallback match result: ${isMatch}`);
+
+        if (isMatch) {
+          console.log('[AdminPage] Admin detected via fallback address check');
+          userIsAdmin = true;
+        }
+      }
+
+      console.log(`[AdminPage] Role check for ${address}: isAdmin=${userIsAdmin}`);
       setIsAdmin(userIsAdmin);
 
       if (userIsAdmin) {
         const summary = await getAllRolesSummary();
         setRolesSummary(summary);
+        // Save to localStorage for persistence
+        localStorage.setItem('supply_chain_roles_summary', JSON.stringify({
+          data: summary,
+          timestamp: Date.now()
+        }));
       } else {
         setRolesSummary(null);
       }
@@ -156,9 +185,28 @@ export default function AdminPage() {
           <h1 className="text-4xl font-bold tracking-tight mb-2">Panel de Administración</h1>
           <p className="text-muted-foreground">Gestiona los roles y el acceso de los usuarios en la cadena de suministro.</p>
         </div>
-        <div className="flex items-center gap-3 bg-white/5 p-2 rounded-xl border border-white/10">
-          <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-sm font-medium">Administrador Conectado</span>
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const { eventBus, EVENTS } = require('@/lib/events');
+              eventBus.emit(EVENTS.REFRESH_DATA || 'REFRESH_DATA');
+              fetchAdminData();
+              toast({
+                title: "Actualizando datos",
+                description: "Se ha solicitado la actualización de todos los componentes.",
+              });
+            }}
+            className="h-10 px-4 border-white/10 hover:bg-white/5"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refrescar Todo
+          </Button>
+          <div className="flex items-center gap-3 bg-white/5 p-2 rounded-xl border border-white/10">
+            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-sm font-medium">Administrador Conectado</span>
+          </div>
         </div>
       </div>
 

@@ -11,7 +11,6 @@ import { ErrorHandler, AppError } from '@/lib/errors/error-handler';
  * Proporciona funcionalidad común para todos los servicios de contratos
  */
 export abstract class BaseContractService {
-  protected publicClient: PublicClient;
   protected walletClient: WalletClient | undefined;
 
   constructor(
@@ -19,8 +18,6 @@ export abstract class BaseContractService {
     protected abi: any,
     protected cachePrefix: string
   ) {
-    // Obtener el public client usando wagmi's getPublicClient
-    this.publicClient = getPublicClient(config);
     // walletClient se obtiene de forma lazy cuando se necesita
   }
 
@@ -47,7 +44,13 @@ export abstract class BaseContractService {
     }
 
     try {
-      const result = await this.publicClient.readContract({
+      // Obtener el public client de forma lazy
+      const publicClient = getPublicClient(config);
+      if (!publicClient) {
+        throw new AppError('No se pudo obtener el cliente público', 'PUBLIC_CLIENT_ERROR');
+      }
+      
+      const result = await publicClient.readContract({
         address: this.contractAddress,
         abi: this.abi,
         functionName,
@@ -115,7 +118,13 @@ export abstract class BaseContractService {
     timeout: number = 60
   ) {
     try {
-      const receipt = await this.publicClient.waitForTransactionReceipt({
+      // Obtener el public client de forma lazy
+      const publicClient = getPublicClient(config);
+      if (!publicClient) {
+        throw new AppError('No se pudo obtener el cliente público', 'PUBLIC_CLIENT_ERROR');
+      }
+      
+      const receipt = await publicClient.waitForTransactionReceipt({
         hash,
         timeout
       });

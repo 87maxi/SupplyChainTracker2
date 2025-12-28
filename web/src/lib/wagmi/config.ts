@@ -22,7 +22,7 @@ const anvilChain = {
     },
   },
   testnet: true,
-} as const;
+};
 
 // Validar projectId de WalletConnect
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;

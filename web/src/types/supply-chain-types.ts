@@ -1,9 +1,13 @@
-// web/src/types/supply-chain-types.ts
+export interface RoleSummary {
+  role: string;
+  members: string[];
+  count: number;
+}
 
-// Estados de la netbook
-export type NetbookState = 'FABRICADA' | 'HW_APROBADO' | 'SW_VALIDADO' | 'DISTRIBUIDA';
+export interface AllRolesSummary {
+  [role: string]: RoleSummary;
+}
 
-// Información completa de una netbook
 export interface Netbook {
   serialNumber: string;
   batchId: string;
@@ -17,43 +21,18 @@ export interface Netbook {
   destinationSchoolHash: string;
   studentIdHash: string;
   distributionTimestamp: string;
-  currentState: NetbookState;
-  setTimestamp?: number; // Add setTimestamp as optional property
+  currentState: string;
 }
 
-// Roles del contrato
-export type ContractRoles = 'DEFAULT_ADMIN_ROLE' | 'FABRICANTE_ROLE' | 'AUDITOR_HW_ROLE' | 'TECNICO_SW_ROLE' | 'ESCUELA_ROLE';
+export type NetbookState = 
+  | 'FABRICADA'
+  | 'HW_APROBADO'
+  | 'SW_VALIDADO'
+  | 'DISTRIBUIDA';
 
-// Miembros de un rol
-export interface RoleMembers {
-  role: ContractRoles;
-  members: string[];
-  count: number;
-}
-
-// Resumen de todos los roles
-export interface AllRolesSummary {
-  DEFAULT_ADMIN_ROLE?: {
-    count: number;
-    members: string[];
-  };
-  FABRICANTE_ROLE?: {
-    count: number;
-    members: string[];
-  };
-  AUDITOR_HW_ROLE?: {
-    count: number;
-    members: string[];
-  };
-  TECNICO_SW_ROLE?: {
-    count: number;
-    members: string[];
-  };
-  ESCUELA_ROLE?: {
-    count: number;
-    members: string[];
-  };
-}
-
-// ROLES constant has been removed - use role labels and hashes from contract via getRoleHashes()
-// See getRoleHashes() in lib/roleUtils.ts for retrieving role information from the contract
+export type ContractRoles = 
+  | 'FABRICANTE_ROLE'
+  | 'AUDITOR_HW_ROLE'
+  | 'TECNICO_SW_ROLE'
+  | 'ESCUELA_ROLE'
+  | 'DEFAULT_ADMIN_ROLE';

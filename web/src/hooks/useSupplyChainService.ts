@@ -3,7 +3,8 @@ import { useCallback } from 'react';
 import * as SupplyChainService from '@/services/SupplyChainService';
 import { useAccount } from 'wagmi';
 import { Address } from 'viem';
-import { ContractRoles, AllRolesSummary } from '@/types/contract';
+import { ContractRoles } from '@/types/contract';
+import { AllRolesSummary } from '@/types/supply-chain-types';
 import { roleMapper } from '@/lib/roleMapping';
 
 export const useSupplyChainService = () => {

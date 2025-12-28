@@ -87,27 +87,27 @@ function TrackingCard({ netbook, onAction }: { netbook: Netbook, onAction?: (act
             </div>
             <div className="text-xs text-muted-foreground">
               {netbook.currentState === 'FABRICADA' ? (
-                <>Fecha de registro: {netbook.setTimestamp ? new Date(netbook.setTimestamp).toLocaleDateString() : 'N/A'}</>
+                <>Fecha de registro: {netbook.distributionTimestamp ? new Date(Number(netbook.distributionTimestamp) * 1000).toLocaleDateString() : 'N/A'}</>
               ) : (
                 <>Última actualización: {Number.isFinite(netbook.distributionTimestamp) ? new Date(Number(netbook.distributionTimestamp) * 1000).toLocaleDateString() : 'N/A'}</>
               )}
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <StatusBadge status={netbook.currentState} />
+            <StatusBadge status={netbook.currentState as NetbookState} />
             {onAction && (
               <div className="flex gap-2">
-                {netbook.currentState === 'FABRICADA' && (isHardwareAuditor || isAdmin) && (
+                {(netbook.currentState === 'FABRICADA' || netbook.currentState === '0') && (isHardwareAuditor || isAdmin) && (
                   <Button size="sm" variant="outline" className="h-8 text-xs border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10" onClick={() => onAction('audit', netbook.serialNumber)}>
                     Auditar
                   </Button>
                 )}
-                {netbook.currentState === 'HW_APROBADO' && (isSoftwareTechnician || isAdmin) && (
+                {(netbook.currentState === 'HW_APROBADO' || netbook.currentState === '1') && (isSoftwareTechnician || isAdmin) && (
                   <Button size="sm" variant="outline" className="h-8 text-xs border-purple-500/50 text-purple-400 hover:bg-purple-500/10" onClick={() => onAction('validate', netbook.serialNumber)}>
                     Validar
                   </Button>
                 )}
-                {netbook.currentState === 'SW_VALIDADO' && (isSchool || isAdmin) && (
+                {(netbook.currentState === 'SW_VALIDADO' || netbook.currentState === '2') && (isSchool || isAdmin) && (
                   <Button size="sm" variant="outline" className="h-8 text-xs border-amber-500/50 text-amber-400 hover:bg-amber-500/10" onClick={() => onAction('assign', netbook.serialNumber)}>
                     Asignar
                   </Button>
@@ -210,7 +210,7 @@ export default function ManagerDashboard() {
                 currentState: state,
                 serialNumber: serial,
                 // Añadir timestamp de registro si no existe en el reporte
-                setTimestamp: report.setTimestamp || 0
+                distributionTimestamp: report.distributionTimestamp || 0
               };
             }
             return null;
@@ -225,10 +225,10 @@ export default function ManagerDashboard() {
       setNetbooks(validNetbooks);
 
       setSummary({
-        FABRICADA: validNetbooks.filter(n => n.currentState === "FABRICADA").length,
-        HW_APROBADO: validNetbooks.filter(n => n.currentState === "HW_APROBADO").length,
-        SW_VALIDADO: validNetbooks.filter(n => n.currentState === "SW_VALIDADO").length,
-        DISTRIBUIDA: validNetbooks.filter(n => n.currentState === "DISTRIBUIDA").length
+        FABRICADA: validNetbooks.filter(n => n.currentState === "FABRICADA" || n.currentState === "0").length,
+        HW_APROBADO: validNetbooks.filter(n => n.currentState === "HW_APROBADO" || n.currentState === "1").length,
+        SW_VALIDADO: validNetbooks.filter(n => n.currentState === "SW_VALIDADO" || n.currentState === "2").length,
+        DISTRIBUIDA: validNetbooks.filter(n => n.currentState === "DISTRIBUIDA" || n.currentState === "3").length
       });
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -250,9 +250,9 @@ export default function ManagerDashboard() {
 
   // Filter pending tasks based on roles
   const pendingTasks = netbooks.filter(n => {
-    if (n.currentState === 'FABRICADA' && (isHardwareAuditor || isAdmin)) return true;
-    if (n.currentState === 'HW_APROBADO' && (isSoftwareTechnician || isAdmin)) return true;
-    if (n.currentState === 'SW_VALIDADO' && (isSchool || isAdmin)) return true;
+    if ((n.currentState === 'FABRICADA' || n.currentState === '0') && (isHardwareAuditor || isAdmin)) return true;
+    if ((n.currentState === 'HW_APROBADO' || n.currentState === '1') && (isSoftwareTechnician || isAdmin)) return true;
+    if ((n.currentState === 'SW_VALIDADO' || n.currentState === '2') && (isSchool || isAdmin)) return true;
     return false;
   });
 

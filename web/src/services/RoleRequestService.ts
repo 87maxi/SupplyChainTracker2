@@ -1,41 +1,40 @@
-'use server';
+'use client';
 
-import { revalidateTag } from 'next/cache';
 import { RoleRequest } from '@/types/role-request';
-import fs from 'fs';
-import path from 'path';
 
-// Use a more stable path for the storage file
-const STORAGE_FILE = path.join(process.cwd(), 'role-requests.json');
+// Use localStorage as persistent storage
+const STORAGE_KEY = 'role_requests';
 
-console.log('RoleRequestService initialized. Storage file:', STORAGE_FILE);
-
+// Read requests from localStorage
 function readRequests(): RoleRequest[] {
     try {
-        if (!fs.existsSync(STORAGE_FILE)) {
-            console.log('Storage file does not exist, creating empty list');
-            return [];
-        }
-        const data = fs.readFileSync(STORAGE_FILE, 'utf8');
-        if (!data) return [];
-        return JSON.parse(data);
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (!stored) return [];
+        
+        const requests = JSON.parse(stored);
+        // Ensure all requests have required properties
+        return requests.map((req: any) => ({
+            id: req.id,
+            address: req.address,
+            role: req.role,
+            status: req.status || 'pending',
+            timestamp: req.timestamp || Date.now(),
+            signature: req.signature
+        }));
     } catch (error) {
-        console.error('CRITICAL: Error reading role requests file:', error);
+        console.error('Error reading role requests from localStorage:', error);
         return [];
     }
 }
 
+// Write requests to localStorage
 function writeRequests(requests: RoleRequest[]) {
     try {
-        const dir = path.dirname(STORAGE_FILE);
-        if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir, { recursive: true });
-        }
-        fs.writeFileSync(STORAGE_FILE, JSON.stringify(requests, null, 2));
-        console.log('Successfully wrote role requests to file');
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(requests));
+        console.log('Successfully wrote role requests to localStorage');
     } catch (error) {
-        console.error('CRITICAL: Error writing role requests file:', error);
-        throw new Error('No se pudo guardar la solicitud en el servidor.');
+        console.error('Error writing role requests to localStorage:', error);
+        throw new Error('No se pudo guardar la solicitud en el almacenamiento local.');
     }
 }
 
@@ -54,13 +53,16 @@ export async function submitRoleRequest(address: string, role: string, signature
     writeRequests(requests);
 
     console.log('Role request submitted and saved:', newRequest);
-    revalidateTag('role-requests', 'max');
+    
+    // In a real app, you might dispatch an event or use a state manager
+    // to notify other parts of the app of the change
+    
     return newRequest;
 }
 
 export async function getRoleRequests() {
     const requests = readRequests();
-    console.log('Fetching role requests from file, count:', requests.length);
+    console.log('Fetching role requests from localStorage, count:', requests.length);
     return requests;
 }
 
@@ -70,7 +72,6 @@ export async function updateRoleRequestStatus(id: string, status: 'approved' | '
     if (index !== -1) {
         requests[index].status = status;
         writeRequests(requests);
-        revalidateTag('role-requests', 'max');
     }
 }
 
@@ -80,6 +81,5 @@ export async function deleteRoleRequest(id: string) {
     requests = requests.filter(req => req.id !== id);
     if (requests.length !== initialLength) {
         writeRequests(requests);
-        revalidateTag('role-requests', 'max');
     }
 }
