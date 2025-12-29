@@ -1,1 +1,0 @@
-define(["./module"],function(e){return{init:function(){e.init("react-root")}}})

@@ -9,12 +9,12 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 export default function AdminDashboard() {
-  const { userRoles, hasRole, isLoading } = useUserRoles();
+  const { hasRole, isLoading } = useUserRoles();
   const router = useRouter();
 
   // Redirect if not admin - now using correct role name
   useEffect(() => {
-    console.log('AdminDashboard: Checking admin access - isLoading:', isLoading, 'hasRole(DEFAULT_ADMIN_ROLE):', hasRole('DEFAULT_ADMIN_ROLE'), 'userRoles:', userRoles);
+    console.log('AdminDashboard: Checking admin access - isLoading:', isLoading, 'hasRole(DEFAULT_ADMIN_ROLE):', hasRole('DEFAULT_ADMIN_ROLE'));
     if (!isLoading && !hasRole('DEFAULT_ADMIN_ROLE')) {
       console.log('AdminDashboard: Redirecting non-admin user to /');
       router.push('/');

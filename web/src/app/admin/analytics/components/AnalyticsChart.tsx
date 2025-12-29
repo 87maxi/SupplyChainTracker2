@@ -1,71 +1,87 @@
 'use client';
 
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Line, LineChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from 'recharts';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface AnalyticsData {
-  month: string;
-  users: number;
-  roleRequests: number;
-  completions: number;
+  date: string;
+  fabricadas: number;
+  distribuidas: number;
 }
 
-const chartData: AnalyticsData[] = [
-  { month: 'Ene', users: 65, roleRequests: 85, completions: 40 },
-  { month: 'Feb', users: 80, roleRequests: 90, completions: 55 },
-  { month: 'Mar', users: 120, roleRequests: 140, completions: 85 },
-  { month: 'Abr', users: 160, roleRequests: 120, completions: 90 },
-  { month: 'May', users: 180, roleRequests: 160, completions: 120 },
-  { month: 'Jun', users: 220, roleRequests: 180, completions: 150 },
-];
+export function AnalyticsChart({ data }: { data: AnalyticsData[] }) {
 
-export function AnalyticsChart() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Actividad del Sistema</CardTitle>
+        <CardTitle>Progreso del Programa</CardTitle>
+        <CardDescription>Seguimiento mensual de netbooks fabricadas y distribuidas</CardDescription>
       </CardHeader>
-      <CardContent>
-        <ChartContainer
-          config={{
-            users: {
-              label: 'Usuarios Registrados',
-              color: 'hsl(var(--chart-1))',
-            },
-            roleRequests: {
-              label: 'Solicitudes de Rol',
-              color: 'hsl(var(--chart-2))',
-            },
-            completions: {
-              label: 'Operaciones Completadas',
-              color: 'hsl(var(--chart-3))',
-            },
-          }}
-          className="h-[300px]"
-        >
+      <CardContent className="pb-4">
+        <div className="h-[200px]">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData}>
-              <CartesianGrid vertical={false} />
+            <LineChart data={data}>
+              <CartesianGrid strokeDasharray="3 3" />
               <XAxis
-                dataKey="month"
+                dataKey="date"
+                stroke="#888888"
+                fontSize={12}
                 tickLine={false}
                 axisLine={false}
-                tickMargin={10}
-                tick={{ fill: 'var(--chart-text-color)' }}
               />
               <YAxis
+                stroke="#888888"
+                fontSize={12}
                 tickLine={false}
                 axisLine={false}
-                tick={{ fill: 'var(--chart-text-color)' }}
               />
-              <ChartTooltip content={<ChartTooltipContent />} />
-              <Bar dataKey="users" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="roleRequests" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="completions" radius={[4, 4, 0, 0]} />
-            </BarChart>
+              <Tooltip
+                content={({ active, payload }) => {
+                  if (active && payload && payload.length) {
+                    return (
+                      <div className="rounded-lg border bg-background p-2 shadow-sm">
+                        <div className="grid grid-cols-2 gap-2">
+                          {payload.map((pld, index) => (
+                            <div key={index} className="flex items-center gap-2 font-medium">
+                              <div
+                                className="h-2 w-2 rounded-full"
+                                style={{ backgroundColor: pld.color }}
+                              />
+                              {pld.name}: {pld.value}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+              <Legend
+                layout="horizontal"
+                verticalAlign="bottom"
+                align="center"
+                formatter={(value) => <span className="text-sm text-muted-foreground">{value}</span>}
+              />
+              <Line
+                type="monotone"
+                dataKey="fabricadas"
+                stroke="hsl(var(--chart-1))"
+                strokeWidth={2}
+                dot={false}
+                name="Netbooks Fabricadas"
+              />
+              <Line
+                type="monotone"
+                dataKey="distribuidas"
+                stroke="hsl(var(--chart-2))"
+                strokeWidth={2}
+                dot={false}
+                name="Netbooks Distribuidas"
+              />
+            </LineChart>
           </ResponsiveContainer>
-        </ChartContainer>
+        </div>
       </CardContent>
     </Card>
   );

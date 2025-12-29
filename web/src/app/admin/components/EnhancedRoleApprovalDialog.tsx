@@ -53,8 +53,8 @@ export function EnhancedRoleApprovalDialog({
       });
       
       // Actualizar estado con el hash de la transacción
-      if (result && result.transactionHash) {
-        setTxHash(result.transactionHash);
+      if (result) {
+        setTxHash(result);
         setStep('completed');
         setTxStatus('confirmed');
         
@@ -75,7 +75,7 @@ export function EnhancedRoleApprovalDialog({
       
       toast({
         title: "Error",
-        description: error,
+        description: error || 'Error desconocido',
         variant: "destructive"
       });
     }
