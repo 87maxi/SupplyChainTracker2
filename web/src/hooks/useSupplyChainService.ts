@@ -209,9 +209,9 @@ export const useSupplyChainService = () => {
   }, []);
 
   // Netbook operations
-  const auditHardware = useCallback(async (serial: string, passed: boolean, reportHash: string) => {
+  const auditHardware = useCallback(async (serial: string, passed: boolean, reportHash: string, userAddress: Address) => {
     try {
-      const transactionHash = await SupplyChainService.auditHardware(serial, passed, reportHash);
+      const transactionHash = await SupplyChainService.auditHardware(serial, passed, reportHash, userAddress);
       return { success: true, hash: transactionHash };
     } catch (error) {
       console.error('Error in auditHardware:', error);
@@ -219,9 +219,9 @@ export const useSupplyChainService = () => {
     }
   }, []);
 
-  const registerNetbooks = useCallback(async (serials: string[], batches: string[], specs: string[]) => {
+  const registerNetbooks = useCallback(async (serials: string[], batches: string[], specs: string[], userAddress: Address) => {
     try {
-      const transactionHash = await SupplyChainService.registerNetbooks(serials, batches, specs);
+      const transactionHash = await SupplyChainService.registerNetbooks(serials, batches, specs, userAddress);
       return { success: true, hash: transactionHash };
     } catch (error) {
       console.error('Error in registerNetbooks:', error);
@@ -230,9 +230,9 @@ export const useSupplyChainService = () => {
   }, []);
 
   // Netbook operations
-  const validateSoftware = useCallback(async (serial: string, osVersion: string, passed: boolean) => {
+  const validateSoftware = useCallback(async (serial: string, osVersion: string, passed: boolean, userAddress: Address) => {
     try {
-      const transactionHash = await SupplyChainService.validateSoftware(serial, osVersion, passed);
+      const transactionHash = await SupplyChainService.validateSoftware(serial, osVersion, passed, userAddress);
       return { success: true, hash: transactionHash };
     } catch (error) {
       console.error('Error in validateSoftware:', error);
@@ -241,9 +241,9 @@ export const useSupplyChainService = () => {
   }, []);
   
   // Netbook operations
-  const assignToStudent = useCallback(async (serial: string, schoolHash: string, studentHash: string) => {
+  const assignToStudent = useCallback(async (serial: string, schoolHash: string, studentHash: string, userAddress: Address) => {
     try {
-      const transactionHash = await SupplyChainService.assignToStudent(serial, schoolHash, studentHash);
+      const transactionHash = await SupplyChainService.assignToStudent(serial, schoolHash, studentHash, userAddress);
       return { success: true, hash: transactionHash };
     } catch (error) {
       console.error('Error in assignToStudent:', error);

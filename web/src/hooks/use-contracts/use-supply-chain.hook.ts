@@ -107,17 +107,19 @@ export const useSupplyChainContract = () => {
    * @param serial Número de serie
    * @param passed Si pasó la auditoría
    * @param reportHash Hash del informe
+   * @param userAddress Dirección del usuario
    */
   const auditHardware = useCallback(async (
     serial: string,
     passed: boolean,
-    reportHash: string
+    reportHash: string,
+    userAddress: string
   ) => {
     const operation = 'auditHardware';
     setLoadingState(operation, true);
     
     try {
-      const result = await supplyChainService.auditHardware(serial, passed, reportHash);
+      const result = await supplyChainService.auditHardware(serial, passed, reportHash, userAddress);
       
       if (result.success && result.hash) {
         handleSuccess(operation, result.hash);

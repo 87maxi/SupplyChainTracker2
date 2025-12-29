@@ -1,8 +1,9 @@
-// Environment variables
-export const NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS = process.env.NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS || '0x5FbDB2315678afecb367f032d93F642f64180aa3';
-export const NEXT_PUBLIC_ANVIL_RPC_URL = process.env.NEXT_PUBLIC_ANVIL_RPC_URL || 'http://127.0.0.1:8545';
-export const NEXT_PUBLIC_NETWORK_ID = process.env.NEXT_PUBLIC_NETWORK_ID || '31337';
-export const NEXT_PUBLIC_ADMIN_ADDRESS = process.env.NEXT_PUBLIC_ADMIN_ADDRESS || '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
-export const NEXT_PUBLIC_RPC_URL = process.env.NEXT_PUBLIC_RPC_URL || 'http://localhost:8545';
-export const NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || 'YOUR_PROJECT_ID';
-export const NEXT_PUBLIC_DEFAULT_ADMIN_ADDRESS = process.env.NEXT_PUBLIC_DEFAULT_ADMIN_ADDRESS || '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
+// Environment variables - SERVER SIDE ONLY
+// These variables are only available on the server and will be undefined on the client
+
+// MongoDB Configuration
+export const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
+export const MONGODB_DATABASE = process.env.MONGODB_DATABASE || 'supplychain';
+
+// Smart Contract Address
+export const NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS = process.env.NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS;

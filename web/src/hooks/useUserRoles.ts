@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useWeb3 } from '@/contexts/Web3Context';
-import * as SupplyChainService from '@/services/SupplyChainService';
+import { hasRole } from '@/services/SupplyChainService';
 import { readContract } from '@wagmi/core';
 import { config } from '@/lib/wagmi/config';
 import SupplyChainTrackerABI from '@/contracts/abi/SupplyChainTracker.json';
@@ -79,11 +79,11 @@ export const useUserRoles = (): UseUserRoles => {
 
       // Check roles
       const [isAdmin, isManufacturer, isHardwareAuditor, isSoftwareTechnician, isSchool] = await Promise.all([
-        SupplyChainService.hasRole(defaultAdminRoleStr, address),
-        SupplyChainService.hasRole(fabricanteRoleStr, address),
-        SupplyChainService.hasRole(auditorHwRoleStr, address),
-        SupplyChainService.hasRole(tecnicoSwRoleStr, address),
-        SupplyChainService.hasRole(escuelaRoleStr, address)
+        hasRole('DEFAULT_ADMIN_ROLE', address as `0x${string}`),
+        hasRole('FABRICANTE_ROLE', address as `0x${string}`),
+        hasRole('AUDITOR_HW_ROLE', address as `0x${string}`),
+        hasRole('TECNICO_SW_ROLE', address as `0x${string}`),
+        hasRole('ESCUELA_ROLE', address as `0x${string}`)
       ]);
 
       console.log('Role check results:', {

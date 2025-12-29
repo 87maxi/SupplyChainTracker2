@@ -42,7 +42,10 @@
    - **Cobertura Mínima:** Las funciones críticas, especialmente las de **interacción con Web3 (contratos)** 
    - **Librerías:** Utiliza **Jest** para pruebas unitarias y **Testing Library (React)** para pruebas de componentes.
    - **jest:** configura jest de manera consistente para el requerimiento para hacer test de los componentes y funcionalides
-   - **anvil:** el objetivo de esta interfaz es interactuar con anvil, usa las cuentas de anvil para pruebas 
+   - **anvil:** el objetivo de esta interfaz es interactuar con anvil, usa las cuentas de anvil para pruebas
+   - no ejecutes anvil, esta corriendo con los contratos deployados 
+   - analisa los errores de codigo con **npm run build --loglevel error**, no use npm run dev, no inicies servicios
+   
 
 **2. Consistencia de Código:**
    - **Formato:** El código debe seguir las reglas definidas por **ESLint** y **Prettier**.

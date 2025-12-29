@@ -1,29 +1,24 @@
 version: '3'
 
 services:
-  ipfs:
-    image: ipfs/kubo:latest
-    container_name: ipfs_node
+  mongodb:
+    image: mongo:latest
+    container_name: supplychain_mongodb
     ports:
-      - "5001:5001"  # API
-      - "8080:8080"  # Gateway
-      - "4001:4001"  # Swarm (TCP)
-      - "4001:4001/udp"  # Swarm (UDP)
+      - "27017:27017"
     volumes:
-      - ./ipfs_data:/data/ipfs
-      - ./ipfs_staging:/export
+      - mongodb_data:/data/db
     environment:
-      - IPFS_PATH=/data/ipfs
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
     restart: unless-stopped
-    command: [
-      "daemon", 
-      "--migrate=true", 
-      "--enable-pubsub-experiment", 
-      "--enable-namesys-pubsub"
-    ]
     networks:
-      - ipfs_network
+      - supplychain_network
+
+volumes:
+  mongodb_data:
+    driver: local
 
 networks:
-  ipfs_network:
+  supplychain_network:
     driver: bridge
