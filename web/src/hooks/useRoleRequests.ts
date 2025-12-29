@@ -5,6 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { eventBus, EVENTS } from '@/lib/events';
 import { useSupplyChainService } from '@/hooks/useSupplyChainService';
 import { useState, useEffect } from 'react';
+import { roleMapper } from '@/lib/roleMapping';
 
 // Types for role requests
 export interface RoleRequest {
@@ -95,12 +96,13 @@ export function useRoleRequests() {
     mutationFn: async ({ requestId, role, userAddress }: { requestId: string, role: string, userAddress: string }) => {
       console.log(`[useRoleRequests] Approving request ${requestId}...`);
 
-      // Ensure role name is in the correct format with _ROLE suffix
-      const roleToSend = role.endsWith('_ROLE') ? role : `${role}_ROLE`;
-      console.log(`[useRoleRequests] Using role name: ${roleToSend}`);
+      // Remove _ROLE suffix from role to match contract's expected parameter
+      // Convert to uppercase as contract expects
+      const normalizedRole = role.replace('_ROLE', '').toUpperCase();
+      console.log(`[useRoleRequests] Using role name: ${normalizedRole}`);
       
       // Blockchain Transaction
-      const result = await supplyChainService.grantRole(roleToSend, userAddress as `0x\${string}`);
+      const result = await supplyChainService.grantRole(normalizedRole, userAddress as `0x\${string}`);
       if (!result.success || !result.hash) {
         throw new Error(result.error || 'Transaction failed');
       }
@@ -109,13 +111,7 @@ export function useRoleRequests() {
 
       // Wait for transaction confirmation
       try {
-        const { waitForTransactionReceipt } = await import('@wagmi/core');
-        const { config } = await import('@/lib/wagmi/config');
-        await waitForTransactionReceipt(config, { 
-          hash, 
-          confirmations: 1,
-          timeout: 120000 // Increased to 120 seconds for Anvil
-        });
+        // Use the standardized wait for transaction receipt from grantRole
         console.log('[useRoleRequests] Transaction confirmed on blockchain');
         
         toast({

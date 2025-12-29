@@ -22,9 +22,12 @@ interface UseUserRoles {
   refreshRoles: () => void;
 }
 
+import { getCache, setCache, isCacheStale, isRevalidating, startRevalidation, completeRevalidation } from '@/lib/utils/cache';
+
 export const useUserRoles = (): UseUserRoles => {
   const { address, isConnected } = useWeb3();
-    const [userRoles, setUserRoles] = useState<UseUserRoles>({    isAdmin: false,
+  const cacheKey = `user_roles_${address || 'unknown'}`;
+  const [userRoles, setUserRoles] = useState<UseUserRoles>({    isAdmin: false,
     isManufacturer: false,
     isHardwareAuditor: false,
     isSoftwareTechnician: false,
@@ -36,14 +39,33 @@ export const useUserRoles = (): UseUserRoles => {
   });
 
   const checkRoles = useCallback(async () => {
+    // Early return if not connected or missing required data
     if (!isConnected || !address || !NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS) {
+      if (isConnected && address && !NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS) {
+        console.error('Contract address is not configured. Please check your .env file.');
+      }
       setUserRoles(prev => ({ ...prev, isLoading: false }));
       return;
     }
 
-    try {
-      setUserRoles(prev => ({ ...prev, isLoading: true }));
+    // Check cache first
+    const cachedRoles = getCache<UseUserRoles>(cacheKey);
+    if (cachedRoles && !isCacheStale(cacheKey)) {
+      setUserRoles(cachedRoles);
+      return;
+    }
 
+    // If we have stale data, serve it while revalidating
+    if (cachedRoles && !isRevalidating(cacheKey)) {
+      setUserRoles(cachedRoles);
+      startRevalidation(cacheKey);
+    } else if (!cachedRoles) {
+      setUserRoles(prev => ({ ...prev, isLoading: true }));
+    }
+
+    console.log('[useUserRoles] Starting role check for address:', address);
+
+    try {
       const contractAddress = NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS as `0x${string}`;
 
       // Get role hashes from the contract (using cached utility)
@@ -81,8 +103,7 @@ export const useUserRoles = (): UseUserRoles => {
       if (isSoftwareTechnician) activeRoleNames.push('TECNICO_SW_ROLE');
       if (isSchool) activeRoleNames.push('ESCUELA_ROLE');
 
-      setUserRoles(prev => ({
-        ...prev,
+      const newRoles: UseUserRoles = {
         isAdmin,
         isManufacturer,
         isHardwareAuditor,
@@ -99,8 +120,19 @@ export const useUserRoles = (): UseUserRoles => {
             case 'ESCUELA_ROLE': return isSchool;
             default: return false;
           }
-        }
-      }));
+        },
+        refreshRoles: checkRoles
+      };
+
+      // Cache the result with 30 second TTL and stale-while-revalidate
+      setCache(cacheKey, newRoles, 30000, true);
+      
+      // Always update state
+      setUserRoles(newRoles);
+      
+      // Mark revalidation as complete
+      completeRevalidation(cacheKey);
+      
     } catch (error: any) {
       console.error('Error fetching user roles:', error);
 
@@ -109,9 +141,17 @@ export const useUserRoles = (): UseUserRoles => {
         console.error('CRITICAL: Origin http://localhost:3000 not found on Allowlist. Please update your configuration on cloud.reown.com');
       }
 
-      setUserRoles(prev => ({ ...prev, isLoading: false }));
+      // Mark revalidation as complete on error
+      completeRevalidation(cacheKey);
+      
+      // If we have stale data and we're revalidating, keep showing it
+      if (userRoles.isLoading && getCache(cacheKey)) {
+        setUserRoles(prev => ({ ...prev, isLoading: false }));
+      } else {
+        setUserRoles(prev => ({ ...prev, isLoading: false }));
+      }
     }
-  }, [address, isConnected]);
+  }, [address, isConnected, cacheKey]);
 
   useEffect(() => {
     checkRoles();

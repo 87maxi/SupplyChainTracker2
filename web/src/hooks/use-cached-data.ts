@@ -19,6 +19,8 @@ const DEFAULT_MAX_SIZE = 100;
 
 // Cache en memoria global (compartido entre componentes)
 const globalCache = new Map<string, CacheItem<any>>();
+// Cola para controlar revalidaciones y evitar múltiples llamadas simultáneas
+const revalidationQueue = new Map<string, boolean>();
 
 // Limpiar cache expirado periódicamente
 setInterval(() => {
@@ -35,6 +37,11 @@ export const useCachedData = <T>(
   fetcher: () => Promise<T>,
   options: CacheOptions = {}
 ) => {
+  // Create a stable reference for fetcher
+  const stableFetcher = useCallback(fetcher, []);
+  // In a real implementation, we would get address from Web3Context
+  // For now, we'll use a placeholder
+  const address = '';
   const {
     ttl = DEFAULT_TTL,
     staleWhileRevalidate = true,
@@ -63,7 +70,7 @@ export const useCachedData = <T>(
       setIsLoading(true);
       setError(null);
 
-      const result = await fetcher();
+      const result = await stableFetcher();
       const now = Date.now();
       
       // Actualizar cache
@@ -90,7 +97,8 @@ export const useCachedData = <T>(
   }, [key, fetcher, ttl, enforceCacheSize]);
 
   const getCachedData = useCallback((): T | null => {
-    const cached = globalCache.get(key);
+    const cacheKey = `${key}_${address || ''}`;
+    const cached = globalCache.get(cacheKey);
     const now = Date.now();
 
     if (!cached) {
@@ -100,21 +108,28 @@ export const useCachedData = <T>(
     // Datos expirados
     if (cached.expiresAt <= now) {
       if (staleWhileRevalidate) {
-        // Devolver datos stale mientras se revalida
-        fetchData().catch(console.error);
+        // Usar cola de revalidación para evitar múltiples llamadas simultáneas
+        const cacheKey = `${key}_${address || ''}`;
+        if (!revalidationQueue.has(cacheKey)) {
+          revalidationQueue.set(cacheKey, true);
+          fetchData().catch(console.error).finally(() => {
+            revalidationQueue.delete(cacheKey);
+          });
+        }
         return cached.data;
       }
       return null;
     }
 
     return cached.data;
-  }, [key, staleWhileRevalidate, fetchData]);
+  }, [key, address, staleWhileRevalidate, fetchData]);
 
   const invalidate = useCallback(() => {
-    globalCache.delete(key);
+    const cacheKey = `${key}_${address || ''}`;
+    globalCache.delete(cacheKey);
     setData(null);
     setLastUpdated(0);
-  }, [key]);
+  }, [key, address]);
 
   const refresh = useCallback(() => {
     invalidate();
@@ -124,6 +139,7 @@ export const useCachedData = <T>(
   // Cargar datos iniciales
   useEffect(() => {
     const cachedData = getCachedData();
+    const cacheKey = `${key}_${address || ''}`;
     
     if (cachedData) {
       setData(cachedData);
@@ -131,15 +147,20 @@ export const useCachedData = <T>(
       
       // Revalidar datos stale en background
       if (staleWhileRevalidate) {
-        const cached = globalCache.get(key);
+        const cached = globalCache.get(cacheKey);
         if (cached && cached.expiresAt <= Date.now()) {
-          fetchData().catch(console.error);
+          if (!revalidationQueue.has(cacheKey)) {
+            revalidationQueue.set(cacheKey, true);
+            fetchData().catch(console.error).finally(() => {
+              revalidationQueue.delete(cacheKey);
+            });
+          }
         }
       }
     } else {
       fetchData();
     }
-  }, [key, getCachedData, fetchData, staleWhileRevalidate]);
+  }, [key, address, getCachedData, fetchData, staleWhileRevalidate]);
 
   return {
     data,
@@ -149,7 +170,8 @@ export const useCachedData = <T>(
     refresh,
     invalidate,
     isStale: () => {
-      const cached = globalCache.get(key);
+      const cacheKey = `${key}_${address || ''}`;
+      const cached = globalCache.get(cacheKey);
       return cached ? cached.expiresAt <= Date.now() : false;
     }
   };

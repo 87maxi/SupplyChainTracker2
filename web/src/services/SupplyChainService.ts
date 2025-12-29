@@ -1,8 +1,9 @@
 'use client';
 
-import { readContract, writeContract, waitForTransactionReceipt, getBalance, getAccount } from '@wagmi/core';
+import { readContract, writeContract, getBalance, getAccount } from '@wagmi/core';
+import { waitForTransactionReceipt } from '@wagmi/core';
 import { config } from '@/lib/wagmi/config';
-import { Address } from 'viem';
+import { Address, parseAbi } from 'viem';
 import { roleMapper } from '@/lib/roleMapping';
 
 // Import contract ABI and address
@@ -22,7 +23,7 @@ export const registerAuditReport = async (reportHash: string) => {
   // In a real implementation, this would be:
   /*
   try {
-    const transactionHash = await writeContract(config, {
+    const hash = await writeContract(config, {
       address: contractAddress,
       abi,
       functionName: 'auditHardware',
@@ -31,7 +32,7 @@ export const registerAuditReport = async (reportHash: string) => {
     
     // Wait for transaction confirmation
     const receipt = await waitForTransactionReceipt(config, {
-      hash: transactionHash
+          hash: hash    
     });
     
     return receipt;
@@ -77,12 +78,37 @@ export const getAccountBalance = async (address: string) => {
 // Function to check if a user has a specific role
 export const hasRole = async (role: string, userAddress: string): Promise<boolean> => {
   try {
-    // Delegate to our centralized roleMapper for consistent role hash mapping
-    const roleHash = await roleMapper.getRoleHash(role);
-
     if (!contractAddress || !contractAddress.startsWith('0x')) {
       console.error(`[SupplyChainService] Invalid contract address: "${contractAddress}"`);
       return false;
+    }
+
+    // If role is already a hash, use it directly
+    if (role.startsWith('0x') && role.length === 66) {
+      console.log(`[SupplyChainService] Role appears to be a hash, using directly: ${role}`);
+      const roleHash = role as `0x${string}`;
+
+      const result = await readContract(config, {
+        address: contractAddress as `0x${string}`,
+        abi: abi as any,
+        functionName: 'hasRole',
+        args: [roleHash, userAddress]
+      });
+      console.log(`[SupplyChainService] hasRole result: ${result}`);
+      return result as boolean;
+    }
+
+    // Delegate to our centralized roleMapper for consistent role hash mapping
+    const roleHash = await roleMapper.getRoleHash(role);
+
+    if (!roleHash || roleHash === '0x0000000000000000000000000000000000000000000000000000000000000000') {
+      console.warn(`[SupplyChainService] Role hash not found or zero hash for role: ${role}. Using default admin role as fallback.`);
+      const defaultRoleHash = await roleMapper.getRoleHash('DEFAULT_ADMIN_ROLE');
+      if (!defaultRoleHash || defaultRoleHash === '0x0000000000000000000000000000000000000000000000000000000000000000') {
+        console.error('[SupplyChainService] Unable to get default admin role hash, access denied.');
+        return false;
+      }
+      return await hasRole('DEFAULT_ADMIN_ROLE', userAddress);
     }
 
     console.log(`[SupplyChainService] Calling hasRole on contract: "${contractAddress}"`);
@@ -240,44 +266,61 @@ export const clearMembersCache = (roleHash?: string) => {
 // Grant a role to a user
 export const grantRole = async (roleName: string, userAddress: Address) => {
   try {
-    // Delegate to our centralized roleMapper for consistent role hash mapping
-    const roleHash = await roleMapper.getRoleHash(roleName);
+    // Use the direct string-based function that the contract provides
+    // This function takes the account first, then the role type as string
+    // Remove _ROLE suffix to get the base role name that the contract expects
+    const roleType = roleName.replace('_ROLE', '').trim().toUpperCase();
 
-    if (!roleHash) {
-      throw new Error(`Role ${roleName} not found in role hashes`);
-    }
+    console.log(`[SupplyChainService] Granting role to user: ${userAddress}, role: ${roleType}`);
 
-    // Direct transaction without simulation to ensure correct execution
-    const transactionHash = await writeContract(config, {
+    // Use parseAbi to explicitly define the function signature to avoid ambiguity and "function not found" errors
+    const explicitAbi = parseAbi(['function grantRole(address account, string roleType)']);
+
+    const hash = await writeContract(config, {
       address: contractAddress,
-      abi,
+      abi: explicitAbi,
       functionName: 'grantRole',
-      args: [roleHash, userAddress],
-      gas: BigInt(500000) // High gas limit for Anvil
+      args: [userAddress, roleType],
+      gas: BigInt(500000)
     });
 
-    // Wait for transaction confirmation with extended timeout
+    console.log(`[SupplyChainService] Transaction submitted: ${hash}`);
+
     const receipt = await waitForTransactionReceipt(config, {
-      hash: transactionHash,
-      timeout: 120000 // Wait up to 120 seconds for Anvil
+      hash,
+      timeout: 30000
     });
 
-    console.log('grantRole transaction confirmed:', receipt);
+    console.log('[SupplyChainService] grantRole transaction confirmed:', receipt);
 
     return {
       success: true,
-      hash: transactionHash
+      hash: hash
     };
   } catch (error: any) {
-    console.error('❌ Error granting role:', error);
+    console.error('❌ [SupplyChainService] Error granting role:', error);
 
-    // Log detailed revert reason if available
-    if (error.cause) console.error('Error cause:', error.cause);
-    if (error.shortMessage) console.error('Short message:', error.shortMessage);
+    let errorMessage = 'Failed to grant role';
+
+    if (error.shortMessage) {
+      errorMessage = error.shortMessage;
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+
+    // Check for common revert reasons
+    if (errorMessage.includes('reverted')) {
+      console.error('[SupplyChainService] Transaction reverted. Possible reasons:');
+      console.error('1. Caller does not have DEFAULT_ADMIN_ROLE');
+      console.error('2. Invalid role type string');
+      console.error('3. Contract address mismatch');
+    }
+
+    if (error.cause) console.error('[SupplyChainService] Error cause:', error.cause);
 
     return {
       success: false,
-      error: error.message || 'Failed to grant role'
+      error: errorMessage
     };
   }
 };
@@ -303,7 +346,7 @@ export const revokeRole = async (roleHash: `0x${string}`, userAddress: Address) 
 // Register multiple netbooks
 export const registerNetbooks = async (serials: string[], batches: string[], specs: string[]) => {
   try {
-    const transactionHash = await writeContract(config, {
+    const hash = await writeContract(config, {
       address: contractAddress,
       abi,
       functionName: 'registerNetbooks',
@@ -312,7 +355,7 @@ export const registerNetbooks = async (serials: string[], batches: string[], spe
 
     // Wait for transaction to be mined
     const receipt = await waitForTransactionReceipt(config, {
-      hash: transactionHash
+      hash: hash
     });
 
     return receipt;
@@ -325,7 +368,7 @@ export const registerNetbooks = async (serials: string[], batches: string[], spe
 // Audit hardware for a netbook
 export const auditHardware = async (serial: string, passed: boolean, reportHash: string) => {
   try {
-    const transactionHash = await writeContract(config, {
+    const hash = await writeContract(config, {
       address: contractAddress,
       abi,
       functionName: 'auditHardware',
@@ -334,7 +377,7 @@ export const auditHardware = async (serial: string, passed: boolean, reportHash:
 
     // Wait for transaction to be mined
     const receipt = await waitForTransactionReceipt(config, {
-      hash: transactionHash
+      hash: hash
     });
 
     return receipt;
@@ -347,7 +390,7 @@ export const auditHardware = async (serial: string, passed: boolean, reportHash:
 // Validate software for a netbook
 export const validateSoftware = async (serial: string, osVersion: string, passed: boolean) => {
   try {
-    const transactionHash = await writeContract(config, {
+    const hash = await writeContract(config, {
       address: contractAddress,
       abi,
       functionName: 'validateSoftware',
@@ -356,7 +399,7 @@ export const validateSoftware = async (serial: string, osVersion: string, passed
 
     // Wait for transaction to be mined
     const receipt = await waitForTransactionReceipt(config, {
-      hash: transactionHash
+      hash: hash
     });
 
     return receipt;
@@ -369,7 +412,7 @@ export const validateSoftware = async (serial: string, osVersion: string, passed
 // Assign netbook to student
 export const assignToStudent = async (serial: string, schoolHash: string, studentHash: string) => {
   try {
-    const transactionHash = await writeContract(config, {
+    const hash = await writeContract(config, {
       address: contractAddress,
       abi,
       functionName: 'assignToStudent',
@@ -378,7 +421,7 @@ export const assignToStudent = async (serial: string, schoolHash: string, studen
 
     // Wait for transaction to be mined
     const receipt = await waitForTransactionReceipt(config, {
-      hash: transactionHash
+      hash: hash
     });
 
     return receipt;

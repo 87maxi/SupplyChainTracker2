@@ -99,9 +99,11 @@ export const Navigation = () => {
   }
 
   // Filtrar ítems de navegación basados en los roles activos del usuario
-  const filteredItems = navigationItems.filter(item =>
-    item.roles.some(requiredRole => activeRoleNames.includes(requiredRole))
-  );
+  const filteredItems = navigationItems.filter(item => {
+    const hasRequiredRole = item.roles.some(requiredRole => activeRoleNames.includes(requiredRole));
+    console.log('Navigation item:', item.href, 'Required roles:', item.roles, 'User roles:', activeRoleNames, 'Has access:', hasRequiredRole);
+    return hasRequiredRole;
+  });
 
   return (
     <nav className="flex space-x-4">

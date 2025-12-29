@@ -1,3 +1,4 @@
+// Types for contract roles
 export type ContractRoles = 
   | 'DEFAULT_ADMIN_ROLE'
   | 'FABRICANTE_ROLE'

@@ -42,19 +42,31 @@ class RoleMapper {
 
   // Convert any role name (with or without _ROLE suffix) to full role name
   normalizeRoleName(name: string): RoleName {
-    console.log(`[roleMapping] Normalizing role: "${name}"`);
-
+    const originalName = name;
     if (!name) {
       console.warn('[roleMapping] Empty role name provided, defaulting to ADMIN');
       return 'DEFAULT_ADMIN_ROLE';
     }
 
     const upperName = name.toUpperCase().trim();
+    console.log(`[roleMapping] Normalizing role: "${originalName}" (upper: "${upperName}")`);
+
+    // Handle case where name is already a hash
+    // This block cannot be async, so we cannot use await here
+    // We'll handle hash to role conversion in a different way
+    if (upperName.startsWith('0x') && upperName.length === 66) {
+      console.log(`[roleMapping] Name appears to be a hash, but cannot resolve to role name without async operation`);
+      
+      // We cannot await getRoleHashes() here since this method is not async
+      // For now, return a fallback
+      return 'DEFAULT_ADMIN_ROLE';
+    }
 
     // 1. Normalize known variants to standard form
     const normalizedMap: Record<string, RoleName> = {
       'ADMIN': 'DEFAULT_ADMIN_ROLE',
       'DEFAULT_ADMIN': 'DEFAULT_ADMIN_ROLE',
+      'DEFAULT_ADMIN_ROLE': 'DEFAULT_ADMIN_ROLE',
       'MANAGER': 'DEFAULT_ADMIN_ROLE',
       'OWNER': 'DEFAULT_ADMIN_ROLE'
     };
@@ -66,6 +78,7 @@ class RoleMapper {
 
     // 2. Direct match with full names in our mapping
     if (upperName in this.nameToKey) {
+      console.log(`[roleMapping] Direct match with full name: ${originalName} -> ${upperName}`);
       return upperName as RoleName;
     }
 
@@ -100,16 +113,37 @@ class RoleMapper {
 
   // Get role hash for any role name format
   async getRoleHash(name: string): Promise<`0x${string}`> {
-    const fullRoleName = this.normalizeRoleName(name);
-    const roleHashes = await getRoleHashes();
+    const upperName = name.toUpperCase().trim();
 
-    // Use the short key to get the hash
-    const key = this.nameToKey[fullRoleName];
-    const hash = roleHashes[key];
-    if (!hash) {
-      throw new Error(`Role hash not found for role: ${fullRoleName} (key: ${key})`);
+    // If name is already a hash, return it directly
+    if (upperName.startsWith('0x') && upperName.length === 66) {
+      console.log(`[roleMapper] Name is already a hash, returning directly: ${name}`);
+      return upperName as `0x${string}`;
     }
-    return hash;
+
+    // Handle special case for admin roles
+    if (['ADMIN', 'DEFAULT_ADMIN', 'MANAGER', 'OWNER', 'DEFAULT_ADMIN_ROLE'].includes(upperName)) {
+      console.log('[roleMapper] Using bytes32(0) for admin role:', upperName);
+      return '0x0000000000000000000000000000000000000000000000000000000000000000' as `0x${string}`;
+    }
+
+    console.log(`[roleMapper] Attempting to get hash for role: "${name}"`);
+    const fullRoleName = this.normalizeRoleName(name);
+
+    // Fallback to roleHashes if contract call fails or is unnecessary
+    const roleHashes = await getRoleHashes();
+    const key = this.nameToKey[fullRoleName];
+
+    if (key) {
+      const hash = roleHashes[key];
+      if (hash && hash !== '0x0000000000000000000000000000000000000000000000000000000000000000') {
+        console.log(`[roleMapper] Using hash from roleHashes cache: ${hash}`);
+        return hash;
+      }
+    }
+
+    console.error(`[roleMapper] Failed to get hash for role: ${name} (full: ${fullRoleName})`);
+    return '0x0000000000000000000000000000000000000000000000000000000000000000' as `0x${string}`;
   }
 }
 

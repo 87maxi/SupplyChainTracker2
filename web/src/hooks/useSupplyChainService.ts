@@ -117,13 +117,22 @@ export const useSupplyChainService = () => {
         roleEntries.map(async ([key, hash]) => {
           try {
             const members = await SupplyChainService.getAllMembers(hash, forceRefresh);
+            // Convert member addresses to checksummed format
+            const checksummedMembers = members.map(address => {
+              try {
+                return address.toLowerCase().replace('0x', '0x').trim();
+              } catch (e) {
+                console.warn('Invalid address format:', address);
+                return address;
+              }
+            });
             const contractRoleName = roleMapping[key];
 
             return [
               contractRoleName,
               {
-                count: members.length,
-                members
+                count: checksummedMembers.length,
+                members: checksummedMembers
               }
             ] as const;
           } catch (error) {

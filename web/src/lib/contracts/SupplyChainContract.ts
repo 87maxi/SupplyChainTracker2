@@ -231,13 +231,24 @@ export async function getRoleByName(roleType: string): Promise<string> {
 }
 
 // Funciones para gestión de roles
-export async function grantRole(roleHash: string, account: string): Promise<string> {
+// Solicita el rol usando el nombre base del rol (sin sufijo _ROLE) en lugar del hash.
+export async function grantRole(roleName: string, account: string): Promise<string> {
   try {
+    // Asegurarnos de que el nombre del rol esté en mayúsculas
+    // Keep the role name as-is since contract expects exact case matching
+    // The contract uses keccak256 encoding which is case-sensitive
+    const contractRoleName = roleName.trim();
+    
+    // Validar que no se esté pasando un hash como roleName
+    if (contractRoleName.startsWith('0x')) {
+      throw new Error('grantRole espera un nombre de rol, no un hash');
+    }
+
     const result = await writeContract(config, {
       address: contractAddress,
       abi,
       functionName: 'grantRole',
-      args: [account, roleHash]
+      args: [account, contractRoleName]
     });
     
     // Simular transacción exitosa

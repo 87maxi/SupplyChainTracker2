@@ -1,14 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {AccessControlEnumerable} from "openzeppelin-contracts/contracts/access/extensions/AccessControlEnumerable.sol";
+import {
+    AccessControlEnumerable
+} from "openzeppelin-contracts/contracts/access/extensions/AccessControlEnumerable.sol";
 
 contract SupplyChainTracker is AccessControlEnumerable {
     // --- Roles ---
-    bytes32 public immutable FABRICANTE_ROLE = keccak256("FABRICANTE_ROLE");
-    bytes32 public immutable AUDITOR_HW_ROLE = keccak256("AUDITOR_HW_ROLE");
-    bytes32 public immutable TECNICO_SW_ROLE = keccak256("TECNICO_SW_ROLE");
-    bytes32 public immutable ESCUELA_ROLE = keccak256("ESCUELA_ROLE");
+    // Roles constant - using public constant as per OpenZeppelin best practices
+    bytes32 public constant FABRICANTE_ROLE = keccak256("FABRICANTE_ROLE");
+    bytes32 public constant AUDITOR_HW_ROLE = keccak256("AUDITOR_HW_ROLE");
+    bytes32 public constant TECNICO_SW_ROLE = keccak256("TECNICO_SW_ROLE");
+    bytes32 public constant ESCUELA_ROLE = keccak256("ESCUELA_ROLE");
+
+    // DEFAULT_ADMIN_ROLE is already defined in AccessControl as 0x00...
+    // We expose it through our mapping system for consistency
 
     // --- Enums ---
     enum State {
@@ -38,7 +44,7 @@ contract SupplyChainTracker is AccessControlEnumerable {
         // D. Datos de Destino
         bytes32 destinationSchoolHash;
         bytes32 studentIdHash;
-        uint256 distributionTimestamp;
+        uint distributionTimestamp;
 
         // Estado actual
         State currentState;
@@ -62,41 +68,73 @@ contract SupplyChainTracker is AccessControlEnumerable {
     // --- Funciones ERC-20 para evitar errores de "execution reverted" ---
     // Estas funciones devuelven valores por defecto para evitar que herramientas
     // que esperan un contrato ERC-20 fallen con "execution reverted"
-    
-    function name() external pure returns (string memory) {
-        return "SupplyChainTracker";
+
+    // --- Funciones de gestión de roles ---
+
+    /**
+     * @notice Otorga un rol a una cuenta
+     * @dev Solo el administrador puede llamar a esta función
+     * @param account La cuenta que recibirá el rol
+     * @param roleType El tipo de rol a otorgar ("FABRICANTE", "AUDITOR_HW", "TECNICO_SW", "ESCUELA")
+     */
+    function grantRole(address account, string calldata roleType)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        bytes32 role = getRoleByName(roleType);
+        _grantRole(role, account);
     }
-    
-    function symbol() external pure returns (string memory) {
-        return "SCT";
+
+    /**
+     * @notice Revoca un rol de una cuenta
+     * @dev Solo el administrador puede llamar a esta función
+     * @param account La cuenta de la que se revocará el rol
+     * @param roleType El tipo de rol a revocar ("FABRICANTE", "AUDITOR_HW", "TECNICO_SW", "ESCUELA")
+     */
+    function revokeRole(address account, string calldata roleType)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        bytes32 role = getRoleByName(roleType);
+        _revokeRole(role, account);
     }
-    
-    function decimals() external pure returns (uint8) {
-        return 0; // No es un token, por lo que no tiene decimales
+
+    /**
+     * @notice Obtiene el hash del rol por su nombre
+     * @param roleType El nombre del rol ("FABRICANTE", "AUDITOR_HW", "TECNICO_SW", "ESCUELA")
+     * @return role El hash del rol correspondiente
+     */
+    function getRoleByName(string calldata roleType) public pure returns (bytes32) {
+        if (keccak256(abi.encodePacked(roleType)) == keccak256(abi.encodePacked("FABRICANTE"))) {
+            return FABRICANTE_ROLE;
+        }
+        if (keccak256(abi.encodePacked(roleType)) == keccak256(abi.encodePacked("AUDITOR_HW"))) {
+            return AUDITOR_HW_ROLE;
+        }
+        if (keccak256(abi.encodePacked(roleType)) == keccak256(abi.encodePacked("TECNICO_SW"))) {
+            return TECNICO_SW_ROLE;
+        }
+        if (keccak256(abi.encodePacked(roleType)) == keccak256(abi.encodePacked("ESCUELA"))) {
+            return ESCUELA_ROLE;
+        }
+        if (keccak256(abi.encodePacked(roleType)) == keccak256(abi.encodePacked("ADMIN")) ||
+            keccak256(abi.encodePacked(roleType)) == keccak256(abi.encodePacked("DEFAULT_ADMIN")) ||
+            keccak256(abi.encodePacked(roleType)) == keccak256(abi.encodePacked("MANAGER")) ||
+            keccak256(abi.encodePacked(roleType)) == keccak256(abi.encodePacked("OWNER"))) {
+            return DEFAULT_ADMIN_ROLE;
+        }
+        revert("Invalid role type");
     }
-    
-    function totalSupply() external pure returns (uint256) {
-        return 0; // No es un token, por lo que no tiene suministro
-    }
-    
-    function balanceOf(address) external pure returns (uint256) {
-        return 0; // No es un token, por lo que no tiene balances
-    }
-    
-    function transfer(address, uint256) external pure returns (bool) {
-        return false; // No es un token, por lo que no permite transferencias
-    }
-    
-    function allowance(address, address) external pure returns (uint256) {
-        return 0; // No es un token, por lo que no tiene allowances
-    }
-    
-    function approve(address, uint256) external pure returns (bool) {
-        return false; // No es un token, por lo que no permite aprobaciones
-    }
-    
-    function transferFrom(address, address, uint256) external pure returns (bool) {
-        return false; // No es un token, por lo que no permite transferencias
+
+    /**
+     * @notice Verifica si una cuenta tiene un rol específico
+     * @param roleType El tipo de rol a verificar
+     * @param account La cuenta a verificar
+     * @return bool True si la cuenta tiene el rol, false en caso contrario
+     */
+    function hasRole(string calldata roleType, address account) external view returns (bool) {
+        bytes32 role = getRoleByName(roleType);
+        return hasRole(role, account);
     }
 
     // --- Funciones de Escritura ---
@@ -107,9 +145,12 @@ contract SupplyChainTracker is AccessControlEnumerable {
         string[] calldata specs
     ) external {
         require(hasRole(FABRICANTE_ROLE, msg.sender), "Acceso denegado: rol requerido");
-        require(serials.length == batches.length && serials.length == specs.length, "Longitud de arrays no coincide");
-        
-        for (uint256 i = 0; i < serials.length; i++) {
+        require(
+            serials.length == batches.length && serials.length == specs.length,
+            "Longitud de arrays no coincide"
+        );
+
+        for (uint i = 0; i < serials.length; i++) {
             require(bytes(serials[i]).length > 0, "Serial no valido");
             require(!netbooks[serials[i]].exists, "Netbook ya registrada");
 
@@ -135,11 +176,7 @@ contract SupplyChainTracker is AccessControlEnumerable {
         }
     }
 
-    function auditHardware(
-        string calldata serial,
-        bool passed,
-        bytes32 reportHash
-    ) external {
+    function auditHardware(string calldata serial, bool passed, bytes32 reportHash) external {
         require(hasRole(AUDITOR_HW_ROLE, msg.sender), "Acceso denegado: rol requerido");
         Netbook storage nb = netbooks[serial];
         require(nb.exists, "Serial no valido");
@@ -153,11 +190,9 @@ contract SupplyChainTracker is AccessControlEnumerable {
         emit HardwareAudited(serial, msg.sender, passed);
     }
 
-    function validateSoftware(
-        string calldata serial,
-        string calldata osVersion,
-        bool passed
-    ) external {
+    function validateSoftware(string calldata serial, string calldata osVersion, bool passed)
+        external
+    {
         require(hasRole(TECNICO_SW_ROLE, msg.sender), "Acceso denegado: rol requerido");
         Netbook storage nb = netbooks[serial];
         require(nb.exists, "Serial no valido");
@@ -171,11 +206,9 @@ contract SupplyChainTracker is AccessControlEnumerable {
         emit SoftwareValidated(serial, msg.sender, osVersion);
     }
 
-    function assignToStudent(
-        string calldata serial,
-        bytes32 schoolHash,
-        bytes32 studentHash
-    ) external {
+    function assignToStudent(string calldata serial, bytes32 schoolHash, bytes32 studentHash)
+        external
+    {
         require(hasRole(ESCUELA_ROLE, msg.sender), "Acceso denegado: rol requerido");
         Netbook storage nb = netbooks[serial];
         require(nb.exists, "Serial no valido");
@@ -206,31 +239,31 @@ contract SupplyChainTracker is AccessControlEnumerable {
     }
 
     function getAllMembers(bytes32 role) public view returns (address[] memory) {
-        uint256 count = getRoleMemberCount(role);
+        uint count = getRoleMemberCount(role);
         address[] memory members = new address[](count);
-        
-        for (uint256 i = 0; i < count; i++) {
+
+        for (uint i = 0; i < count; i++) {
             members[i] = getRoleMember(role, i);
         }
-        
+
         return members;
     }
 
-    function totalNetbooks() external view returns (uint256) {
+    function totalNetbooks() external view returns (uint) {
         return allSerialNumbers.length;
     }
 
     function getNetbooksByState(State state) external view returns (string[] memory) {
-        uint256 count = 0;
-        for (uint256 i = 0; i < allSerialNumbers.length; i++) {
+        uint count = 0;
+        for (uint i = 0; i < allSerialNumbers.length; i++) {
             if (netbooks[allSerialNumbers[i]].currentState == state) {
                 count++;
             }
         }
-        
+
         string[] memory result = new string[](count);
-        uint256 index = 0;
-        for (uint256 i = 0; i < allSerialNumbers.length; i++) {
+        uint index = 0;
+        for (uint i = 0; i < allSerialNumbers.length; i++) {
             if (netbooks[allSerialNumbers[i]].currentState == state) {
                 result[index] = allSerialNumbers[i];
                 index++;
@@ -238,5 +271,4 @@ contract SupplyChainTracker is AccessControlEnumerable {
         }
         return result;
     }
-
 }

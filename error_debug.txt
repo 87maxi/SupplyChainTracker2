@@ -1,0 +1,1 @@
+Multiple syntax errors in EnhancedPendingRoleRequests.tsx related to JSX structure, commas, and closing brackets. Current state has mismatched parentheses and brackets.

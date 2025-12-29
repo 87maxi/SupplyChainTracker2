@@ -13,3 +13,4 @@ coverage/
 *.log
 anvil-state.json
 variables.txt
+sc/lib/openzeppelin-contracts 

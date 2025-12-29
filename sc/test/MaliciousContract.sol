@@ -8,8 +8,8 @@ contract MaliciousContract {
     string public targetSerial;
     bool public shouldReenter;
     bool public reentrancyDetected;
-    uint256 public reentrancyCount;
-    
+    uint public reentrancyCount;
+
     constructor(address _trackerAddress, string memory _serial) {
         tracker = SupplyChainTracker(_trackerAddress);
         targetSerial = _serial;
@@ -17,15 +17,15 @@ contract MaliciousContract {
         reentrancyDetected = false;
         reentrancyCount = 0;
     }
-    
+
     function enableReentrancy() public {
         shouldReenter = true;
     }
-    
+
     function disableReentrancy() public {
         shouldReenter = false;
     }
-    
+
     // This function will be called when Ether is sent to this contract
     receive() external payable {
         if (shouldReenter && reentrancyCount < 2) {
@@ -36,14 +36,14 @@ contract MaliciousContract {
             // so true reentrancy is not possible. This is just to check for proper patterns.
         }
     }
-    
+
     function attack() public payable {
         // This function doesn't exploit anything since the contract doesn't handle Ether
         // But we can use it to test that there are no unexpected behaviors
         reentrancyDetected = false;
         reentrancyCount = 0;
     }
-    
+
     function getBalance() public view returns (uint) {
         return address(this).balance;
     }

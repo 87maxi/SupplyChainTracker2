@@ -50,7 +50,7 @@ contract SupplyChainTrackerTest is Test {
         vm.prank(fabricante);
         tracker.registerNetbooks(serials, batches, specs);
 
-        assertEq(uint256(tracker.getNetbookState(SERIAL_01)), uint256(SupplyChainTracker.State.FABRICADA));
+        assertEq(uint(tracker.getNetbookState(SERIAL_01)), uint(SupplyChainTracker.State.FABRICADA));
         assertEq(tracker.getNetbookReport(SERIAL_01).batchId, BATCH);
         assertEq(tracker.getNetbookReport(SERIAL_01).initialModelSpecs, SPECS);
     }
@@ -61,7 +61,9 @@ contract SupplyChainTrackerTest is Test {
         vm.prank(auditor);
         tracker.auditHardware(SERIAL_01, true, REPORT_HASH);
 
-        assertEq(uint256(tracker.getNetbookState(SERIAL_01)), uint256(SupplyChainTracker.State.HW_APROBADO));
+        assertEq(
+            uint(tracker.getNetbookState(SERIAL_01)), uint(SupplyChainTracker.State.HW_APROBADO)
+        );
         assertEq(tracker.getNetbookReport(SERIAL_01).hwAuditor, auditor);
         assertEq(tracker.getNetbookReport(SERIAL_01).hwIntegrityPassed, true);
         assertEq(tracker.getNetbookReport(SERIAL_01).hwReportHash, REPORT_HASH);
@@ -81,7 +83,9 @@ contract SupplyChainTrackerTest is Test {
         vm.prank(tecnico);
         tracker.validateSoftware(SERIAL_01, OS_VERSION, true);
 
-        assertEq(uint256(tracker.getNetbookState(SERIAL_01)), uint256(SupplyChainTracker.State.SW_VALIDADO));
+        assertEq(
+            uint(tracker.getNetbookState(SERIAL_01)), uint(SupplyChainTracker.State.SW_VALIDADO)
+        );
         assertEq(tracker.getNetbookReport(SERIAL_01).swTechnician, tecnico);
         assertEq(tracker.getNetbookReport(SERIAL_01).osVersion, OS_VERSION);
         assertEq(tracker.getNetbookReport(SERIAL_01).swValidationPassed, true);
@@ -93,7 +97,9 @@ contract SupplyChainTrackerTest is Test {
         vm.prank(escuela);
         tracker.assignToStudent(SERIAL_01, SCHOOL_HASH, STUDENT_HASH);
 
-        assertEq(uint256(tracker.getNetbookState(SERIAL_01)), uint256(SupplyChainTracker.State.DISTRIBUIDA));
+        assertEq(
+            uint(tracker.getNetbookState(SERIAL_01)), uint(SupplyChainTracker.State.DISTRIBUIDA)
+        );
         assertEq(tracker.getNetbookReport(SERIAL_01).destinationSchoolHash, SCHOOL_HASH);
         assertEq(tracker.getNetbookReport(SERIAL_01).studentIdHash, STUDENT_HASH);
         assertEq(tracker.getNetbookReport(SERIAL_01).distributionTimestamp, block.timestamp);

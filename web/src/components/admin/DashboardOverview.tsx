@@ -288,7 +288,8 @@ export function DashboardOverview({ stats: initialStats }: { stats: DashboardSta
       const roleHashes = await getRoleHashes();
       
       let roleBytes32: string;
-      switch (request.role) {
+              // Map the role to its hash (this part remains unchanged)
+        switch (request.role) {
         case 'fabricante': roleBytes32 = roleHashes.FABRICANTE; break;
         case 'auditor_hw': roleBytes32 = roleHashes.AUDITOR_HW; break;
         case 'tecnico_sw': roleBytes32 = roleHashes.TECNICO_SW; break;
@@ -296,7 +297,9 @@ export function DashboardOverview({ stats: initialStats }: { stats: DashboardSta
         default: throw new Error('Rol inválido');
       }
 
-      const result = await SupplyChainContract.grantRole(roleBytes32, request.address);
+      // Now call grantRole with the string-based function that expects the base role name without _ROLE suffix
+      // The role name we have in `request.role` is already in the correct format (e.g., 'fabricante')
+      const result = await SupplyChainContract.grantRole(request.role, request.address);
       
       // Wait for transaction receipt
       if (result) {

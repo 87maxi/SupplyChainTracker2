@@ -162,7 +162,9 @@ export default function AdminUsersPage() {
   const onGrantRoleSubmit: SubmitHandler<RoleManagementInputs> = async (data) => {
     setIsSubmittingGrant(true);
     try {
-      const result = await grantRole(data.role, data.userAddress as Address);
+      // Strip _ROLE suffix from the selected role value before passing to grantRole
+      const baseRoleName = data.role.replace('_ROLE', '');
+      const result = await grantRole(baseRoleName, data.userAddress as Address);
       if (result.success) {
         toast({
           title: "Rol Otorgado",
