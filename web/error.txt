@@ -1,61 +1,18 @@
-src/app/admin/components/SystemHealth.tsx(200,71): error TS2345: Argument of type '`0x${string}`' is not assignable to parameter of type 'ContractRoles'.
-src/app/audit/page.tsx(45,80): error TS2304: Cannot find name 'address'.
-src/app/dashboard/page.test.tsx(28,25): error TS2339: Property 'getAllSerialNumbers' does not exist on type 'typeof SupplyChainService'.
-src/app/dashboard/page.test.tsx(29,25): error TS2339: Property 'isWalletConnected' does not exist on type 'typeof SupplyChainService'.
-src/app/dashboard/page.test.tsx(38,25): error TS2339: Property 'getAllSerialNumbers' does not exist on type 'typeof SupplyChainService'.
-src/app/dashboard/page.test.tsx(43,25): error TS2339: Property 'isWalletConnected' does not exist on type 'typeof SupplyChainService'.
-src/app/dashboard/page.test.tsx(51,25): error TS2339: Property 'getAllSerialNumbers' does not exist on type 'typeof SupplyChainService'.
-src/app/dashboard/page.test.tsx(52,25): error TS2339: Property 'isWalletConnected' does not exist on type 'typeof SupplyChainService'.
-src/app/dashboard/page.test.tsx(61,25): error TS2339: Property 'getAllSerialNumbers' does not exist on type 'typeof SupplyChainService'.
-src/app/dashboard/page.test.tsx(62,25): error TS2339: Property 'getNetbookReport' does not exist on type 'typeof SupplyChainService'.
-src/app/dashboard/page.test.tsx(66,25): error TS2339: Property 'isWalletConnected' does not exist on type 'typeof SupplyChainService'.
-src/app/dashboard/page.test.tsx(76,25): error TS2339: Property 'getAllSerialNumbers' does not exist on type 'typeof SupplyChainService'.
-src/app/dashboard/page.test.tsx(79,25): error TS2339: Property 'getNetbookReport' does not exist on type 'typeof SupplyChainService'.
-src/app/dashboard/page.test.tsx(97,25): error TS2339: Property 'isWalletConnected' does not exist on type 'typeof SupplyChainService'.
-src/app/dashboard/page.test.tsx(109,25): error TS2339: Property 'getAllSerialNumbers' does not exist on type 'typeof SupplyChainService'.
-src/app/dashboard/page.test.tsx(119,25): error TS2339: Property 'getNetbookReport' does not exist on type 'typeof SupplyChainService'.
-src/app/dashboard/page.test.tsx(127,25): error TS2339: Property 'isWalletConnected' does not exist on type 'typeof SupplyChainService'.
-src/app/dashboard/page.test.tsx(139,25): error TS2339: Property 'getAllSerialNumbers' does not exist on type 'typeof SupplyChainService'.
-src/app/dashboard/page.test.tsx(140,25): error TS2339: Property 'isWalletConnected' does not exist on type 'typeof SupplyChainService'.
-src/app/dashboard/page.test.tsx(149,25): error TS2339: Property 'getAllSerialNumbers' does not exist on type 'typeof SupplyChainService'.
-src/app/dashboard/page.test.tsx(154,25): error TS2339: Property 'isWalletConnected' does not exist on type 'typeof SupplyChainService'.
-src/app/dashboard/page.test.tsx(162,25): error TS2339: Property 'getAllSerialNumbers' does not exist on type 'typeof SupplyChainService'.
-src/app/dashboard/page.test.tsx(163,25): error TS2339: Property 'isWalletConnected' does not exist on type 'typeof SupplyChainService'.
-src/app/dashboard/page.test.tsx(172,25): error TS2339: Property 'getAllSerialNumbers' does not exist on type 'typeof SupplyChainService'.
-src/app/dashboard/page.test.tsx(173,25): error TS2339: Property 'getNetbookReport' does not exist on type 'typeof SupplyChainService'.
-src/app/dashboard/page.test.tsx(177,25): error TS2339: Property 'isWalletConnected' does not exist on type 'typeof SupplyChainService'.
-src/app/dashboard/page.test.tsx(187,25): error TS2339: Property 'getAllSerialNumbers' does not exist on type 'typeof SupplyChainService'.
-src/app/dashboard/page.test.tsx(190,25): error TS2339: Property 'getNetbookReport' does not exist on type 'typeof SupplyChainService'.
-src/app/dashboard/page.test.tsx(208,25): error TS2339: Property 'isWalletConnected' does not exist on type 'typeof SupplyChainService'.
-src/app/dashboard/page.test.tsx(220,25): error TS2339: Property 'getAllSerialNumbers' does not exist on type 'typeof SupplyChainService'.
-src/app/dashboard/page.test.tsx(230,25): error TS2339: Property 'getNetbookReport' does not exist on type 'typeof SupplyChainService'.
-src/app/dashboard/page.test.tsx(238,25): error TS2339: Property 'isWalletConnected' does not exist on type 'typeof SupplyChainService'.
-src/app/dashboard/page.tsx(203,28): error TS7006: Parameter 'serial' implicitly has an 'any' type.
-src/app/dashboard/page.tsx(227,49): error TS7006: Parameter 'n' implicitly has an 'any' type.
-src/app/dashboard/page.tsx(231,41): error TS7006: Parameter 'n' implicitly has an 'any' type.
-src/app/dashboard/page.tsx(232,43): error TS7006: Parameter 'n' implicitly has an 'any' type.
-src/app/dashboard/page.tsx(233,43): error TS7006: Parameter 'n' implicitly has an 'any' type.
-src/app/dashboard/page.tsx(234,43): error TS7006: Parameter 'n' implicitly has an 'any' type.
-src/app/tokens/create/page.tsx(96,82): error TS2345: Argument of type '`0x${string}` | undefined' is not assignable to parameter of type '`0x${string}`'.
-src/components/contracts/HardwareAuditForm.tsx(74,68): error TS2304: Cannot find name 'address'.
-src/components/contracts/NetbookForm.tsx(44,73): error TS2304: Cannot find name 'address'.
-src/components/contracts/SoftwareValidationForm.tsx(51,70): error TS2304: Cannot find name 'address'.
-src/components/contracts/StudentAssignmentForm.tsx(50,77): error TS2304: Cannot find name 'address'.
-src/hooks/useSupplyChainService.ts(16,39): error TS2339: Property 'getAllSerialNumbers' does not exist on type 'typeof SupplyChainService'.
-src/hooks/useSupplyChainService.ts(42,49): error TS2345: Argument of type 'string' is not assignable to parameter of type 'ContractRoles | ContractRoleName'.
-src/hooks/useSupplyChainService.ts(43,39): error TS2339: Property 'hasRole' does not exist on type 'typeof SupplyChainService'.
-src/hooks/useSupplyChainService.ts(52,39): error TS2339: Property 'getRoleCounts' does not exist on type 'typeof SupplyChainService'.
-src/hooks/useSupplyChainService.ts(64,48): error TS2339: Property 'getRoleMembers' does not exist on type 'typeof SupplyChainService'.
-src/hooks/useSupplyChainService.ts(115,54): error TS2339: Property 'getRoleMembers' does not exist on type 'typeof SupplyChainService'.
-src/hooks/useSupplyChainService.ts(117,52): error TS7006: Parameter 'address' implicitly has an 'any' type.
-src/hooks/useSupplyChainService.ts(172,39): error TS2339: Property 'getNetbookState' does not exist on type 'typeof SupplyChainService'.
-src/hooks/useSupplyChainService.ts(181,39): error TS2339: Property 'getNetbookReport' does not exist on type 'typeof SupplyChainService'.
-src/hooks/useSupplyChainService.ts(191,39): error TS2339: Property 'grantRole' does not exist on type 'typeof SupplyChainService'.
-src/hooks/useSupplyChainService.ts(200,39): error TS2339: Property 'revokeRole' does not exist on type 'typeof SupplyChainService'.
-src/hooks/useSupplyChainService.ts(210,47): error TS2339: Property 'auditHardware' does not exist on type 'typeof SupplyChainService'.
-src/hooks/useSupplyChainService.ts(220,47): error TS2339: Property 'registerNetbooks' does not exist on type 'typeof SupplyChainService'.
-src/hooks/useSupplyChainService.ts(231,47): error TS2339: Property 'validateSoftware' does not exist on type 'typeof SupplyChainService'.
-src/hooks/useSupplyChainService.ts(242,47): error TS2339: Property 'assignToStudent' does not exist on type 'typeof SupplyChainService'.
-src/hooks/useSupplyChainService.ts(255,5): error TS18004: No value exists in scope for the shorthand property 'getAccountBalance'. Either declare one or provide an initializer.
-src/lib/mongodb.ts(2,10): error TS2305: Module '"@/lib/env"' has no exported member 'MONGODB_URI'.
-src/lib/mongodb.ts(2,23): error TS2305: Module '"@/lib/env"' has no exported member 'MONGODB_DATABASE'.
+src/app/admin/components/SystemHealth.tsx(188,165): error TS1127: Invalid character.
+src/components/contracts/HardwareAuditForm.fixed.tsx(45,27): error TS1005: ',' expected.
+src/components/contracts/HardwareAuditForm.fixed.tsx(45,32): error TS1005: ',' expected.
+src/components/contracts/HardwareAuditForm.fixed.tsx(45,53): error TS1005: ',' expected.
+src/components/contracts/HardwareAuditForm.fixed.tsx(45,54): error TS1109: Expression expected.
+src/components/contracts/HardwareAuditForm.fixed.tsx(149,6): error TS17008: JSX element 'Dialog' has no corresponding closing tag.
+src/components/contracts/HardwareAuditForm.fixed.tsx(150,8): error TS17008: JSX element 'DialogContent' has no corresponding closing tag.
+src/components/contracts/HardwareAuditForm.fixed.tsx(151,10): error TS17008: JSX element 'div' has no corresponding closing tag.
+src/components/contracts/HardwareAuditForm.fixed.tsx(152,12): error TS17008: JSX element 'div' has no corresponding closing tag.
+src/components/contracts/HardwareAuditForm.fixed.tsx(159,14): error TS17008: JSX element 'div' has no corresponding closing tag.
+src/components/contracts/HardwareAuditForm.fixed.tsx(160,16): error TS17008: JSX element 'Card' has no corresponding closing tag.
+src/components/contracts/HardwareAuditForm.fixed.tsx(167,18): error TS17008: JSX element 'CardContent' has no corresponding closing tag.
+src/components/contracts/HardwareAuditForm.fixed.tsx(168,20): error TS17008: JSX element 'form' has no corresponding closing tag.
+src/components/contracts/HardwareAuditForm.fixed.tsx(203,22): error TS17008: JSX element 'div' has no corresponding closing tag.
+src/components/contracts/HardwareAuditForm.fixed.tsx(205,24): error TS17008: JSX element 'div' has no corresponding closing tag.
+src/components/contracts/HardwareAuditForm.fixed.tsx(214,26): error TS17008: JSX element 'div' has no corresponding closing tag.
+src/components/contracts/HardwareAuditForm.fixed.tsx(216,28): error TS17008: JSX element 'Label' has no corresponding closing tag.
+src/components/contracts/HardwareAuditForm.fixed.tsx(216,59): error TS1005: '</' expected.

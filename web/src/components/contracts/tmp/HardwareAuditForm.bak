@@ -42,7 +42,7 @@ export function HardwareAuditForm({
   const [auditData, setAuditData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const { auditHardware } = useSupplyChainService();
+  const { auditHardware } from useSupplyChainService();
   const { address } = useWeb3();
 
   // Añadir efecto para actualizar el serial cuando cambie initialSerial
@@ -213,59 +213,4 @@ export function HardwareAuditForm({
                         </div>
                         <div className="flex items-center space-x-2">
                           <Checkbox id="storage" />
-                          <Label htmlFor="storage">Almacenamiento</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox id="display" />
-                          <Label htmlFor="display">Display</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox id="keyboard" />
-                          <Label htmlFor="keyboard">Teclado</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox id="ports" />
-                          <Label htmlFor="ports">Puertos</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Checkbox id="battery" />
-                          <Label htmlFor="battery">Batería</Label>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2 md:col-span-2">
-                      <Label htmlFor="observations">Observaciones</Label>
-                      <Textarea
-                        id="observations"
-                        placeholder="Detalles de la auditoría, problemas encontrados, recomendaciones..."
-                        className="min-h-32"
-                      />
-                    </div>
-                  </form>
-                </CardContent>
-              </Card>
-            </div>
-            <DialogFooter className="sm:justify-end">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={loading}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                form="auditForm"
-                disabled={loading}
-              >
-                {loading ? (<>Registringando...</>) : (<>Registrar Auditoría</>) }
-              </Button>
-            </DialogFooter>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
+                          <Label htmlFor="storage">Almacenamiento

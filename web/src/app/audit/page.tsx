@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useWeb3 } from '@/contexts/Web3Context';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormUploader } from '@/components/ipfs/FormUploader';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 export default function HardwareAuditPage() {
   const { toast } = useToast();
   const { auditHardware } = useSupplyChainService();
+  const { address } = useWeb3();
   const [ipfsHash, setIpfsHash] = useState<string | null>(null);
   const [isRegistering, setIsRegistering] = useState(false);
   const [currentSerial, setCurrentSerial] = useState('');
@@ -42,7 +44,7 @@ export default function HardwareAuditPage() {
     
     try {
       // Registrar el hash en la blockchain
-      const result = await auditHardware(currentSerial, auditPassed, ipfsHash, address);
+      const result = await auditHardware(currentSerial, auditPassed, ipfsHash, address as `0x${string}` || '0x0000000000000000000000000000000000000000');
       
       if (result.success) {
         toast({

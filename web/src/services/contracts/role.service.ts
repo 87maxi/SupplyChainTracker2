@@ -25,6 +25,7 @@ interface RoleMembersResult {
  * Servicio para gestionar roles en el contrato inteligente
  */
 export class RoleService extends BaseContractService {
+  private readonly logger = console;
   constructor() {
     super(
       NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS as `0x${string}`,
@@ -61,7 +62,12 @@ export class RoleService extends BaseContractService {
       }
       
       // Leer del contrato
+      // Properties are initialized in constructor, so this check is redundant but kept as defensive programming
+      if (!this.contractAddress || !this.abi) {
+        throw new Error('Contract configuration is not initialized');
+      }
       const result = await this.read<boolean>('hasRole', [roleHash, userAddress]);
+      console.log('[RoleService] Verificación de rol:', { roleName, roleHash, userAddress, result });
       return result;
     } catch (error) {
       throw error;

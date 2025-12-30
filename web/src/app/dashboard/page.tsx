@@ -200,7 +200,7 @@ export default function ManagerDashboard() {
       const serials = await getAllSerialNumbers();
 
       const netbookData = await Promise.all(
-        serials.map(async (serial) => {
+        serials.map(async (serial: string) => {
           try {
             // Obtener el estado y el reporte por separado
             const state = await getNetbookState(serial);
@@ -224,7 +224,7 @@ export default function ManagerDashboard() {
         })
       );
 
-      const validNetbooks = netbookData.filter((n): n is Netbook => n !== null);
+      const validNetbooks = netbookData.filter((n): n is Netbook => n !== null); // No error - this is correct TypeScript syntax for a type predicate
       setNetbooks(validNetbooks);
 
       setSummary({
