@@ -110,12 +110,12 @@ export abstract class BaseContractService {
   /**
    * Espera a que una transacción sea confirmada
    * @param hash Hash de la transacción
-   * @param timeout Tiempo máximo de espera en segundos (por defecto: 60)
+   * @param timeout Tiempo máximo de espera en segundos (por defecto: 120)
    * @returns Recibo de la transacción
    */
   protected async waitForTransaction(
     hash: `0x${string}`,
-    timeout: number = 60
+    timeout: number = 120
   ) {
     try {
       // Obtener el public client de forma lazy

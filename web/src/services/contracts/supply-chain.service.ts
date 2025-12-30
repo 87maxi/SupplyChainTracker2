@@ -8,9 +8,6 @@ import {
   NetbookState, 
   ContractRoles 
 } from '@/types/supply-chain-types';
-// Import MongoDB service
-// Removed direct import of RoleDataService to avoid MongoDB dependencies in client code
-// All MongoDB operations are now handled through API routes
 import { 
   RegisterNetbooksSchema, 
   AuditHardwareSchema,
@@ -64,7 +61,7 @@ export class SupplyChainService extends BaseContractService {
    * @param userAddress Dirección del usuario
    * @returns True si el usuario tiene el rol
    */
-  async hasRole(roleHash: `0x${string}`, userAddress: Address): Promise<boolean> {
+  hasRole = async (roleHash: `0x${string}`, userAddress: Address): Promise<boolean> => {
     try {
       return await this.read<boolean>('hasRole', [roleHash, userAddress]);
     } catch (error) {
@@ -81,12 +78,12 @@ export class SupplyChainService extends BaseContractService {
    * @param userAddress Dirección del usuario
    * @returns Resultado de la transacción
    */
-  async registerNetbooks(
+  registerNetbooks = async (
     serials: string[], 
     batches: string[], 
     specs: string[],
     userAddress: Address
-  ): Promise<TransactionResult> {
+  ): Promise<TransactionResult> => {
     try {
       // Validar entrada
       validateRegisterInput.parse({ serials, batches, specs });
@@ -140,12 +137,12 @@ export class SupplyChainService extends BaseContractService {
    * @param userAddress Dirección del usuario
    * @returns Resultado de la transacción
    */
-  async auditHardware(
+  auditHardware = async (
     serial: string,
     passed: boolean,
     reportHash: string,
     userAddress: Address
-  ): Promise<TransactionResult> {
+  ): Promise<TransactionResult> => {
     try {
       // Validar entrada
       AuditHardwareSchema.parse({ serial, passed, reportHash });
@@ -198,12 +195,12 @@ export class SupplyChainService extends BaseContractService {
    * @param userAddress Dirección del usuario
    * @returns Resultado de la transacción
    */
-  async validateSoftware(
+  validateSoftware = async (
     serial: string,
     osVersion: string,
     passed: boolean,
     userAddress: Address
-  ): Promise<TransactionResult> {
+  ): Promise<TransactionResult> => {
     try {
       // Validar entrada
       ValidateSoftwareSchema.parse({ serial, osVersion, passed });
@@ -256,12 +253,12 @@ export class SupplyChainService extends BaseContractService {
    * @param userAddress Dirección del usuario
    * @returns Resultado de la transacción
    */
-  async assignToStudent(
+  assignToStudent = async (
     serial: string,
     schoolHash: string,
     studentHash: string,
     userAddress: Address
-  ): Promise<TransactionResult> {
+  ): Promise<TransactionResult> => {
     try {
       // Validar entrada
       AssignToStudentSchema.parse({ serial, schoolHash, studentHash });
@@ -311,7 +308,7 @@ export class SupplyChainService extends BaseContractService {
    * @param serial Número de serie
    * @returns Estado de la netbook
    */
-  async getNetbookState(serial: string): Promise<NetbookState> {
+  getNetbookState = async (serial: string): Promise<NetbookState> => {
     // Validar entrada
     z.string().min(1).parse(serial);
     
@@ -328,7 +325,7 @@ export class SupplyChainService extends BaseContractService {
    * @param serial Número de serie
    * @returns Reporte completo de la netbook
    */
-  async getNetbookReport(serial: string): Promise<Netbook> {
+  getNetbookReport = async (serial: string): Promise<Netbook> => {
     // Validar entrada
     z.string().min(1).parse(serial);
     
@@ -366,7 +363,7 @@ export class SupplyChainService extends BaseContractService {
    * Obtiene todos los números de serie registrados
    * @returns Array de números de serie
    */
-  async getAllSerialNumbers(): Promise<string[]> {
+  getAllSerialNumbers = async (): Promise<string[]> => {
     // Leer todos los números de serie
     const result = await this.read<string[]>('getAllSerialNumbers', []);
     return Array.isArray(result) ? result : [];
@@ -377,7 +374,7 @@ export class SupplyChainService extends BaseContractService {
    * @param state Estado de las netbooks a obtener
    * @returns Array de números de serie
    */
-  async getNetbooksByState(state: number): Promise<string[]> {
+  getNetbooksByState = async (state: number): Promise<string[]> => {
     // Leer netbooks por estado
     const result = await this.read<string[]>('getNetbooksByState', [state]);
     return result;
@@ -388,7 +385,7 @@ export class SupplyChainService extends BaseContractService {
    * @param roleHash Hash del rol
    * @returns Array de direcciones de miembros
    */
-  async getAllMembers(roleHash: string): Promise<string[]> {
+  getAllMembers = async (roleHash: string): Promise<string[]> => {
     // Leer todos los miembros del rol
     const result = await this.read<string[]>('getAllMembers', [roleHash]);
     return result;
@@ -399,13 +396,13 @@ export class SupplyChainService extends BaseContractService {
    * @param roleHash Hash del rol
    * @returns Array de direcciones de miembros
    */
-  async getRoleMembers(roleHash: `0x${string}`): Promise<string[]> {
+  getRoleMembers = async (roleHash: `0x${string}`): Promise<string[]> => {
     // Leer miembros del rol
     const result = await this.read<string[]>('getRoleMembers', [roleHash]);
     return Array.isArray(result) ? result : [];
   }
 
-  async getRoleCounts(): Promise<{[key in ContractRoles]: number}> {
+  getRoleCounts = async (): Promise<{[key in ContractRoles]: number}> => {
     const roleHashes = await import('@/lib/roleUtils').then(m => m.getRoleHashes());
     const counts: {[key in ContractRoles]: number} = {
       'FABRICANTE_ROLE': 0,
@@ -424,7 +421,7 @@ export class SupplyChainService extends BaseContractService {
     return counts;
   }
 
-  async getAccountBalance(userAddress: string): Promise<string> {
+  getAccountBalance = async (userAddress: string): Promise<string> => {
     try {
       // Asumimos que el contrato tiene una función para obtener el balance
       // Si no existe, retornamos '0'
@@ -441,7 +438,7 @@ export class SupplyChainService extends BaseContractService {
    * @param userAddress Dirección del usuario
    * @returns Resultado de la transacción
    */
-  async grantRole(roleHash: `0x${string}`, userAddress: Address): Promise<TransactionResult> {
+  grantRole = async (roleHash: `0x${string}`, userAddress: Address): Promise<TransactionResult> => {
     try {
       const { hash } = await this.write('grantRole', [roleHash, userAddress]);
       const receipt = await this.waitForTransaction(hash);
@@ -480,7 +477,7 @@ export class SupplyChainService extends BaseContractService {
    * @param userAddress Dirección del usuario
    * @returns Resultado de la transacción
    */
-  async revokeRole(roleHash: `0x${string}`, userAddress: Address): Promise<TransactionResult> {
+  revokeRole = async (roleHash: `0x${string}`, userAddress: Address): Promise<TransactionResult> => {
     try {
       const { hash } = await this.write('revokeRole', [roleHash, userAddress]);
       const receipt = await this.waitForTransaction(hash);

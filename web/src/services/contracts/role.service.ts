@@ -40,7 +40,7 @@ export class RoleService extends BaseContractService {
    * @param userAddress Dirección del usuario
    * @returns True si tiene el rol, false en caso contrario
    */
-  async hasRole(roleName: ContractRoles, userAddress: Address): Promise<boolean> {
+  hasRole = async (roleName: ContractRoles, userAddress: Address): Promise<boolean> => {
     try {
       // Obtener hash del rol
       const roleHashes = await getRoleHashes();
@@ -55,10 +55,15 @@ export class RoleService extends BaseContractService {
         'ESCUELA_ROLE': 'ESCUELA'
       };
       
+      // Verificar que roleName sea válido
+      if (!roleKeyMap[roleName]) {
+        throw new Error(`Nombre de rol inválido: ${roleName}`);
+      }
+      
       const roleKey = roleKeyMap[roleName];
       const roleHash = roleHashes[roleKey];
       if (!roleHash) {
-        throw new Error(`Rol ${roleName} no encontrado: ${roleKey}`);
+        throw new Error(`Rol ${roleName} no encontrado: ${roleKey}. Hash no definido.`);
       }
       
       // Leer del contrato
@@ -70,6 +75,7 @@ export class RoleService extends BaseContractService {
       console.log('[RoleService] Verificación de rol:', { roleName, roleHash, userAddress, result });
       return result;
     } catch (error) {
+      console.error('[RoleService] Error en hasRole:', error);
       throw error;
     }
   }
@@ -80,7 +86,7 @@ export class RoleService extends BaseContractService {
    * @param userAddress Dirección del usuario
    * @returns Resultado de la transacción
    */
-  async grantRole(roleName: ContractRoles, userAddress: Address): Promise<TransactionResult> {
+  grantRole = async (roleName: ContractRoles, userAddress: Address): Promise<TransactionResult> => {
     try {
       // Obtener hash del rol
       const roleHashes = await getRoleHashes();
@@ -95,11 +101,16 @@ export class RoleService extends BaseContractService {
         'ESCUELA_ROLE': 'ESCUELA'
       };
       
+      // Verificar que roleName sea válido
+      if (!roleKeyMap[roleName]) {
+        return { success: false, error: `Nombre de rol inválido: ${roleName}` };
+      }
+      
       const roleKey = roleKeyMap[roleName];
       const roleHash = roleHashes[roleKey];
       
       if (!roleHash) {
-        throw new Error(`Rol ${roleName} no encontrado. Role key: ${roleKey}`);
+        return { success: false, error: `Hash no encontrado para el rol: ${roleName}` };
       }
       
       // Realizar transacción
@@ -130,7 +141,7 @@ export class RoleService extends BaseContractService {
    * @param userAddress Dirección del usuario
    * @returns Resultado de la transacción
    */
-  async revokeRole(roleName: ContractRoles, userAddress: Address): Promise<TransactionResult> {
+  revokeRole = async (roleName: ContractRoles, userAddress: Address): Promise<TransactionResult> => {
     try {
       // Obtener hash del rol
       const roleHashes = await getRoleHashes();
@@ -145,10 +156,15 @@ export class RoleService extends BaseContractService {
         'ESCUELA_ROLE': 'ESCUELA'
       };
       
+      // Verificar que roleName sea válido
+      if (!roleKeyMap[roleName]) {
+        return { success: false, error: `Nombre de rol inválido: ${roleName}` };
+      }
+      
       const roleKey = roleKeyMap[roleName];
       const roleHash = roleHashes[roleKey];
       if (!roleHash) {
-        throw new Error(`Rol ${roleName} no encontrado: ${roleKey}`);
+        return { success: false, error: `Hash no encontrado para el rol: ${roleName}` };
       }
       
       // Realizar transacción
@@ -178,7 +194,7 @@ export class RoleService extends BaseContractService {
    * @param roleName Nombre del rol
    * @returns Miembros del rol
    */
-  async getRoleMembers(roleName: ContractRoles): Promise<RoleMembersResult> {
+  getRoleMembers = async (roleName: ContractRoles): Promise<RoleMembersResult> => {
     try {
       // Intentar obtener de caché primero
       const cacheKey = `getRoleMembers:${roleName}`;
@@ -200,10 +216,15 @@ export class RoleService extends BaseContractService {
         'ESCUELA_ROLE': 'ESCUELA'
       };
       
+      // Verificar que roleName sea válido
+      if (!roleKeyMap[roleName]) {
+        throw new Error(`Nombre de rol inválido: ${roleName}`);
+      }
+      
       const roleKey = roleKeyMap[roleName];
       const roleHash = roleHashes[roleKey];
       if (!roleHash) {
-        throw new Error(`Rol ${roleName} no encontrado: ${roleKey}`);
+        throw new Error(`Rol ${roleName} no encontrado: ${roleKey}. Hash no definido.`);
       }
       
       // Leer del contrato
@@ -223,13 +244,13 @@ export class RoleService extends BaseContractService {
     } catch (error) {
       throw error;
     }
-  }
+  };
 
   /**
    * Obtiene todos los miembros de todos los roles
    * @returns Mapa de roles con sus miembros
    */
-  async getAllRolesSummary(): Promise<Record<ContractRoles, RoleMembersResult>> {
+  getAllRolesSummary = async (): Promise<Record<ContractRoles, RoleMembersResult>> => {
     try {
       // Intentar obtener de caché primero
       const cacheKey = 'getAllRolesSummary';
@@ -270,5 +291,5 @@ export class RoleService extends BaseContractService {
     } catch (error) {
       throw error;
     }
-  }
+  };
 }

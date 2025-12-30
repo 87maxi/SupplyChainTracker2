@@ -33,11 +33,6 @@ echo "🚀 Iniciando despliegue de SupplyChainTracker en Anvil..."
 #
 # OBJETIVO: Asegurar que no haya instancias previas de Anvil ejecutándose
 #
-# DETALLES:
-#   - Usa 'pgrep -x anvil' para buscar SOLO el proceso exacto llamado "anvil"
-#   - La opción -x evita falsos positivos (como este script que contiene "anvil")
-#   - Si encuentra un proceso, lo mata y espera 2 segundos para limpieza
-#
 ################################################################################
 
 echo "📍 Verificando procesos de Anvil existentes..."
@@ -62,11 +57,10 @@ fi
 #     └─> ID de la red blockchain local (estándar para desarrollo)
 #         Rabby Wallet y MetaMask usan este ID para identificar la red
 #
-#   (Sin --block-time)
-#     └─> Anvil usará "auto-mining" por defecto.
-#         Generará un bloque SOLO cuando reciba una transacción.
-#         Esto evita el "ruido" de bloques vacíos constantes.
-#
+#   --block-time 1
+#     └─> Genera un bloque cada 1 segundo
+#         Asegura que las transacciones se confirmen inmediatamente
+#         Evita timeouts en waitForTransaction
 #
 #   --state ./anvil-state.json
 #     └─> CARGA el estado previo desde este archivo (si existe)
@@ -89,9 +83,15 @@ fi
 
 echo "📍 Iniciando Anvil con estado persistente..."
 echo "   Chain ID: 31337"
-echo "   Block Time: Auto-mining (bloques bajo demanda)"
+echo "   Block Time: 1 segundo"
 echo "   Estado: ./anvil-state.json"
 
+anvil --chain-id 31337 \\
+  --block-time 1 \\
+  --state ./anvil-state.json \\
+  --state-interval 1 \\
+  --dump-state ./anvil-state.json \\
+  --port 8545 &
 
 # Capturar el PID (Process ID) de Anvil para gestión posterior
 ANVIL_PID=$!
@@ -167,11 +167,11 @@ echo "   ✅ Compilación exitosa"
 ################################################################################
 
 echo "📍 Desplegando contrato SupplyChainTracker..."
-DEPLOY_OUTPUT=$(cd sc && forge script script/Deploy.s.sol:DeploySupplyChainTracker \
-    --rpc-url http://localhost:8545 \
-    --broadcast \
-    --sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 \
-    --unlocked \
+DEPLOY_OUTPUT=$(cd sc && forge script script/Deploy.s.sol:DeploySupplyChainTracker \\
+    --rpc-url http://localhost:8545 \\
+    --broadcast \\
+    --sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 \\
+    --unlocked \\
     --skip-simulation 2>&1)
 
 echo "$DEPLOY_OUTPUT"
@@ -234,7 +234,25 @@ Estado persistente: ./anvil-state.json
 Despliegue completado: $(date)
 Anvil PID: $ANVIL_PID
 EOF
-    
+
+# Actualizar .env.local en web/
+if [ -n "$CONTRACT_ADDRESS" ]; then
+    echo "📝 Actualizando .env.local con la dirección del contrato..."
+    cat > web/.env.local <<EOF
+NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS=$CONTRACT_ADDRESS
+NEXT_PUBLIC_RPC_URL=http://localhost:8545
+NEXT_PUBLIC_CHAIN_ID=31337
+ANVIL_ADMIN_ADDRESS=0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+NEXT_PUBLIC_VERIFICATION_BLOCKSCOUT_URL=http://localhost:8545
+NEXT_PUBLIC_ETHERSCAN_URL=http://localhost:8545
+NEXT_PUBLIC_PINATA_API_KEY=mock
+NEXT_PUBLIC_PINATA_SECRET_API_KEY=mock
+NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID=1234567890
+EOF
+    echo "✅ .env.local actualizado en web/"
+fi
+
+
     echo ""
     echo "💾 Información guardada en: variables.txt"
     echo ""
@@ -284,7 +302,7 @@ fi
 ################################################################################
 
 echo "🔄 Anvil está corriendo en segundo plano..."
-echo "   ⏱️  Generando bloques bajo demanda (auto-mining)"
+echo "   ⏱️  Generando bloques cada 1 segundo"
 echo "   💾 Guardando estado cada 1 segundo en anvil-state.json"
 echo ""
 echo "   Para detener: kill $ANVIL_PID"
@@ -295,4 +313,4 @@ echo ""
 trap "echo ''; echo '🛑 Deteniendo Anvil...'; kill $ANVIL_PID; exit 0" INT TERM
 
 # Esperar a que Anvil termine (se ejecuta indefinidamente hasta que se mate)
-wait $ANVIL_PID
+wait $ANVIL_PID"

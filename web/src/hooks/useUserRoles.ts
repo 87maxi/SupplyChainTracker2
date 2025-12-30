@@ -77,7 +77,7 @@ export const useUserRoles = (): UseUserRoles => {
       const escuelaRoleStr = hashes.ESCUELA;
       const defaultAdminRoleStr = hashes.ADMIN;
 
-      // Check roles
+      // Check roles using ContractRoles
       const [isAdmin, isManufacturer, isHardwareAuditor, isSoftwareTechnician, isSchool] = await Promise.all([
         hasRole('DEFAULT_ADMIN_ROLE', address as `0x${string}`),
         hasRole('FABRICANTE_ROLE', address as `0x${string}`),
@@ -175,7 +175,6 @@ export const useUserRoles = (): UseUserRoles => {
     }
   }, [address, isConnected, checkRoles]);
 
-  // Return the roles and add a method to force refresh
   // Effect to update refreshRoles
   useEffect(() => {
     setUserRoles(prev => {

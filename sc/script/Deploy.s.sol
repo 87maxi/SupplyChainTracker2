@@ -8,7 +8,7 @@ import {SupplyChainTracker} from "../src/SupplyChainTracker.sol";
 contract DeploySupplyChainTracker is Script {
     // Helper functions to calculate role hashes locally
     function _roleAdmin() internal pure returns (bytes32) {
-        return keccak256("DEFAULT_ADMIN_ROLE");
+        return 0x0000000000000000000000000000000000000000000000000000000000000000;
     }
 
     function _roleFabricante() internal pure returns (bytes32) {

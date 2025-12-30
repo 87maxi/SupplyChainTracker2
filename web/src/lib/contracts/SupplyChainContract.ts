@@ -1,5 +1,3 @@
-'use server';
-
 import { config } from '@/lib/wagmi/config';
 import { readContract, writeContract } from '@wagmi/core';
 import { formatEther } from 'viem';

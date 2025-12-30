@@ -23,13 +23,13 @@ let cachedRoleHashes: RoleMap | null = null;
 export const getRoleHashes = async (): Promise<RoleMap> => {
   if (cachedRoleHashes) return cachedRoleHashes;
 
-      const fallbackHashes: RoleMap = {
-  FABRICANTE: '0xbe0c84bfff967b2deb88bd0540d4a796d0ebfdcb72262ced26f1892b419e6457' as `0x${string}`,
-  AUDITOR_HW: '0x49c0376dc7caa3eab0c186e9bc20bf968b0724fea74a37706c35f59bc5d8b15b' as `0x${string}`,
-  TECNICO_SW: '0xeeb4ddf6a0e2f06cb86713282a0b88ee789709e92a08b9e9b4ce816bbb13fcaf' as `0x${string}`,
-  ESCUELA: '0xa8f5858ea94a9ede7bc5dd04119dcc24b3b02a20be15d673993d8b6c2a901ef9' as `0x${string}`,
-  ADMIN: '0x0000000000000000000000000000000000000000000000000000000000000000' as `0x${string}` // bytes32(0) for DEFAULT_ADMIN_ROLE
-};
+  const fallbackHashes: RoleMap = {
+    FABRICANTE: '0xbe0c84bfff967b2deb88bd0540d4a796d0ebfdcb72262ced26f1892b419e6457' as `0x${string}`,
+    AUDITOR_HW: '0x49c0376dc7caa3eab0c186e9bc20bf968b0724fea74a37706c35f59bc5d8b15b' as `0x${string}`,
+    TECNICO_SW: '0xeeb4ddf6a0e2f06cb86713282a0b88ee789709e92a08b9e9b4ce816bbb13fcaf' as `0x${string}`,
+    ESCUELA: '0xa8f5858ea94a9ede7bc5dd04119dcc24b3b02a20be15d673993d8b6c2a901ef9' as `0x${string}`,
+    ADMIN: '0x0000000000000000000000000000000000000000000000000000000000000000' as `0x${string}` // bytes32(0) for DEFAULT_ADMIN_ROLE
+  };
 
       try {
     console.log('[roleUtils] Fetching role hashes from contract...');
@@ -47,22 +47,29 @@ export const getRoleHashes = async (): Promise<RoleMap> => {
       return fallbackHashes;
     }
 
-    // Utilizar función existente getRoleByName
+    // Skip string-based hasRole and use bytes32-based hasRole with DEFAULT_ADMIN_ROLE = 0x00..00
+    try {
+      console.log('[roleUtils] Checking DEFAULT_ADMIN_ROLE using AccessControl.hasRole with bytes32(0)');
+      const defaultAdminRole = '0x0000000000000000000000000000000000000000000000000000000000000000';
+      const deployerAddress = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
+      
+      const hasAdminRole = await readContract(config, {
+        address: contractAddress,
+        abi: SupplyChainTrackerABI,
+        functionName: 'hasRole',
+        args: [defaultAdminRole as `0x${string}`, deployerAddress]
+      });
+      
+      if (hasAdminRole) {
+        console.log('[roleUtils] First Anvil account has DEFAULT_ADMIN_ROLE');
+      } else {
+        console.log('[roleUtils] First Anvil account does NOT have DEFAULT_ADMIN_ROLE');
+      }
+    } catch (error) {
+      console.error('[roleUtils] Error checking DEFAULT_ADMIN_ROLE:', error);
+    }
 
-    type RoleKey = 'FABRICANTE' | 'AUDITOR_HW' | 'TECNICO_SW' | 'ESCUELA' | 'ADMIN';
-    
-    // Direct mapping of contract-compatible role names to our internal keys
-    const roleMapping: Record<string, { contractName: string; key: RoleKey }> = {
-      FABRICANTE: { contractName: 'FABRICANTE', key: 'FABRICANTE' },
-      AUDITOR_HW: { contractName: 'AUDITOR_HW', key: 'AUDITOR_HW' },
-      TECNICO_SW: { contractName: 'TECNICO_SW', key: 'TECNICO_SW' },
-      ESCUELA: { contractName: 'ESCUELA', key: 'ESCUELA' },
-      ADMIN: { contractName: 'ADMIN', key: 'ADMIN' },
-      DEFAULT_ADMIN_ROLE: { contractName: 'ADMIN', key: 'ADMIN' },
-      DEFAULT_ADMIN: { contractName: 'ADMIN', key: 'ADMIN' },
-      MANAGER: { contractName: 'ADMIN', key: 'ADMIN' },
-      OWNER: { contractName: 'ADMIN', key: 'ADMIN' }
-    };
+    // Continue with other roles...
     
     const result: RoleMap = {
       FABRICANTE: fallbackHashes.FABRICANTE,
@@ -99,6 +106,18 @@ export const getRoleHashes = async (): Promise<RoleMap> => {
     }
 
     // Continue with other roles
+    const roleMapping: Record<string, { contractName: string; key: 'FABRICANTE' | 'AUDITOR_HW' | 'TECNICO_SW' | 'ESCUELA' | 'ADMIN' }> = {
+      FABRICANTE: { contractName: 'FABRICANTE', key: 'FABRICANTE' },
+      AUDITOR_HW: { contractName: 'AUDITOR_HW', key: 'AUDITOR_HW' },
+      TECNICO_SW: { contractName: 'TECNICO_SW', key: 'TECNICO_SW' },
+      ESCUELA: { contractName: 'ESCUELA', key: 'ESCUELA' },
+      ADMIN: { contractName: 'ADMIN', key: 'ADMIN' },
+      DEFAULT_ADMIN_ROLE: { contractName: 'ADMIN', key: 'ADMIN' },
+      DEFAULT_ADMIN: { contractName: 'ADMIN', key: 'ADMIN' },
+      MANAGER: { contractName: 'ADMIN', key: 'ADMIN' },
+      OWNER: { contractName: 'ADMIN', key: 'ADMIN' }
+    };
+    
     for (const [roleName, mapping] of Object.entries(roleMapping)) {
       // Skip admin-related roles as we've already handled DEFAULT_ADMIN_ROLE
       if (['ADMIN', 'DEFAULT_ADMIN_ROLE', 'DEFAULT_ADMIN', 'MANAGER', 'OWNER'].includes(roleName)) continue;

@@ -7,13 +7,14 @@ import { useSupplyChainService } from '@/hooks/useSupplyChainService';
 import { useState, useEffect } from 'react';
 import { roleMapper } from '@/lib/roleMapping';
 import { ContractRoleName } from '@/types/contract';
+import { getRoleHashes } from '@/lib/roleUtils';
 
 // Types for role requests
 export interface RoleRequest {
   id: string;
   address: string;
   role: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'rejected';
   timestamp: number;
   signature?: string;
 }
@@ -97,13 +98,30 @@ export function useRoleRequests() {
     mutationFn: async ({ requestId, role, userAddress }: { requestId: string, role: string, userAddress: string }) => {
       console.log(`[useRoleRequests] Approving request ${requestId}...`);
 
-      // Remove _ROLE suffix from role to match contract's expected parameter
-      // Convert to uppercase as contract expects
-      const normalizedRole = role.replace('_ROLE', '').toUpperCase();
-      console.log(`[useRoleRequests] Using role name: ${normalizedRole}`);
+      // Get role hashes
+      const roleHashes = await getRoleHashes();
+      
+      // Map role name to hash
+      const roleKeyMap: Record<string, keyof typeof roleHashes> = {
+        'FABRICANTE_ROLE': 'FABRICANTE',
+        'AUDITOR_HW_ROLE': 'AUDITOR_HW',
+        'TECNICO_SW_ROLE': 'TECNICO_SW',
+        'ESCUELA_ROLE': 'ESCUELA',
+        'DEFAULT_ADMIN_ROLE': 'ADMIN'
+      };
+      
+      const roleKey = roleKeyMap[role];
+      if (!roleKey) {
+        throw new Error(`Rol desconocido: ${role}`);
+      }
+      
+      const roleHash = roleHashes[roleKey];
+      if (!roleHash) {
+        throw new Error(`Hash no encontrado para el rol: ${role}`);
+      }
       
       // Blockchain Transaction
-      const result = await supplyChainService.grantRole(normalizedRole as ContractRoleName, userAddress as `0x${string}`);
+      const result = await supplyChainService.grantRole(roleHash, userAddress as `0x${string}`);
       if (!result.success || !result.hash) {
         throw new Error(result.error || 'Transaction failed');
       }

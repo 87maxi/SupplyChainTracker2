@@ -7,6 +7,11 @@ import { getRoleHashes } from './roleUtils';
 type RoleKey = 'FABRICANTE' | 'AUDITOR_HW' | 'TECNICO_SW' | 'ESCUELA' | 'ADMIN';
 type RoleName = 'FABRICANTE_ROLE' | 'AUDITOR_HW_ROLE' | 'TECNICO_SW_ROLE' | 'ESCUELA_ROLE' | 'DEFAULT_ADMIN_ROLE';
 
+// Verifica si un string es un hash de 32 bytes (66 caracteres)
+function isHash(value: string): boolean {
+  return /^0x[0-9a-fA-F]{64}$/.test(value);
+}
+
 // Mapping from short keys to full role names as defined in the contract
 class RoleMapper {
   private readonly keyToName: Record<RoleKey, RoleName> = {
@@ -48,19 +53,16 @@ class RoleMapper {
       return 'DEFAULT_ADMIN_ROLE';
     }
 
-    const upperName = name.toUpperCase().trim();
-    console.log(`[roleMapping] Normalizing role: "${originalName}" (upper: "${upperName}")`);
-
-    // Handle case where name is already a hash
-    // This block cannot be async, so we cannot use await here
-    // We'll handle hash to role conversion in a different way
-    if (upperName.startsWith('0x') && upperName.length === 66) {
-      console.log(`[roleMapping] Name appears to be a hash, but cannot resolve to role name without async operation`);
-      
-      // We cannot await getRoleHashes() here since this method is not async
-      // For now, return a fallback
+    // Prevent processing of role hashes
+    if (isHash(name)) {
+      console.warn(`[roleMapping] Attempted to normalize a role hash as a name: ${name}`);
+      console.warn(`[roleMapping] This is invalid. Role hashes should not be passed to normalizeRoleName.`);
+      console.warn(`[roleMapping] Using DEFAULT_ADMIN_ROLE as fallback`);
       return 'DEFAULT_ADMIN_ROLE';
     }
+
+    const upperName = name.toUpperCase().trim();
+    console.log(`[roleMapping] Normalizing role: "${originalName}" (upper: "${upperName}")`);
 
     // 1. Normalize known variants to standard form
     const normalizedMap: Record<string, RoleName> = {
@@ -113,13 +115,13 @@ class RoleMapper {
 
   // Get role hash for any role name format
   async getRoleHash(name: string): Promise<`0x${string}`> {
-    const upperName = name.toUpperCase().trim();
-
     // If name is already a hash, return it directly
-    if (upperName.startsWith('0x') && upperName.length === 66) {
+    if (isHash(name)) {
       console.log(`[roleMapper] Name is already a hash, returning directly: ${name}`);
-      return upperName as `0x${string}`;
+      return name as `0x${string}`;
     }
+
+    const upperName = name.toUpperCase().trim();
 
     // Handle special case for admin roles
     if (['ADMIN', 'DEFAULT_ADMIN', 'MANAGER', 'OWNER', 'DEFAULT_ADMIN_ROLE'].includes(upperName)) {
