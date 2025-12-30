@@ -112,8 +112,8 @@ Updated hooks to pass user address to service functions:
 
 ### Required Variables
 ```env
-NEXT_PUBLIC_MONGODB_URI=mongodb://localhost:27017
-NEXT_PUBLIC_MONGODB_DATABASE=supplychain
+MONGODB_URI=mongodb://localhost:27017
+MONGODB_DATABASE=supplychain
 ```
 
 ### Docker Configuration

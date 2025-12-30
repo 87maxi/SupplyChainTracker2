@@ -42,18 +42,21 @@ export default function HardwareAuditPage() {
     
     try {
       // Registrar el hash en la blockchain
-      await auditHardware(currentSerial, auditPassed, ipfsHash);
+      const result = await auditHardware(currentSerial, auditPassed, ipfsHash, address);
       
-      toast({
-        title: "Registro completado",
-        description: "El informe de auditoría se ha registrado en la blockchain",
-      });
-      
-      // Reset form
-      setCurrentSerial('');
-      setAuditPassed(true);
-      setIpfsHash(null);
-      
+      if (result.success) {
+        toast({
+          title: "Registro completado",
+          description: "El informe de auditoría se ha registrado en la blockchain",
+        });
+        
+        // Reset form
+        setCurrentSerial('');
+        setAuditPassed(true);
+        setIpfsHash(null);
+      } else {
+        throw new Error(result.error);
+      }
     } catch (error) {
       console.error('Error registering on blockchain:', error);
       toast({

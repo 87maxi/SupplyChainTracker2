@@ -1,5 +1,5 @@
-import { mongodbService } from '@/services/server/mongodb-service';
-import { RoleData, NetbookData } from '@/services/server/mongodb-service';
+import { mongodbService } from '@/lib/mongodb';
+import { RoleData, NetbookData } from '@/types/mongodb';
 import { ContractRoles } from '@/types/contract';
 import { Address } from 'viem';
 

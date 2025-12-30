@@ -41,13 +41,16 @@ export function NetbookForm({ isOpen, onOpenChange, onComplete }: NetbookFormPro
     try {
       setLoading(true);
 
-      // Register single netbook using the hook
-      await registerNetbooks([serial], [batch], [specs]);
-
-      toast({
-        title: "Éxito",
-        description: `Netbook ${serial} registrada correctamente`,
-      });
+      const result = await registerNetbooks([serial], [batch], [specs], address);
+      
+      if (result.success) {
+        toast({
+          title: "Éxito",
+          description: `Netbook ${serial} registrada correctamente`,
+        });
+      } else {
+        throw new Error(result.error);
+      }
 
       // Reset form
       setSerial('');

@@ -47,6 +47,9 @@ if pgrep -x anvil > /dev/null; then
     sleep 2  # Esperar a que el proceso termine completamente
 fi
 
+ anvil --chain-id 31337  &
+
+
 ################################################################################
 # SECCIÓN 2: INICIALIZACIÓN DE ANVIL
 ################################################################################
@@ -89,26 +92,6 @@ echo "   Chain ID: 31337"
 echo "   Block Time: Auto-mining (bloques bajo demanda)"
 echo "   Estado: ./anvil-state.json"
 
-# Verificar si existe estado previo
-if [ -f "anvil-state.json" ]; then
-    echo "   ℹ️  Encontrado estado previo, cargando..."
-    echo "   ⚠️  Los contratos desplegados anteriormente seguirán disponibles"
-    
-    # Iniciar con estado previo (anvil carga automáticamente si existe)
-    anvil \
-        --chain-id 31337 \
-        --state-interval 1 \
-        --dump-state ./anvil-state.json &
-else
-    echo "   ℹ️  Iniciando con estado nuevo..."
-    echo "   ℹ️  Se creará anvil-state.json para persistir el estado"
-    
-    # Iniciar sin estado previo (anvil creará el archivo si no existe)
-    anvil \
-        --chain-id 31337 \
-        --state-interval 1 \
-        --dump-state ./anvil-state.json &
-fi
 
 # Capturar el PID (Process ID) de Anvil para gestión posterior
 ANVIL_PID=$!

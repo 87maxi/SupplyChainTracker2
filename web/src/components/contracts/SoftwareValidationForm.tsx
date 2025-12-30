@@ -48,12 +48,16 @@ export function SoftwareValidationForm({ isOpen, onOpenChange, onComplete, initi
     try {
       setLoading(true);
 
-      await validateSoftware(serial, version, passed);
-
-      toast({
-        title: "Éxito",
-        description: `Validación de software ${passed ? 'aprobada' : 'rechazada'} para netbook ${serial}`,
-      });
+      const result = await validateSoftware(serial, version, passed, address);
+      
+      if (result.success) {
+        toast({
+          title: "Éxito",
+          description: `Validación de software ${passed ? 'aprobada' : 'rechazada'} para netbook ${serial}`,
+        });
+      } else {
+        throw new Error(result.error);
+      }
 
       // Reset form
       if (!initialSerial) setSerial('');

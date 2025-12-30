@@ -47,12 +47,16 @@ export function StudentAssignmentForm({ isOpen, onOpenChange, onComplete, initia
     try {
       setLoading(true);
 
-      await assignToStudent(serial, schoolHash, studentHash);
-
-      toast({
-        title: "Éxito",
-        description: `Netbook ${serial} asignada al estudiante`,
-      });
+      const result = await assignToStudent(serial, schoolHash, studentHash, address);
+      
+      if (result.success) {
+        toast({
+          title: "Éxito",
+          description: `Netbook ${serial} asignada al estudiante`,
+        });
+      } else {
+        throw new Error(result.error);
+      }
 
       // Reset form
       if (!initialSerial) setSerial('');

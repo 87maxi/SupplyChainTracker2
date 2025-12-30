@@ -75,6 +75,9 @@ function SummaryCard({ title, count, description, icon: Icon, color }: { title: 
 // Tracking Card Component
 function TrackingCard({ netbook, onAction }: { netbook: Netbook, onAction?: (action: string, serial: string) => void }) {
   const { isHardwareAuditor, isSoftwareTechnician, isSchool, isAdmin } = useUserRoles();
+  
+  // Ensure netbook is defined
+  if (!netbook) return null;
 
   return (
     <Card className="hover:bg-white/5 transition-colors border-white/5">
@@ -97,21 +100,21 @@ function TrackingCard({ netbook, onAction }: { netbook: Netbook, onAction?: (act
             <StatusBadge status={netbook.currentState as NetbookState} />
             {onAction && (
               <div className="flex gap-2">
-                {(netbook.currentState === 'FABRICADA' || netbook.currentState === '0') && (isHardwareAuditor || isAdmin) && (
-                  <Button size="sm" variant="outline" className="h-8 text-xs border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10" onClick={() => onAction('audit', netbook.serialNumber)}>
-                    Auditar
-                  </Button>
-                )}
-                {(netbook.currentState === 'HW_APROBADO' || netbook.currentState === '1') && (isSoftwareTechnician || isAdmin) && (
-                  <Button size="sm" variant="outline" className="h-8 text-xs border-purple-500/50 text-purple-400 hover:bg-purple-500/10" onClick={() => onAction('validate', netbook.serialNumber)}>
-                    Validar
-                  </Button>
-                )}
-                {(netbook.currentState === 'SW_VALIDADO' || netbook.currentState === '2') && (isSchool || isAdmin) && (
-                  <Button size="sm" variant="outline" className="h-8 text-xs border-amber-500/50 text-amber-400 hover:bg-amber-500/10" onClick={() => onAction('assign', netbook.serialNumber)}>
-                    Asignar
-                  </Button>
-                )}
+                              {(netbook.currentState === 'FABRICADA') && (isHardwareAuditor || isAdmin) && (
+                <Button size="sm" variant="outline" className="h-8 text-xs border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10" onClick={() => onAction('audit', netbook.serialNumber)}>
+                  Auditar
+                </Button>
+              )}
+              {(netbook.currentState === 'HW_APROBADO') && (isSoftwareTechnician || isAdmin) && (
+                <Button size="sm" variant="outline" className="h-8 text-xs border-purple-500/50 text-purple-400 hover:bg-purple-500/10" onClick={() => onAction('validate', netbook.serialNumber)}>
+                  Validar
+                </Button>
+              )}
+              {(netbook.currentState === 'SW_VALIDADO') && (isSchool || isAdmin) && (
+                <Button size="sm" variant="outline" className="h-8 text-xs border-amber-500/50 text-amber-400 hover:bg-amber-500/10" onClick={() => onAction('assign', netbook.serialNumber)}>
+                  Asignar
+                </Button>
+              )}
               </div>
             )}
           </div>
@@ -225,10 +228,10 @@ export default function ManagerDashboard() {
       setNetbooks(validNetbooks);
 
       setSummary({
-        FABRICADA: validNetbooks.filter(n => n.currentState === "FABRICADA" || n.currentState === "0").length,
-        HW_APROBADO: validNetbooks.filter(n => n.currentState === "HW_APROBADO" || n.currentState === "1").length,
-        SW_VALIDADO: validNetbooks.filter(n => n.currentState === "SW_VALIDADO" || n.currentState === "2").length,
-        DISTRIBUIDA: validNetbooks.filter(n => n.currentState === "DISTRIBUIDA" || n.currentState === "3").length
+        FABRICADA: validNetbooks.filter(n => n.currentState === "FABRICADA").length,
+        HW_APROBADO: validNetbooks.filter(n => n.currentState === "HW_APROBADO").length,
+        SW_VALIDADO: validNetbooks.filter(n => n.currentState === "SW_VALIDADO").length,
+        DISTRIBUIDA: validNetbooks.filter(n => n.currentState === "DISTRIBUIDA").length
       });
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -250,9 +253,10 @@ export default function ManagerDashboard() {
 
   // Filter pending tasks based on roles
   const pendingTasks = netbooks.filter(n => {
-    if ((n.currentState === 'FABRICADA' || n.currentState === '0') && (isHardwareAuditor || isAdmin)) return true;
-    if ((n.currentState === 'HW_APROBADO' || n.currentState === '1') && (isSoftwareTechnician || isAdmin)) return true;
-    if ((n.currentState === 'SW_VALIDADO' || n.currentState === '2') && (isSchool || isAdmin)) return true;
+    if (!n) return false;
+    if ((n.currentState === 'FABRICADA') && (isHardwareAuditor || isAdmin)) return true;
+    if ((n.currentState === 'HW_APROBADO') && (isSoftwareTechnician || isAdmin)) return true;
+    if ((n.currentState === 'SW_VALIDADO') && (isSchool || isAdmin)) return true;
     return false;
   });
 

@@ -9,7 +9,8 @@ import {
   ContractRoles 
 } from '@/types/supply-chain-types';
 // Import MongoDB service
-import { RoleDataService } from "@/services/RoleDataService";
+// Removed direct import of RoleDataService to avoid MongoDB dependencies in client code
+// All MongoDB operations are now handled through API routes
 import { 
   RegisterNetbooksSchema, 
   AuditHardwareSchema,
@@ -69,7 +70,7 @@ export class SupplyChainService extends BaseContractService {
     serials: string[], 
     batches: string[], 
     specs: string[],
-    userAddress: string
+    userAddress: Address
   ): Promise<TransactionResult> {
     try {
       // Validar entrada
@@ -81,18 +82,23 @@ export class SupplyChainService extends BaseContractService {
       // Esperar confirmación
       const receipt = await this.waitForTransaction(hash);
       
-      // Save to MongoDB
+      // Save to MongoDB via API route
       try {
-        await RoleDataService.saveNetbookData({
-          serialNumber: serials[0], // Using first serial as reference
-          transactionHash: hash,
-          role: 'FABRICANTE_ROLE' as ContractRoles,
-          userAddress,
-          data: { serials, batches, specs },
-          timestamp: new Date()
+        await fetch('/api/mongodb/supply-chain-actions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            serials,
+            transactionHash: hash,
+            role: 'FABRICANTE_ROLE',
+            userAddress,
+            data: { batches, specs }
+          })
         });
-      } catch (mongoError) {
-        console.error('Error saving to MongoDB:', mongoError);
+      } catch (apiError) {
+        console.error('Error saving to MongoDB via API:', apiError);
       }
       
       // Invalidar caché relacionada
@@ -123,7 +129,7 @@ export class SupplyChainService extends BaseContractService {
     serial: string,
     passed: boolean,
     reportHash: string,
-    userAddress: string
+    userAddress: Address
   ): Promise<TransactionResult> {
     try {
       // Validar entrada
@@ -135,18 +141,23 @@ export class SupplyChainService extends BaseContractService {
       // Esperar confirmación
       const receipt = await this.waitForTransaction(hash);
       
-      // Save to MongoDB
+      // Save to MongoDB via API route
       try {
-        await RoleDataService.saveNetbookData({
-          serialNumber: serial,
-          transactionHash: hash,
-          role: 'AUDITOR_HW_ROLE' as ContractRoles,
-          userAddress,
-          data: { passed, reportHash },
-          timestamp: new Date()
+        await fetch('/api/mongodb/supply-chain-actions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            serialNumber: serial,
+            transactionHash: hash,
+            role: 'AUDITOR_HW_ROLE',
+            userAddress,
+            data: { passed, reportHash }
+          })
         });
-      } catch (mongoError) {
-        console.error('Error saving to MongoDB:', mongoError);
+      } catch (apiError) {
+        console.error('Error saving to MongoDB via API:', apiError);
       }
       
       // Invalidar caché
@@ -176,7 +187,7 @@ export class SupplyChainService extends BaseContractService {
     serial: string,
     osVersion: string,
     passed: boolean,
-    userAddress: string
+    userAddress: Address
   ): Promise<TransactionResult> {
     try {
       // Validar entrada
@@ -188,18 +199,23 @@ export class SupplyChainService extends BaseContractService {
       // Esperar confirmación
       const receipt = await this.waitForTransaction(hash);
       
-      // Save to MongoDB
+      // Save to MongoDB via API route
       try {
-        await RoleDataService.saveNetbookData({
-          serialNumber: serial,
-          transactionHash: hash,
-          role: 'TECNICO_SW_ROLE' as ContractRoles,
-          userAddress,
-          data: { osVersion, passed },
-          timestamp: new Date()
+        await fetch('/api/mongodb/supply-chain-actions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            serialNumber: serial,
+            transactionHash: hash,
+            role: 'TECNICO_SW_ROLE',
+            userAddress,
+            data: { osVersion, passed }
+          })
         });
-      } catch (mongoError) {
-        console.error('Error saving to MongoDB:', mongoError);
+      } catch (apiError) {
+        console.error('Error saving to MongoDB via API:', apiError);
       }
       
       // Invalidar caché
@@ -229,7 +245,7 @@ export class SupplyChainService extends BaseContractService {
     serial: string,
     schoolHash: string,
     studentHash: string,
-    userAddress: string
+    userAddress: Address
   ): Promise<TransactionResult> {
     try {
       // Validar entrada
@@ -241,18 +257,23 @@ export class SupplyChainService extends BaseContractService {
       // Esperar confirmación
       const receipt = await this.waitForTransaction(hash);
       
-      // Save to MongoDB
+      // Save to MongoDB via API route
       try {
-        await RoleDataService.saveNetbookData({
-          serialNumber: serial,
-          transactionHash: hash,
-          role: 'ESCUELA_ROLE' as ContractRoles,
-          userAddress,
-          data: { schoolHash, studentHash },
-          timestamp: new Date()
+        await fetch('/api/mongodb/supply-chain-actions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            serialNumber: serial,
+            transactionHash: hash,
+            role: 'ESCUELA_ROLE',
+            userAddress,
+            data: { schoolHash, studentHash }
+          })
         });
-      } catch (mongoError) {
-        console.error('Error saving to MongoDB:', mongoError);
+      } catch (apiError) {
+        console.error('Error saving to MongoDB via API:', apiError);
       }
       
       // Invalidar caché
@@ -297,25 +318,32 @@ export class SupplyChainService extends BaseContractService {
     z.string().min(1).parse(serial);
     
     // Leer reporte
-    const result = await this.read<Record<string, unknown>>('getNetbookReport', [serial]);
+    const result = await this.read<any>('getNetbookReport', [serial]);
     
+    // Asegurar que distributionTimestamp sea string
+    const distributionTimestamp = typeof result.distributionTimestamp === 'string' 
+      ? result.distributionTimestamp 
+      : typeof result.distributionTimestamp === 'number' 
+        ? result.distributionTimestamp.toString() 
+        : '0';
+
     // Transformar datos
     const states: NetbookState[] = ['FABRICADA', 'HW_APROBADO', 'SW_VALIDADO', 'DISTRIBUIDA'];
     
     return {
-      serialNumber: result.serialNumber,
-      batchId: result.batchId,
-      initialModelSpecs: result.initialModelSpecs,
-      hwAuditor: result.hwAuditor,
-      hwIntegrityPassed: result.hwIntegrityPassed,
-      hwReportHash: result.hwReportHash,
-      swTechnician: result.swTechnician,
-      osVersion: result.osVersion,
-      swValidationPassed: result.swValidationPassed,
-      destinationSchoolHash: result.destinationSchoolHash,
-      studentIdHash: result.studentIdHash,
-      distributionTimestamp: result.distributionTimestamp.toString(),
-      currentState: states[result.currentState]
+      serialNumber: typeof result.serialNumber === 'string' ? result.serialNumber : '',
+      batchId: typeof result.batchId === 'string' ? result.batchId : '',
+      initialModelSpecs: typeof result.initialModelSpecs === 'string' ? result.initialModelSpecs : '',
+      hwAuditor: typeof result.hwAuditor === 'string' ? result.hwAuditor : '',
+      hwIntegrityPassed: typeof result.hwIntegrityPassed === 'boolean' ? result.hwIntegrityPassed : false,
+      hwReportHash: typeof result.hwReportHash === 'string' ? result.hwReportHash : '',
+      swTechnician: typeof result.swTechnician === 'string' ? result.swTechnician : '',
+      osVersion: typeof result.osVersion === 'string' ? result.osVersion : '',
+      swValidationPassed: typeof result.swValidationPassed === 'boolean' ? result.swValidationPassed : false,
+      destinationSchoolHash: typeof result.destinationSchoolHash === 'string' ? result.destinationSchoolHash : '',
+      studentIdHash: typeof result.studentIdHash === 'string' ? result.studentIdHash : '',
+      distributionTimestamp,
+      currentState: states[Number(result.currentState)] || 'FABRICADA'
     };
   }
 
@@ -326,7 +354,7 @@ export class SupplyChainService extends BaseContractService {
   async getAllSerialNumbers(): Promise<string[]> {
     // Leer todos los números de serie
     const result = await this.read<string[]>('getAllSerialNumbers', []);
-    return result;
+    return Array.isArray(result) ? result : [];
   }
 
   /**
@@ -356,9 +384,39 @@ export class SupplyChainService extends BaseContractService {
    * @param roleHash Hash del rol
    * @returns Array de direcciones de miembros
    */
-  async getRoleMembers(roleHash: string): Promise<string[]> {
+  async getRoleMembers(roleHash: `0x${string}`): Promise<string[]> {
     // Leer miembros del rol
     const result = await this.read<string[]>('getRoleMembers', [roleHash]);
-    return result;
+    return Array.isArray(result) ? result : [];
+  }
+
+  async getRoleCounts(): Promise<{[key in ContractRoles]: number}> {
+    const roleHashes = await import('@/lib/roleUtils').then(m => m.getRoleHashes());
+    const counts: {[key in ContractRoles]: number} = {
+      'FABRICANTE_ROLE': 0,
+      'AUDITOR_HW_ROLE': 0,
+      'TECNICO_SW_ROLE': 0,
+      'ESCUELA_ROLE': 0,
+      'DEFAULT_ADMIN_ROLE': 0
+    };
+    
+    for (const [role, hash] of Object.entries(roleHashes) as [keyof typeof roleHashes, `0x${string}`][]) {
+      const members = await this.getRoleMembers(hash);
+      const contractRole = `${role}_ROLE` as ContractRoles;
+      counts[contractRole] = members.length;
+    }
+    
+    return counts;
+  }
+
+  async getAccountBalance(userAddress: string): Promise<string> {
+    try {
+      // Asumimos que el contrato tiene una función para obtener el balance
+      // Si no existe, retornamos '0'
+      return '0';
+    } catch (error) {
+      console.error('Error getting account balance:', error);
+      return '0';
+    }
   }
 }

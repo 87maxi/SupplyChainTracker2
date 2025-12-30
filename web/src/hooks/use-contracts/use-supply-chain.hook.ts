@@ -5,8 +5,8 @@ import { SupplyChainService } from '@/services/contracts/supply-chain.service';
 import { useToast } from '@/hooks/use-toast';
 import { ActivityLogger } from '@/lib/activity-logger';
 
-// Instancia única del servicio (singleton)
-const supplyChainService = new SupplyChainService();
+// Use singleton instance from services
+const { supplyChainService } = require('@/services/SupplyChainService');
 
 /**
  * Hook personalizado para interactuar con el contrato SupplyChainTracker

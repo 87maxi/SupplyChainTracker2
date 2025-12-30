@@ -4,11 +4,12 @@ import { useWeb3 } from '@/contexts/Web3Context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import * as SupplyChainService from '@/services/SupplyChainService';
+import { useSupplyChainService } from '@/hooks/useSupplyChainService';
 import { useState, useEffect } from 'react';
 
 export default function TransfersPage() {
   const { address, isConnected } = useWeb3();
+  const { getAllSerialNumbers, getNetbookState } = useSupplyChainService();
   const [transfers, setTransfers] = useState<Array<{ serial: string, from: string, to: string, status: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -22,7 +23,7 @@ export default function TransfersPage() {
 
       try {
         // Get all serial numbers
-        const serials = await SupplyChainService.getAllSerialNumbers();
+        const serials = await getAllSerialNumbers();
 
         // Filter for transfers that are pending approval
         // In a real implementation, we'd have a pending transfers mapping in the contract
@@ -31,7 +32,7 @@ export default function TransfersPage() {
         const pendingTransfers: Array<{ serial: string, from: string, to: string, status: string }> = [];
 
         for (const serial of serials) {
-          const stateValue = await SupplyChainService.getNetbookState(serial);
+          const stateValue = await getNetbookState(serial);
           const state = ['FABRICADA', 'HW_APROBADO', 'SW_VALIDADO', 'DISTRIBUIDA'][Number(stateValue)];
 
           // In our state machine, transfers happen when moving from SW_VALIDADO to DISTRIBUIDA

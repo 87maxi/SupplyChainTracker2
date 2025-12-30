@@ -26,12 +26,14 @@ const nextConfig = {
 experimental: {
     turbo: {
       resolveAlias: {
-        // Le decimos a Turbopack que ignore estos módulos en el cliente
-        child_process: false,
-        dns: false,
-        tls: false,
-        net: false,
-        fs: false,
+        // Esto evita el error de child_process, dns, etc. en el cliente
+        "child_process": false,
+        "dns": false,
+        "tls": false,
+        "net": false,
+        "fs": false,
+        "os": false,
+        "path": false,
       },
     },
   },

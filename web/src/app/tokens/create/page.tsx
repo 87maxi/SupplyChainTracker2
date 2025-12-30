@@ -93,12 +93,12 @@ export default function CreateTokensPage() {
         return;
       }
 
-      const result = await registerNetbooks(serialArray, batchArray, modelArray);
+      const result = await registerNetbooks(serialArray, batchArray, modelArray, address);
 
-      if (result.success && result.hash) {
+      if (result.success) {
         toast({
           title: "Registro Exitoso",
-          description: `Se registraron ${serialArray.length} netbooks. Transacción: ${result.hash.transactionHash}`,
+          description: `Se registraron ${serialArray.length} netbooks.`,
         });
       } else {
         throw new Error(result.error || 'Unknown error');

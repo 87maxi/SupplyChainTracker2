@@ -1,56 +1,37 @@
 "use client";
 
 import { useWeb3 } from '@/contexts/Web3Context';
+import { useSupplyChainService } from '@/hooks/useSupplyChainService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import Link from 'next/link';
-import * as SupplyChainService from '@/services/SupplyChainService';
-import { useParams, useRouter } from 'next/navigation';
-// import { NetbookState } from '@/types/supply-chain-types'; // Removed because it's not available as a value
-// Using enum values directly from the contract or string literals
+import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
-import type { Netbook } from '@/types/supply-chain-types';
+import { Netbook } from '@/types/supply-chain-types';
 
-export default function NetbookDetailsPage() {
-  const { id } = useParams();
+interface TokenDetailsProps {
+  params: {
+    id: string;
+  };
+}
+
+export default function TokenDetailsPage({ params }: TokenDetailsProps) {
+  const { id } = params;
   const { isConnected } = useWeb3();
-  const router = useRouter();
-  const [netbook, setNetbook] = useState<Omit<Netbook, 'currentState'> & { currentState: 'FABRICADA' | 'HW_APROBADO' | 'SW_VALIDADO' | 'DISTRIBUIDA' } | null>(null);
+  const { getNetbookReport } = useSupplyChainService();
+  const [netbook, setNetbook] = useState<Netbook | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
-  const stateLabels = {
-    'FABRICADA': 'FABRICADA',
-    'HW_APROBADO': 'HW_APROBADO',
-    'SW_VALIDADO': 'SW_VALIDADO',
-    'DISTRIBUIDA': 'DISTRIBUIDA'
-  } as const;
-
-  const stateColors = {
-    'FABRICADA': 'bg-gray-100 text-gray-800',
-    'HW_APROBADO': 'bg-blue-100 text-blue-800',
-    'SW_VALIDADO': 'bg-yellow-100 text-yellow-800',
-    'DISTRIBUIDA': 'bg-green-100 text-green-800'
-  } as const;
-
+  
   useEffect(() => {
     const fetchNetbook = async () => {
-      if (!isConnected || !id || typeof id !== 'string') return;
-
+      if (!isConnected) return;
+      
       setLoading(true);
       setError('');
-
+      
       try {
-        const serial = id;
-        const state = await SupplyChainService.getNetbookState(serial);
-        const report = await SupplyChainService.getNetbookReport(serial);
-
-        const stateLabel = (['FABRICADA', 'HW_APROBADO', 'SW_VALIDADO', 'DISTRIBUIDA'][Number(state)]) as 'FABRICADA' | 'HW_APROBADO' | 'SW_VALIDADO' | 'DISTRIBUIDA';
-        setNetbook({
-          ...(report as Netbook),
-          serialNumber: serial,
-          currentState: stateLabel
-        });
+        const report = await getNetbookReport(id);
+        setNetbook(report);
       } catch (err) {
         console.error('Error fetching netbook:', err);
         setError('Failed to load netbook details');
@@ -58,10 +39,10 @@ export default function NetbookDetailsPage() {
         setLoading(false);
       }
     };
-
+    
     fetchNetbook();
-  }, [isConnected, id]);
-
+  }, [id, isConnected]);
+  
   if (!isConnected) {
     return (
       <div className="container mx-auto px-4 py-12">
@@ -79,8 +60,12 @@ export default function NetbookDetailsPage() {
     return (
       <div className="container mx-auto px-4 py-12">
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <p>Cargando detalles del netbook...</p>
+          <CardHeader>
+            <CardTitle>Detalles del Netbook</CardTitle>
+            <CardDescription>Cargando...</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-4 w-1/2 bg-muted rounded animate-pulse"></div>
           </CardContent>
         </Card>
       </div>
@@ -91,9 +76,12 @@ export default function NetbookDetailsPage() {
     return (
       <div className="container mx-auto px-4 py-12">
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <p className="text-red-500">{error}</p>
-            <Button onClick={() => router.push('/tokens')}>Volver a la lista</Button>
+          <CardHeader>
+            <CardTitle>Error</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">{error}</p>
+            <Button className="mt-4" onClick={() => window.location.reload()}>Reintentar</Button>
           </CardContent>
         </Card>
       </div>
@@ -104,9 +92,14 @@ export default function NetbookDetailsPage() {
     return (
       <div className="container mx-auto px-4 py-12">
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <p>Netbook no encontrado</p>
-            <Button onClick={() => router.push('/tokens')}>Volver a la lista</Button>
+          <CardHeader>
+            <CardTitle>Netbook no encontrado</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">No se encontró un netbook con el número de serie {id}.</p>
+            <Button className="mt-4" asChild>
+              <a href="/tokens">Volver a la lista</a>
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -115,78 +108,29 @@ export default function NetbookDetailsPage() {
 
   return (
     <div className="container mx-auto px-4 py-12">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Detalles del Netbook</h1>
-        <Button onClick={() => router.push('/tokens')}>Volver a la lista</Button>
-      </div>
-
       <Card>
         <CardHeader>
-          <CardTitle>{netbook?.serialNumber}</CardTitle>
-          <CardDescription>
-            <span className={`px-2 py-1 rounded text-xs ${stateColors[netbook?.currentState as keyof typeof stateColors || 'FABRICADA']}`}>
-              {stateLabels[netbook?.currentState as keyof typeof stateLabels || 'FABRICADA']}
-            </span>
-          </CardDescription>
+          <CardTitle>Detalles del Netbook {netbook.serialNumber}</CardTitle>
+          <CardDescription>Información sobre este netbook</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Información General</h3>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Lote:</span>
-                  <span>{netbook?.batchId || 'No especificado'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Modelo:</span>
-                  <span>{netbook?.initialModelSpecs || 'No especificado'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Fecha de Registro:</span>
-                  <span>{netbook?.serialNumber ? 'Registrado' : 'No especificada'}</span>
-                </div>
-              </div>
+        <CardContent>
+          <div className="grid gap-4">
+            <div>
+              <p className="text-sm font-medium">Número de Serie</p>
+              <p className="text-foreground">{netbook.serialNumber}</p>
             </div>
-
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Estado del Ciclo de Vida</h3>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Fabricación:</span>
-                  <span>{netbook?.serialNumber ? 'Completada' : 'Pendiente'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Auditoría HW:</span>
-                  <span>{netbook?.hwAuditor !== '0x0000000000000000000000000000000000000000' ? 'Completada' : 'Pendiente'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Validación SW:</span>
-                  <span>{netbook?.swTechnician !== '0x0000000000000000000000000000000000000000' ? 'Completada' : 'Pendiente'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Distribución:</span>
-                  <span>{netbook?.currentState === 'DISTRIBUIDA' ? 'Completada' : 'Pendiente'}</span>
-                </div>
-              </div>
+            <div>
+              <p className="text-sm font-medium">Lote</p>
+              <p className="text-foreground">{netbook.batchId}</p>
             </div>
-          </div>
-
-          <div className="border-t pt-6">
-            <h3 className="text-lg font-semibold mb-4">Historial de Transiciones</h3>
-            <div className="space-y-2">
-              <p className="text-muted-foreground">El historial de transiciones se puede ver en los eventos del contrato.</p>
+            <div>
+              <p className="text-sm font-medium">Especificación del Modelo</p>
+              <p className="text-foreground">{netbook.initialModelSpecs}</p>
             </div>
-          </div>
-
-          <div className="flex justify-between pt-6 border-t">
-            <Button variant="outline" asChild>
-              <Link href={`/tokens/${netbook?.serialNumber}/transfer`}>Transferir Netbook</Link>
-            </Button>
-
-            <Button asChild>
-              <Link href="/tokens">Volver a la lista</Link>
-            </Button>
+            <div>
+              <p className="text-sm font-medium">Estado Actual</p>
+              <p className="text-foreground">{netbook.currentState}</p>
+            </div>
           </div>
         </CardContent>
       </Card>

@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import ManagerDashboard from '@/app/dashboard/page';
-import { SupplyChainService } from '@/services/SupplyChainService';
+import { SupplyChainService } from '@/services/contracts/supply-chain.service';
 
 // Tipos para los mocks
 import { type Mock } from 'jest-mock';
@@ -10,7 +10,10 @@ describe('ManagerDashboard', () => {
   const mockSupplyChainService = {
     getAllSerialNumbers: jest.fn(),
     getNetbookReport: jest.fn(),
-    isWalletConnected: jest.fn(),
+    getNetbookState: jest.fn(),
+    getRoleCounts: jest.fn(),
+    getAccountBalance: jest.fn(),
+    hasRole: jest.fn(),
     connectWallet: jest.fn(),
   };
 

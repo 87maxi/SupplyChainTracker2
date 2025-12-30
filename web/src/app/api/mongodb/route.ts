@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { mongodbService, type RoleData, type NetbookData } from '@/services/server/mongodb-service';
+import { mongodbService } from '@/lib/mongodb';
+import { RoleData, NetbookData } from '@/types/mongodb';
 import { ContractRoles } from '@/types/contract';
 
 // POST /api/mongodb/save-netbook-data

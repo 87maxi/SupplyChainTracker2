@@ -1,11 +1,11 @@
 // web/src/hooks/useSupplyChainService.ts
 import { useCallback } from 'react';
-import * as SupplyChainService from '@/services/SupplyChainService';
 import { useAccount } from 'wagmi';
 import { Address } from 'viem';
-import { ContractRoles } from '@/types/contract';
+import { ContractRoles, ContractRoleName } from '@/types/contract';
 import { AllRolesSummary } from '@/types/supply-chain-types';
 import { roleMapper } from '@/lib/roleMapping';
+import { SupplyChainService } from '@/services/contracts/supply-chain.service';
 
 export const useSupplyChainService = () => {
   const { address } = useAccount();
@@ -23,20 +23,18 @@ export const useSupplyChainService = () => {
   // Role hash mapping utility - now uses centralized roleMapper
   // For backward compatibility, this function maintains the same interface
   // but delegates to the centralized roleMapper for consistency
-  const getRoleHashForName = useCallback(async (role: string): Promise<`0x${string}`> => {
-    // If it's already a hash, just return it
-    if (role.startsWith('0x') && role.length === 66) {
-      return role as `0x${string}`;
+  const getRoleHashForName = useCallback(async (role: ContractRoleName | ContractRoles): Promise<`0x${string}`> => {
+    // Si es un ContractRoles completo (FABRICANTE_ROLE), extraer la parte base
+    if (role.endsWith('_ROLE')) {
+      const roleBase = role.replace('_ROLE', '') as ContractRoleName;
+      return await roleMapper.getRoleHash(roleBase);
     }
     
-    try {
-      // Delegate to centralized role mapper
-      return await roleMapper.getRoleHash(role);
-    } catch (error: any) {
-      console.error('💥 Error getting role hash:', error);
-      throw error;
-    }
+    // Si es un nombre de rol básico (FABRICANTE)
+    return await roleMapper.getRoleHash(role);
   }, []);
+
+
 
   // Read operations
   const hasRole = useCallback(async (role: string, userAddress: Address): Promise<boolean> => {
@@ -58,23 +56,21 @@ export const useSupplyChainService = () => {
     }
   }, []);
 
-  const getAccountBalance = useCallback(async (userAddress: string) => {
-    try {
-      return await SupplyChainService.getAccountBalance(userAddress);
-    } catch (error) {
-      console.error('Error in getAccountBalance:', error);
-      return '0';
-    }
-  }, []);
 
-  const getRoleMembers = useCallback(async (role: string) => {
+
+  const getRoleMembers = useCallback(async (role: ContractRoleName | ContractRoles) => {
     try {
       const roleHash = await getRoleHashForName(role);
-      const members = await SupplyChainService.getAllMembers(roleHash);
-      return { role, members, count: members.length };
+      const members = await SupplyChainService.getRoleMembers(roleHash);
+      const roleName = typeof role === 'string' && role.endsWith('_ROLE') ? role : `${role}_ROLE`;
+      return { 
+        role: roleName as ContractRoles, 
+        members, 
+        count: members.length 
+      };
     } catch (error) {
       console.error('Error in getRoleMembers:', error);
-      return { role, members: [], count: 0 };
+      return { role: 'DEFAULT_ADMIN_ROLE', members: [], count: 0 };
     }
   }, [getRoleHashForName]);
 
@@ -116,7 +112,7 @@ export const useSupplyChainService = () => {
       const roleResults = await Promise.all(
         roleEntries.map(async ([key, hash]) => {
           try {
-            const members = await SupplyChainService.getAllMembers(hash, forceRefresh);
+            const members = await SupplyChainService.getRoleMembers(hash);
             // Convert member addresses to checksummed format
             const checksummedMembers = members.map(address => {
               try {
@@ -211,8 +207,8 @@ export const useSupplyChainService = () => {
   // Netbook operations
   const auditHardware = useCallback(async (serial: string, passed: boolean, reportHash: string, userAddress: Address) => {
     try {
-      const transactionHash = await SupplyChainService.auditHardware(serial, passed, reportHash, userAddress);
-      return { success: true, hash: transactionHash };
+      const result = await SupplyChainService.auditHardware(serial, passed, reportHash, userAddress);
+      return result;
     } catch (error) {
       console.error('Error in auditHardware:', error);
       return { success: false, error: (error as Error).message };
@@ -221,8 +217,8 @@ export const useSupplyChainService = () => {
 
   const registerNetbooks = useCallback(async (serials: string[], batches: string[], specs: string[], userAddress: Address) => {
     try {
-      const transactionHash = await SupplyChainService.registerNetbooks(serials, batches, specs, userAddress);
-      return { success: true, hash: transactionHash };
+      const result = await SupplyChainService.registerNetbooks(serials, batches, specs, userAddress);
+      return result;
     } catch (error) {
       console.error('Error in registerNetbooks:', error);
       return { success: false, error: (error as Error).message };
@@ -232,8 +228,8 @@ export const useSupplyChainService = () => {
   // Netbook operations
   const validateSoftware = useCallback(async (serial: string, osVersion: string, passed: boolean, userAddress: Address) => {
     try {
-      const transactionHash = await SupplyChainService.validateSoftware(serial, osVersion, passed, userAddress);
-      return { success: true, hash: transactionHash };
+      const result = await SupplyChainService.validateSoftware(serial, osVersion, passed, userAddress);
+      return result;
     } catch (error) {
       console.error('Error in validateSoftware:', error);
       return { success: false, error: (error as Error).message };
@@ -243,8 +239,8 @@ export const useSupplyChainService = () => {
   // Netbook operations
   const assignToStudent = useCallback(async (serial: string, schoolHash: string, studentHash: string, userAddress: Address) => {
     try {
-      const transactionHash = await SupplyChainService.assignToStudent(serial, schoolHash, studentHash, userAddress);
-      return { success: true, hash: transactionHash };
+      const result = await SupplyChainService.assignToStudent(serial, schoolHash, studentHash, userAddress);
+      return result;
     } catch (error) {
       console.error('Error in assignToStudent:', error);
       return { success: false, error: (error as Error).message };

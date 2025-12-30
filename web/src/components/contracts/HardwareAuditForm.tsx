@@ -71,13 +71,17 @@ export function HardwareAuditForm({
     try {
       setLoading(true);
 
-      await auditHardware(serial, passed, ipfsHash);
-
-      toast({
-        title: "Registro completado",
-        description:
-          "El informe de auditoría se ha registrado en la blockchain",
-      });
+      const result = await auditHardware(serial, passed, ipfsHash, address);
+      
+      if (result.success) {
+        toast({
+          title: "Registro completado",
+          description:
+            "El informe de auditoría se ha registrado en la blockchain",
+        });
+      } else {
+        throw new Error(result.error);
+      }
 
       // Reset form
       if (!initialSerial) setSerial("");

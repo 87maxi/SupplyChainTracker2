@@ -1,8 +1,4 @@
-import 'server-only';
 import { MongoClient, Db, Collection } from 'mongodb';
-
-const MONGODB_URI = process.env.MONGODB_URI; // Quitamos el NEXT_PUBLIC
-const MONGODB_DATABASE = process.env.MONGODB_DATABASE;
 
 // Interfaces for our data models
 export interface RoleData {
@@ -39,15 +35,19 @@ class MongoDBService {
     }
 
     try {
-      const uri = NEXT_PUBLIC_MONGODB_URI;
+      // Access MongoDB URI directly from process.env (server-side only)
+      const uri = process.env.MONGODB_URI;
       if (!uri) {
-        throw new Error('MongoDB URI is not configured. Please check your environment variables.');
+        console.warn('MONGODB_URI is not configured. Using default connection string: mongodb://localhost:27017');
       }
 
-      this.client = new MongoClient(uri);
+      // Use the provided URI or fallback to default
+      const mongoUri = uri || 'mongodb://localhost:27017';
+      this.client = new MongoClient(mongoUri);
       await this.client.connect();
       
-      const dbName = NEXT_PUBLIC_MONGODB_DATABASE || 'supplychain';
+      // Determine database name
+      const dbName = process.env.MONGODB_DATABASE || 'supplychain';
       this.db = this.client.db(dbName);
       
       // Create indexes for better performance

@@ -5,13 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Link from 'next/link';
-import { getAllSerialNumbers, getNetbookState, getNetbookReport } from '@/services/SupplyChainService';
+import { useSupplyChainService } from '@/hooks/useSupplyChainService';
 import { useState, useEffect } from 'react';
 import { Netbook } from '@/types/supply-chain-types';
 import { Laptop, Plus } from 'lucide-react';
 
 export default function TokensPage() {
   const { isConnected } = useWeb3();
+  const { getAllSerialNumbers, getNetbookState, getNetbookReport } = useSupplyChainService();
   const [netbooks, setNetbooks] = useState<Array<{serialNumber: string, currentState: 'FABRICADA' | 'HW_APROBADO' | 'SW_VALIDADO' | 'DISTRIBUIDA', hwAuditor: string, swTechnician: string}>>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

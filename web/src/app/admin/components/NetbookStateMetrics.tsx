@@ -1,10 +1,9 @@
-// web/src/app/admin/components/NetbookStateMetrics.tsx
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Package, ShieldCheck, Monitor, Truck, Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import * as SupplyChainService from '@/services/SupplyChainService';
+import { useSupplyChainService } from '@/hooks/useSupplyChainService';
 import { cn } from '@/lib/utils';
 
 interface NetbookCounts {
@@ -54,6 +53,7 @@ const StateCard = ({
 );
 
 export const NetbookStateMetrics = () => {
+    const { getAllSerialNumbers, getNetbookState } = useSupplyChainService();
     const [loading, setLoading] = useState(true);
     const [counts, setCounts] = useState<NetbookCounts>(() => {
         if (typeof window !== 'undefined') {
@@ -75,7 +75,7 @@ export const NetbookStateMetrics = () => {
                 // Only show loader if we don't have cached data
                 if (counts.total === 0) setLoading(true);
 
-                const serials = await SupplyChainService.getAllSerialNumbers();
+                const serials = await getAllSerialNumbers();
                 const total = serials.length;
 
                 if (total === 0) {
@@ -87,9 +87,9 @@ export const NetbookStateMetrics = () => {
 
                 // Contar netbooks por estado en paralelo
                 const states = await Promise.all(
-                    serials.map(async (serial) => {
+                    serials.map(async (serial: string) => {
                         try {
-                            const state = await SupplyChainService.getNetbookState(serial);
+                            const state = await getNetbookState(serial);
                             return Number(state);
                         } catch (e) {
                             console.error(`Error getting state for ${serial}:`, e);
@@ -99,7 +99,7 @@ export const NetbookStateMetrics = () => {
                 );
 
                 let fabricadas = 0, hwAprobado = 0, swValidado = 0, distribuidas = 0;
-                states.forEach(state => {
+                states.forEach((state: number) => {
                     switch (state) {
                         case 0: fabricadas++; break;
                         case 1: hwAprobado++; break;
