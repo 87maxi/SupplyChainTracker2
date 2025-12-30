@@ -1,7 +1,7 @@
 // web/src/hooks/index.ts
 
 // Hooks de Web3
-export { useWeb3 } from '@/contexts/Web3Context';
+export { useWeb3 } from '@/hooks/useWeb3';
 export { useToast } from './use-toast';
 export { useNotifications } from './use-notifications';
 

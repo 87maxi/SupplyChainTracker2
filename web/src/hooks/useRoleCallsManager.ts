@@ -2,7 +2,7 @@
 // Centralized manager for role-related contract calls with batching and caching
 
 import { useState, useEffect, useCallback } from 'react';
-import { useWeb3 } from '@/contexts/Web3Context';
+import { useWeb3 } from '@/hooks/useWeb3';
 // Removed getAllRolesSummary as it's not currently exported
 import { getCache, setCache, isCacheStale, clearCache, clearAllCache } from '@/lib/utils/cache';
 

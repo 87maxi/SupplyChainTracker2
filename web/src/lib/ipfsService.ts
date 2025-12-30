@@ -28,7 +28,7 @@ export interface IPFSResult {
 }
 
 // Función para cargar datos a IPFS
-export const uploadToIPFS = async (data: any): Promise<IPFSResult> => {
+export const uploadToIPFS = async (data: Record<string, unknown> | string): Promise<IPFSResult> => {
   try {
     // Convertir los datos a JSON si no lo están
     const jsonData = typeof data === 'string' ? data : JSON.stringify(data);
@@ -51,7 +51,7 @@ export const uploadToIPFS = async (data: any): Promise<IPFSResult> => {
 };
 
 // Función para recuperar datos de IPFS
-export const getFromIPFS = async (hash: string): Promise<any> => {
+export const getFromIPFS = async (hash: string): Promise<unknown> => {
   try {
     // Obtener el contenido de IPFS
     const chunks: Uint8Array[] = [];

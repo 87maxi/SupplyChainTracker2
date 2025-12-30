@@ -22,7 +22,7 @@ import {
 import { NetbookStatusChart } from '@/components/charts/NetbookStatusChart';
 import { UserRolesChart } from '@/components/charts/UserRolesChart';
 import { AnalyticsChart } from '@/components/charts/AnalyticsChart';
-import { useWeb3 } from '@/contexts/Web3Context';
+import { useWeb3 } from '@/hooks/useWeb3';
 import {
   getRoleMembers,
   getRoleMemberCount,

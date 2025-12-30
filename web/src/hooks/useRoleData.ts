@@ -2,7 +2,7 @@
 // Specialized hook for role data with proper address context
 
 import { useState, useEffect, useCallback } from 'react';
-import { useWeb3 } from '@/contexts/Web3Context';
+import { useWeb3 } from '@/hooks/useWeb3';
 import { useCachedData } from '@/hooks/use-cached-data';
 
 interface RoleData {

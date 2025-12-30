@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useSupplyChainService } from "@/hooks/useSupplyChainService";
-import { useWeb3 } from "@/contexts/Web3Context";
+import { useWeb3 } from "@/hooks/useWeb3";
 import {
   Card,
   CardContent,
@@ -23,6 +23,24 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
+interface AuditFormData {
+  serial: string;
+  deviceModel: string;
+  auditDate: string;
+  auditorName: string;
+  components: {
+    cpu: boolean;
+    ram: boolean;
+    storage: boolean;
+    display: boolean;
+    keyboard: boolean;
+    ports: boolean;
+    battery: boolean;
+  };
+  observations: string;
+  timestamp: string;
+}
+
 interface HardwareAuditFormProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
@@ -39,7 +57,7 @@ export function HardwareAuditForm({
 }: HardwareAuditFormProps) {
   const [serial, setSerial] = useState(initialSerial || "");
   const [passed, setPassed] = useState(true);
-  const [auditData, setAuditData] = useState<any>(null);
+  const [auditData, setAuditData] = useState<AuditFormData | null>(null);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { auditHardware } = useSupplyChainService();
@@ -73,7 +91,16 @@ export function HardwareAuditForm({
       const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
       const reportHash = `0x${hashHex.padStart(64, '0')}`;
 
-      const result = await auditHardware(serial, passed, reportHash, address || '');
+      if (!address) {
+        toast({
+          title: "Error",
+          description: "No se pudo obtener tu dirección. Recarga la página.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const result = await auditHardware(serial, passed, reportHash, address);
       
       if (result.success) {
         toast({

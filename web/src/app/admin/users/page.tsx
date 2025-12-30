@@ -1,7 +1,7 @@
 // web/src/app/admin/users/page.tsx
 "use client";
 
-import { useWeb3 } from '@/contexts/Web3Context';
+import { useWeb3 } from '@/hooks/useWeb3';
 import { useSupplyChainService } from '@/hooks/useSupplyChainService';
 import { getRoleHashes } from '@/lib/roleUtils';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Loader2, ShieldAlert, UserPlus, UserMinus, Users, ArrowLeft, ClipboardCopy } from 'lucide-react';
-import { ContractRoles } from '@/types/contract';
+import { ContractRoles, ContractRoleName } from '@/types/contract';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -39,7 +39,7 @@ interface UserWithRoles {
 
 export default function AdminUsersPage() {
   const { address, isConnected, connectWallet, defaultAdminAddress } = useWeb3();
-  const { hasRole, getAllRolesSummary, grantRole, revokeRole } = useSupplyChainService();
+  const { hasRole, hasRoleByHash, getAllRolesSummary, grantRole, revokeRole } = useSupplyChainService();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -102,7 +102,7 @@ export default function AdminUsersPage() {
         }));
       setAvailableRoles(available);
 
-      const userIsAdmin = await hasRole(hashes.ADMIN, address);
+      const userIsAdmin = await hasRoleByHash(hashes.ADMIN, address);
       setIsAdmin(userIsAdmin);
 
       if (userIsAdmin) {
@@ -163,7 +163,7 @@ export default function AdminUsersPage() {
     setIsSubmittingGrant(true);
     try {
       // Strip _ROLE suffix from the selected role value before passing to grantRole
-      const baseRoleName = data.role.replace('_ROLE', '');
+      const baseRoleName = data.role.replace('_ROLE', '') as ContractRoleName;
       const result = await grantRole(baseRoleName, data.userAddress as Address);
       if (result.success) {
         toast({

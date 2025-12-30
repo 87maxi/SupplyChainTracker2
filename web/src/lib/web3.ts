@@ -15,7 +15,8 @@ export const getSigner = async (): Promise<ethers.Signer> => {
 };
 
 // Load contract instance
-export const getContract = async (abi: any, address: string) => {
+export const getContract = async (abi: ethers.InterfaceAbi, address: string) => {
   const signer = await getSigner();
   return new ethers.Contract(address, abi, signer);
 };
+

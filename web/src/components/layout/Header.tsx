@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { RoleRequestModal } from '@/components/contracts/RoleRequestModal';
 import { useState, useEffect } from 'react';
-import { useWeb3 } from '@/contexts/Web3Context';
+import { useWeb3 } from '@/hooks/useWeb3';
 import { User, Wallet } from 'lucide-react';
 import Link from 'next/link';
 

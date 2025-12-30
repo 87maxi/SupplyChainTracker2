@@ -15,7 +15,10 @@
     "analyze": "ANALYZE=true next build",
     "export": "next export",
     "abi:generate": "./web/scripts/generate-abis.sh",
-    "abi:watch": "cd sc && forge build --watch --build-info"
+    "abi:watch": "cd sc && forge build --watch --build-info",
+    "clean": "rm -rf .next/ .next-build-output",
+    "clean-build": "npm run clean && npm run build",
+    "clean-dev": "npm run clean && npm run dev"
   },
   "dependencies": {
     "@base-org/account": "^2.5.0",

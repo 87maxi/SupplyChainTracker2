@@ -7,13 +7,16 @@ import { AllRolesSummary } from '@/types/supply-chain-types';
 import { roleMapper } from '@/lib/roleMapping';
 import { SupplyChainService } from '@/services/contracts/supply-chain.service';
 
+// Crear una instancia única del servicio
+const supplyChainService = new SupplyChainService();
+
 export const useSupplyChainService = () => {
   const { address } = useAccount();
 
   // Get all serial numbers
   const getAllSerialNumbers = useCallback(async () => {
     try {
-      return await SupplyChainService.getAllSerialNumbers();
+      return await supplyChainService.getAllSerialNumbers();
     } catch (error) {
       console.error('Error in getAllSerialNumbers:', error);
       return [];
@@ -37,19 +40,29 @@ export const useSupplyChainService = () => {
 
 
   // Read operations
-  const hasRole = useCallback(async (role: string, userAddress: Address): Promise<boolean> => {
+  const hasRole = useCallback(async (role: ContractRoles | ContractRoleName, userAddress: Address): Promise<boolean> => {
     try {
       const roleHash = await getRoleHashForName(role);
-      return await SupplyChainService.hasRole(roleHash, userAddress);
+      return await supplyChainService.hasRole(roleHash, userAddress);
     } catch (error) {
       console.error('Error in hasRole:', error);
       return false;
     }
   }, [getRoleHashForName]);
 
+  // New: Direct role check by hash
+  const hasRoleByHash = useCallback(async (roleHash: `0x${string}`, userAddress: Address): Promise<boolean> => {
+    try {
+      return await supplyChainService.hasRole(roleHash, userAddress);
+    } catch (error) {
+      console.error('Error in hasRoleByHash:', error);
+      return false;
+    }
+  }, []);
+
   const getRoleCounts = useCallback(async () => {
     try {
-      return await SupplyChainService.getRoleCounts();
+      return await supplyChainService.getRoleCounts();
     } catch (error) {
       console.error('Error in getRoleCounts:', error);
       return {};
@@ -61,7 +74,7 @@ export const useSupplyChainService = () => {
   const getRoleMembers = useCallback(async (role: ContractRoleName | ContractRoles) => {
     try {
       const roleHash = await getRoleHashForName(role);
-      const members = await SupplyChainService.getRoleMembers(roleHash);
+      const members = await supplyChainService.getRoleMembers(roleHash);
       const roleName = typeof role === 'string' && role.endsWith('_ROLE') ? role : `${role}_ROLE`;
       return { 
         role: roleName as ContractRoles, 
@@ -106,13 +119,13 @@ export const useSupplyChainService = () => {
         ADMIN: 'DEFAULT_ADMIN_ROLE'
       };
 
-      const roleEntries = Object.entries(roleHashes) as [keyof typeof roleHashes, string][];
+      const roleEntries = Object.entries(roleHashes) as [keyof typeof roleHashes, `0x${string}`][];
 
       // Fetch all role members concurrently
       const roleResults = await Promise.all(
         roleEntries.map(async ([key, hash]) => {
           try {
-            const members = await SupplyChainService.getRoleMembers(hash);
+            const members = await supplyChainService.getRoleMembers(hash);
             // Convert member addresses to checksummed format
             const checksummedMembers = members.map(address => {
               try {
@@ -169,7 +182,7 @@ export const useSupplyChainService = () => {
   // Netbook operations
   const getNetbookState = useCallback(async (serial: string) => {
     try {
-      return await SupplyChainService.getNetbookState(serial);
+      return await supplyChainService.getNetbookState(serial);
     } catch (error) {
       console.error('Error in getNetbookState:', error);
       return 'FABRICADA';
@@ -178,7 +191,7 @@ export const useSupplyChainService = () => {
 
   const getNetbookReport = useCallback(async (serial: string) => {
     try {
-      return await SupplyChainService.getNetbookReport(serial);
+      return await supplyChainService.getNetbookReport(serial);
     } catch (error) {
       console.error('Error in getNetbookReport:', error);
       return null;
@@ -186,18 +199,19 @@ export const useSupplyChainService = () => {
   }, []);
 
   // Write operations - these require wallet connection and return promise with transaction hash
-  const grantRole = useCallback(async (roleName: string, userAddress: Address) => {
+  const grantRole = useCallback(async (roleName: ContractRoles | ContractRoleName, userAddress: Address) => {
     try {
-      return await SupplyChainService.grantRole(roleName, userAddress);
+      const roleHash = await getRoleHashForName(roleName);
+      return await supplyChainService.grantRole(roleHash, userAddress);
     } catch (error) {
       console.error('Error in grantRole:', error);
       throw error;
     }
-  }, []);
+  }, [getRoleHashForName]);
 
   const revokeRole = useCallback(async (roleHash: `0x${string}`, userAddress: Address) => {
     try {
-      return await SupplyChainService.revokeRole(roleHash, userAddress);
+      return await supplyChainService.revokeRole(roleHash, userAddress);
     } catch (error) {
       console.error('Error in revokeRole:', error);
       throw error;
@@ -207,7 +221,7 @@ export const useSupplyChainService = () => {
   // Netbook operations
   const auditHardware = useCallback(async (serial: string, passed: boolean, reportHash: string, userAddress: Address) => {
     try {
-      const result = await SupplyChainService.auditHardware(serial, passed, reportHash, userAddress);
+      const result = await supplyChainService.auditHardware(serial, passed, reportHash, userAddress);
       return result;
     } catch (error) {
       console.error('Error in auditHardware:', error);
@@ -217,7 +231,7 @@ export const useSupplyChainService = () => {
 
   const registerNetbooks = useCallback(async (serials: string[], batches: string[], specs: string[], userAddress: Address) => {
     try {
-      const result = await SupplyChainService.registerNetbooks(serials, batches, specs, userAddress);
+      const result = await supplyChainService.registerNetbooks(serials, batches, specs, userAddress);
       return result;
     } catch (error) {
       console.error('Error in registerNetbooks:', error);
@@ -228,7 +242,7 @@ export const useSupplyChainService = () => {
   // Netbook operations
   const validateSoftware = useCallback(async (serial: string, osVersion: string, passed: boolean, userAddress: Address) => {
     try {
-      const result = await SupplyChainService.validateSoftware(serial, osVersion, passed, userAddress);
+      const result = await supplyChainService.validateSoftware(serial, osVersion, passed, userAddress);
       return result;
     } catch (error) {
       console.error('Error in validateSoftware:', error);
@@ -239,7 +253,7 @@ export const useSupplyChainService = () => {
   // Netbook operations
   const assignToStudent = useCallback(async (serial: string, schoolHash: string, studentHash: string, userAddress: Address) => {
     try {
-      const result = await SupplyChainService.assignToStudent(serial, schoolHash, studentHash, userAddress);
+      const result = await supplyChainService.assignToStudent(serial, schoolHash, studentHash, userAddress);
       return result;
     } catch (error) {
       console.error('Error in assignToStudent:', error);
@@ -247,10 +261,21 @@ export const useSupplyChainService = () => {
     }
   }, []);
   
+  // Balance operations
+  const getAccountBalance = useCallback(async (userAddress: Address): Promise<string> => {
+    try {
+      return await supplyChainService.getAccountBalance(userAddress);
+    } catch (error) {
+      console.error('Error in getAccountBalance:', error);
+      return '0';
+    }
+  }, []);
+
   // Export all functions
   return {
     getRoleHashForName,
     hasRole,
+    hasRoleByHash,
     getRoleCounts,
     getAccountBalance,
     getRoleMembers,

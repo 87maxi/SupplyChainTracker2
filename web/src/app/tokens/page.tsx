@@ -1,19 +1,19 @@
 "use client";
 
-import { useWeb3 } from '@/contexts/Web3Context';
+import { useWeb3 } from '@/hooks/useWeb3';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import Link from 'next/link';
 import { useSupplyChainService } from '@/hooks/useSupplyChainService';
 import { useState, useEffect } from 'react';
-import { Netbook } from '@/types/supply-chain-types';
+import { Netbook, NetbookState } from '@/types/supply-chain-types';
 import { Laptop, Plus } from 'lucide-react';
 
 export default function TokensPage() {
   const { isConnected } = useWeb3();
   const { getAllSerialNumbers, getNetbookState, getNetbookReport } = useSupplyChainService();
-  const [netbooks, setNetbooks] = useState<Array<{serialNumber: string, currentState: 'FABRICADA' | 'HW_APROBADO' | 'SW_VALIDADO' | 'DISTRIBUIDA', hwAuditor: string, swTechnician: string}>>([]);
+  const [netbooks, setNetbooks] = useState<Netbook[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -38,19 +38,36 @@ export default function TokensPage() {
       setLoading(true);
       setError('');
       
+      // Mapeo de número de estado a NetbookState
+      const stateMap: Record<number, NetbookState> = {
+        0: 'FABRICADA',
+        1: 'HW_APROBADO',
+        2: 'SW_VALIDADO',
+        3: 'DISTRIBUIDA'
+      };
+      
       try {
         const serials = await getAllSerialNumbers();
         
         const netbooksData = await Promise.all(
-          serials.map(async (serial) => {
+          serials.map(async (serial: string) => {
             const state = await getNetbookState(serial);
             const report = await getNetbookReport(serial) as { hwAuditor: string; swTechnician: string };
             
             return { 
-              serialNumber: serial, 
-              currentState: (['FABRICADA', 'HW_APROBADO', 'SW_VALIDADO', 'DISTRIBUIDA'][Number(state)]) as 'FABRICADA' | 'HW_APROBADO' | 'SW_VALIDADO' | 'DISTRIBUIDA',
+              serialNumber: serial,
+              batchId: "N/A",
+              initialModelSpecs: "N/A",
               hwAuditor: report.hwAuditor,
-              swTechnician: report.swTechnician
+              hwIntegrityPassed: false,
+              hwReportHash: "0x0",
+              swTechnician: report.swTechnician,
+              osVersion: "N/A",
+              swValidationPassed: false,
+              destinationSchoolHash: "0x0",
+              studentIdHash: "0x0",
+              distributionTimestamp: "0",
+              currentState: stateMap[Number(state)],
             };
           })
         );

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useWeb3 } from '@/contexts/Web3Context';
+import { useWeb3 } from '@/hooks/useWeb3';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormUploader } from '@/components/ipfs/FormUploader';
 import { Button } from '@/components/ui/button';

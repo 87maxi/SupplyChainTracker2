@@ -2,7 +2,7 @@
 "use client";
 
 // Importaciones actualizadas
-import { useWeb3 } from '@/contexts/Web3Context'; // Usar el contexto correcto
+import { useWeb3 } from '@/hooks/useWeb3'; // Usar el contexto correcto
 import { useSupplyChainService } from '@/hooks/useSupplyChainService'; // Usar el hook del servicio
 import { Netbook, NetbookState } from '@/types/supply-chain-types'; // Usar el tipo correcto
 import { Button } from '@/components/ui/button';
@@ -224,15 +224,15 @@ export default function ManagerDashboard() {
         })
       );
 
-      const validNetbooks = netbookData.filter((n): n is Netbook => n !== null); // No error - this is correct TypeScript syntax for a type predicate
+      const validNetbooks = netbookData.filter((n): n is Netbook => n !== null);
       setNetbooks(validNetbooks);
 
       setSummary({
-        FABRICADA: validNetbooks.filter(n => n.currentState === "FABRICADA").length,
-        HW_APROBADO: validNetbooks.filter(n => n.currentState === "HW_APROBADO").length,
-        SW_VALIDADO: validNetbooks.filter(n => n.currentState === "SW_VALIDADO").length,
-        DISTRIBUIDA: validNetbooks.filter(n => n.currentState === "DISTRIBUIDA").length
-      });
+    FABRICADA: validNetbooks.filter((n: Netbook) => n.currentState === "FABRICADA").length,
+    HW_APROBADO: validNetbooks.filter((n: Netbook) => n.currentState === "HW_APROBADO").length,
+    SW_VALIDADO: validNetbooks.filter((n: Netbook) => n.currentState === "SW_VALIDADO").length,
+    DISTRIBUIDA: validNetbooks.filter((n: Netbook) => n.currentState === "DISTRIBUIDA").length
+  });
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -252,7 +252,7 @@ export default function ManagerDashboard() {
   }
 
   // Filter pending tasks based on roles
-  const pendingTasks = netbooks.filter(n => {
+  const pendingTasks = netbooks.filter((n: Netbook) => {
     if (!n) return false;
     if ((n.currentState === 'FABRICADA') && (isHardwareAuditor || isAdmin)) return true;
     if ((n.currentState === 'HW_APROBADO') && (isSoftwareTechnician || isAdmin)) return true;

@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { submitRoleRequest } from '@/services/RoleRequestService';
-import { useWeb3 } from '@/contexts/Web3Context';
+import { useWeb3 } from '@/hooks/useWeb3';
 import { useSignMessage } from 'wagmi';
 
 interface RoleRequestModalProps {

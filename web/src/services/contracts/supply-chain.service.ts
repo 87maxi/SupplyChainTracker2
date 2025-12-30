@@ -59,6 +59,21 @@ export class SupplyChainService extends BaseContractService {
   }
 
   /**
+   * Verifica si una dirección tiene un rol específico
+   * @param roleHash Hash del rol
+   * @param userAddress Dirección del usuario
+   * @returns True si el usuario tiene el rol
+   */
+  async hasRole(roleHash: `0x${string}`, userAddress: Address): Promise<boolean> {
+    try {
+      return await this.read<boolean>('hasRole', [roleHash, userAddress]);
+    } catch (error) {
+      console.error('Error in hasRole:', error);
+      return false;
+    }
+  }
+
+  /**
    * Registra múltiples netbooks en el contrato
    * @param serials Array de números de serie
    * @param batches Array de IDs de lote
@@ -417,6 +432,84 @@ export class SupplyChainService extends BaseContractService {
     } catch (error) {
       console.error('Error getting account balance:', error);
       return '0';
+    }
+  }
+
+  /**
+   * Otorga un rol a una dirección
+   * @param roleHash Hash del rol
+   * @param userAddress Dirección del usuario
+   * @returns Resultado de la transacción
+   */
+  async grantRole(roleHash: `0x${string}`, userAddress: Address): Promise<TransactionResult> {
+    try {
+      const { hash } = await this.write('grantRole', [roleHash, userAddress]);
+      const receipt = await this.waitForTransaction(hash);
+      
+      // Guardar en MongoDB
+      try {
+        await fetch('/api/mongodb/supply-chain-actions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            transactionHash: hash,
+            role: 'DEFAULT_ADMIN_ROLE',
+            userAddress,
+            data: { roleHash }
+          })
+        });
+      } catch (apiError) {
+        console.error('Error saving to MongoDB via API:', apiError);
+      }
+
+      this.invalidateCache('getRoleMembers');
+      this.invalidateCache('getAllRolesSummary');
+
+      return { success: true, hash };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Error desconocido'
+      };
+    }
+  }
+
+  /**
+   * Revoca un rol de una dirección
+   * @param roleHash Hash del rol
+   * @param userAddress Dirección del usuario
+   * @returns Resultado de la transacción
+   */
+  async revokeRole(roleHash: `0x${string}`, userAddress: Address): Promise<TransactionResult> {
+    try {
+      const { hash } = await this.write('revokeRole', [roleHash, userAddress]);
+      const receipt = await this.waitForTransaction(hash);
+      
+      // Guardar en MongoDB
+      try {
+        await fetch('/api/mongodb/supply-chain-actions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            transactionHash: hash,
+            role: 'DEFAULT_ADMIN_ROLE',
+            userAddress,
+            data: { roleHash }
+          })
+        });
+      } catch (apiError) {
+        console.error('Error saving to MongoDB via API:', apiError);
+      }
+
+      this.invalidateCache('getRoleMembers');
+      this.invalidateCache('getAllRolesSummary');
+
+      return { success: true, hash };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Error desconocido'
+      };
     }
   }
 }

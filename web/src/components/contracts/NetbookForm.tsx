@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useSupplyChainService } from '@/hooks/useSupplyChainService';
+import { useWeb3 } from '@/hooks/useWeb3';
 import { useToast } from '@/hooks/use-toast';
 
 interface NetbookFormProps {
@@ -27,6 +28,7 @@ export function NetbookForm({ isOpen, onOpenChange, onComplete }: NetbookFormPro
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { registerNetbooks } = useSupplyChainService();
+  const { address } = useWeb3();
 
   const handleRegister = async () => {
     if (!serial || !batch || !specs) {
@@ -40,6 +42,15 @@ export function NetbookForm({ isOpen, onOpenChange, onComplete }: NetbookFormPro
 
     try {
       setLoading(true);
+
+      if (!address) {
+        toast({
+          title: "Error",
+          description: "No se pudo obtener tu dirección. Recarga la página.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       const result = await registerNetbooks([serial], [batch], [specs], address);
       

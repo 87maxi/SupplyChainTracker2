@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useSupplyChainService } from '@/hooks/useSupplyChainService';
+import { useWeb3 } from '@/hooks/useWeb3';
 
 interface StudentAssignmentFormProps {
   isOpen: boolean;
@@ -27,6 +28,7 @@ export function StudentAssignmentForm({ isOpen, onOpenChange, onComplete, initia
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { assignToStudent } = useSupplyChainService();
+  const { address } = useWeb3();
 
   useEffect(() => {
     if (initialSerial) {
@@ -46,6 +48,15 @@ export function StudentAssignmentForm({ isOpen, onOpenChange, onComplete, initia
 
     try {
       setLoading(true);
+
+      if (!address) {
+        toast({
+          title: "Error",
+          description: "No se pudo obtener tu dirección. Recarga la página.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       const result = await assignToStudent(serial, schoolHash, studentHash, address);
       

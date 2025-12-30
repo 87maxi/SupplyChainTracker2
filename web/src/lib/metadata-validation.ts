@@ -65,7 +65,7 @@ export const NETBOOK_METADATA_SCHEMA = {
 
 // Validar metadata contra el esquema
 export const validateNetbookMetadata = (
-  metadata: any,
+  metadata: Record<string, unknown>,
   currentState?: string
 ): MetadataValidationResult => {
   const errors: string[] = [];
@@ -98,10 +98,10 @@ export const validateNetbookMetadata = (
     }
 
     // Validar longitud
-    if ('minLength' in rules && rules.minLength && value && value.length < rules.minLength) {
+    if ('minLength' in rules && rules.minLength && typeof value === 'string' && value.length < rules.minLength) {
       errors.push(`${field}: mínimo ${rules.minLength} caracteres`);
     }
-    if ('maxLength' in rules && rules.maxLength && value && value.length > rules.maxLength) {
+    if ('maxLength' in rules && rules.maxLength && typeof value === 'string' && value.length > rules.maxLength) {
       errors.push(`${field}: máximo ${rules.maxLength} caracteres`);
     }
   });
@@ -120,7 +120,7 @@ export const validateNetbookMetadata = (
 
 // Validaciones específicas por estado
 export const validateStateSpecificMetadata = (
-  metadata: any,
+  metadata: Record<string, unknown>,
   currentState: string,
   errors: string[],
   warnings: string[]
@@ -156,9 +156,9 @@ export const validateStateSpecificMetadata = (
 };
 
 // Sanitizar metadata (eliminar campos no deseados)
-export const sanitizeMetadata = (metadata: any): any => {
+export const sanitizeMetadata = (metadata: Record<string, unknown>): Record<string, unknown> => {
   const allowedFields = Object.keys(NETBOOK_METADATA_SCHEMA);
-  const sanitized: any = {};
+  const sanitized: Record<string, unknown> = {};
 
   Object.entries(metadata).forEach(([key, value]) => {
     if (allowedFields.includes(key)) {

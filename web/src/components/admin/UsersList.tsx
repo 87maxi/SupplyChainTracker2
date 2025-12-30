@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Search, Shield } from 'lucide-react';
 import { getRoleMembers } from '@/lib/api/serverRpc';
 import { getRoleHashes } from '@/lib/roleUtils';
-import { useWeb3 } from '@/contexts/Web3Context';
+import { useWeb3 } from '@/hooks/useWeb3';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 

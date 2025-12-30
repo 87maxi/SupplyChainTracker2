@@ -1,6 +1,6 @@
 "use client";
 
-import { useWeb3 } from '@/contexts/Web3Context';
+import { useWeb3 } from '@/hooks/useWeb3';
 import { useSupplyChainService } from '@/hooks/useSupplyChainService';
 import { useRoleRequests } from '@/hooks/useRoleRequests';
 import { Button } from '@/components/ui/button';
@@ -19,7 +19,7 @@ import { Address } from 'viem';
 
 export default function ProfilePage() {
   const { address, isConnected, disconnect, connectWallet } = useWeb3();
-  const { hasRole, getAccountBalance } = useSupplyChainService();
+  const { hasRole, hasRoleByHash, getAccountBalance } = useSupplyChainService();
   const { addRequest } = useRoleRequests();
   const { toast } = useToast();
 
@@ -54,19 +54,19 @@ export default function ProfilePage() {
       const rolesFound: ContractRoles[] = [];
       
       // Check each role by its hash
-      if (roleHashes.FABRICANTE && await hasRole(roleHashes.FABRICANTE, address)) {
+      if (roleHashes.FABRICANTE && await hasRoleByHash(roleHashes.FABRICANTE, address)) {
         rolesFound.push('FABRICANTE_ROLE');
       }
-      if (roleHashes.AUDITOR_HW && await hasRole(roleHashes.AUDITOR_HW, address)) {
+      if (roleHashes.AUDITOR_HW && await hasRoleByHash(roleHashes.AUDITOR_HW, address)) {
         rolesFound.push('AUDITOR_HW_ROLE');
       }
-      if (roleHashes.TECNICO_SW && await hasRole(roleHashes.TECNICO_SW, address)) {
+      if (roleHashes.TECNICO_SW && await hasRoleByHash(roleHashes.TECNICO_SW, address)) {
         rolesFound.push('TECNICO_SW_ROLE');
       }
-      if (roleHashes.ESCUELA && await hasRole(roleHashes.ESCUELA, address)) {
+      if (roleHashes.ESCUELA && await hasRoleByHash(roleHashes.ESCUELA, address)) {
         rolesFound.push('ESCUELA_ROLE');
       }
-      if (roleHashes.ADMIN && await hasRole(roleHashes.ADMIN, address)) {
+      if (roleHashes.ADMIN && await hasRoleByHash(roleHashes.ADMIN, address)) {
         rolesFound.push('DEFAULT_ADMIN_ROLE');
       }
       setUserRoles(rolesFound.sort()); // Ordenar roles alfabéticamente

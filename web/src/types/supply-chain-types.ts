@@ -21,7 +21,7 @@ export interface Netbook {
   destinationSchoolHash: string;
   studentIdHash: string;
   distributionTimestamp: string;
-  currentState: string;
+  currentState: NetbookState;
 }
 
 export type NetbookState = 

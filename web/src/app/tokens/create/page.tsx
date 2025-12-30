@@ -1,7 +1,7 @@
 // web/src/app/tokens/create/page.tsx
 "use client";
 
-import { useWeb3 } from '@/contexts/Web3Context';
+import { useWeb3 } from '@/hooks/useWeb3';
 import { useSupplyChainService } from '@/hooks/useSupplyChainService';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,7 +27,7 @@ type FormInputs = z.infer<typeof formSchema>;
 
 export default function CreateTokensPage() {
   const { address, isConnected, connectWallet } = useWeb3();
-  const { registerNetbooks, hasRole } = useSupplyChainService();
+  const { registerNetbooks, hasRole, hasRoleByHash } = useSupplyChainService();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -54,7 +54,7 @@ export default function CreateTokensPage() {
           const roleHashes = await getRoleHashes();
           
           // Verificar si el usuario tiene el rol de fabricante
-          const hasManufacturerRole = await hasRole(roleHashes.FABRICANTE, address);
+          const hasManufacturerRole = await hasRoleByHash(roleHashes.FABRICANTE, address);
           setIsManufacturer(hasManufacturerRole);
         } catch (error) {
           console.error("Error checking manufacturer role:", error);
@@ -88,6 +88,15 @@ export default function CreateTokensPage() {
         toast({
           title: "Error de entrada",
           description: "Todos los campos deben tener el mismo número de elementos separados por comas.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!address) {
+        toast({
+          title: "Error",
+          description: "No se pudo obtener tu dirección. Recarga la página.",
           variant: "destructive",
         });
         return;

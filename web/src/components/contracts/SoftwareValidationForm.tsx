@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useSupplyChainService } from '@/hooks/useSupplyChainService';
+import { useWeb3 } from '@/hooks/useWeb3';
 
 interface SoftwareValidationFormProps {
   isOpen: boolean;
@@ -28,6 +29,7 @@ export function SoftwareValidationForm({ isOpen, onOpenChange, onComplete, initi
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { validateSoftware } = useSupplyChainService();
+  const { address } = useWeb3();
 
   useEffect(() => {
     if (initialSerial) {
@@ -47,6 +49,15 @@ export function SoftwareValidationForm({ isOpen, onOpenChange, onComplete, initi
 
     try {
       setLoading(true);
+
+      if (!address) {
+        toast({
+          title: "Error",
+          description: "No se pudo obtener tu dirección. Recarga la página.",
+          variant: "destructive",
+        });
+        return;
+      }
 
       const result = await validateSoftware(serial, version, passed, address);
       

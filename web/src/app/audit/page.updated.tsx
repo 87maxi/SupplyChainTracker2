@@ -8,7 +8,7 @@ import { useSupplyChainService } from '@/hooks/useSupplyChainService';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useWeb3 } from '@/contexts/Web3Context';
+import { useWeb3 } from '@/hooks/useWeb3';
 
 export default function HardwareAuditPage() {
   const { toast } = useToast();

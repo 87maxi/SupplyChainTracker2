@@ -6,6 +6,7 @@ import { eventBus, EVENTS } from '@/lib/events';
 import { useSupplyChainService } from '@/hooks/useSupplyChainService';
 import { useState, useEffect } from 'react';
 import { roleMapper } from '@/lib/roleMapping';
+import { ContractRoleName } from '@/types/contract';
 
 // Types for role requests
 export interface RoleRequest {
@@ -102,7 +103,7 @@ export function useRoleRequests() {
       console.log(`[useRoleRequests] Using role name: ${normalizedRole}`);
       
       // Blockchain Transaction
-      const result = await supplyChainService.grantRole(normalizedRole, userAddress as `0x\${string}`);
+      const result = await supplyChainService.grantRole(normalizedRole as ContractRoleName, userAddress as `0x${string}`);
       if (!result.success || !result.hash) {
         throw new Error(result.error || 'Transaction failed');
       }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useWeb3 } from '@/contexts/Web3Context';
+import { useWeb3 } from '@/hooks/useWeb3';
 import { hasRole } from '@/services/SupplyChainService';
 import { readContract } from '@wagmi/core';
 import { config } from '@/lib/wagmi/config';
