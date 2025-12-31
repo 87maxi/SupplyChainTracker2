@@ -68,6 +68,107 @@ end note
 @enduml
 ```
 
+---
+
+## 🔄 Flujo de Datos End-to-End
+
+El sistema opera con un flujo de datos coherente entre frontend, blockchain y base de datos, gestionado mediante hooks, servicios y API REST:
+
+```puml
+@startuml
+' Arquitectura de Flujo de Datos del Sistema de Trazabilidad de Netbooks
+
+skinparam componentStyle uml2
+skinparam defaultTextAlignment center
+
+package "Usuario Final (Web3)" {
+  [Wallet Connect] as wallet
+  [Frontend UI] as frontend
+}
+
+package "Frontend Web (Next.js)" {
+  [Wagmi/Viem] as wagmi
+  [RoleMapper] as roleMapper
+  [SupplyChainService] as service
+  [MongoDB API] as mongoApi
+}
+
+package "Backend" {
+  [Blockchain (Anvil)] as blockchain
+  [MongoDB] as mongodb
+}
+
+' Flujo de conexión de wallet
+wallet --> frontend : Conexión con MetaMask
+frontend --> wagmi : Inicializa conexión
+wagmi --> blockchain : RPC (http://localhost:8545)
+
+' Flujo de registro de netbook
+frontend --> service : registerNetbooks(serial, batch, specs)
+service --> wagmi : writeContract(grantRole)
+wagmi --> blockchain : Transacción (grantRole)
+blockchain --> mongodb : Escribe en netbook_data
+
+' Flujo de auditoría de hardware
+frontend --> service : auditHardware(serial, passed, hash)
+service --> wagmi : writeContract(auditHardware)
+wagmi --> blockchain : Transacción (auditHardware)
+blockchain --> mongodb : Escribe en transactions
+
+' Flujo de validación de software
+frontend --> service : validateSoftware(serial, osVersion, passed)
+service --> wagmi : writeContract(validateSoftware)
+wagmi --> blockchain : Transacción (validateSoftware)
+blockchain --> mongodb : Escribe en transactions
+
+' Flujo de asignación a estudiante
+frontend --> service : assignToStudent(serial, schoolHash, studentHash)
+service --> wagmi : writeContract(assignToStudent)
+wagmi --> blockchain : Transacción (assignToStudent)
+blockchain --> mongodb : Escribe en netbook_data
+
+' Flujo de gestión de roles (Admin)
+frontend --> roleMapper : normalizeRoleName("AUDITOR_HW")
+roleMapper --> service : getRoleHash("AUDITOR_HW")
+service --> wagmi : readContract(getRoleByName)
+wagmi --> blockchain : readContract(getRoleByName)
+blockchain --> service : Devuelve hash
+service --> wagmi : writeContract(grantRole)
+wagmi --> blockchain : Transacción (grantRole)
+blockchain --> mongodb : Escribe en role_data
+
+' Flujo de consulta de estado
+frontend --> service : getNetbookState(serial)
+service --> wagmi : readContract(getNetbookState)
+wagmi --> blockchain : readContract(getNetbookState)
+blockchain --> service : Devuelve estado
+service --> frontend : Renderiza estado
+
+' Flujo de sincronización de datos
+mongoApi --> mongodb : GET /api/mongodb/netbooks
+mongodb --> mongoApi : Devuelve netbooks
+mongoApi --> frontend : Renderiza tabla
+
+note right of blockchain
+  Contrato: SupplyChainTracker.sol
+  Roles: FABRICANTE, AUDITOR_HW,
+        TECNICO_SW, ESCUELA, ADMIN
+  Estados: FABRICADA → HW_APROBADO →
+           SW_VALIDADO → DISTRIBUIDA
+end note
+
+note right of mongodb
+  Colecciones:
+  - netbook_data
+  - role_data
+  - transactions
+  - users
+end note
+
+@enduml
+```
+```
+
 ## 📦 Contrato Inteligente Principal
 
 ### SupplyChainTracker.sol

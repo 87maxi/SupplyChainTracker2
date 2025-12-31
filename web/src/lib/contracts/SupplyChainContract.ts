@@ -274,18 +274,7 @@ export async function revokeRole(roleHash: string, account: string): Promise<str
   }
 }
 
-// Función para obtener netbooks por estado
-export async function getNetbooksByState(state: number): Promise<string[]> {
-  try {
-    const result = await readContract(config, {
-      address: contractAddress,
-      abi,
-      functionName: 'getNetbooksByState',
-      args: [state]
-    });
-    return result as string[];
-  } catch (error) {
-    console.error('Error al obtener netbooks por estado:', error);
-    throw error;
-  }
-}
+// Function removed: getNetbooksByState not implemented in contract
+// Instead, use getAllSerialNumbers() + getNetbookState(serial) to filter client-side
+// This avoids needing a non-existent on-chain function
+

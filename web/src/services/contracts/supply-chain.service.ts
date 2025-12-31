@@ -102,24 +102,7 @@ export class SupplyChainService extends BaseContractService {
       // Esperar confirmación
       const receipt = await this.waitForTransaction(hash);
       
-      // Save to MongoDB via API route
-      try {
-        await fetch('/api/mongodb/supply-chain-actions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            serials,
-            transactionHash: hash,
-            role: 'FABRICANTE_ROLE',
-            userAddress,
-            data: { batches, specs }
-          })
-        });
-      } catch (apiError) {
-        console.error('Error saving to MongoDB via API:', apiError);
-      }
+      // All state is on-chain. No MongoDB persistence layer exists.
       
       // Invalidar caché relacionada
       this.invalidateCache('getNetbook');
@@ -169,24 +152,7 @@ export class SupplyChainService extends BaseContractService {
       // Esperar confirmación
       const receipt = await this.waitForTransaction(hash);
       
-      // Save to MongoDB via API route
-      try {
-        await fetch('/api/mongodb/supply-chain-actions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            serialNumber: serial,
-            transactionHash: hash,
-            role: 'AUDITOR_HW_ROLE',
-            userAddress,
-            data: { passed, reportHash }
-          })
-        });
-      } catch (apiError) {
-        console.error('Error saving to MongoDB via API:', apiError);
-      }
+      // All state is on-chain. No MongoDB persistence layer exists.
       
       // Invalidar caché
       this.invalidateCache(`getNetbook:${serial}`);
@@ -235,24 +201,7 @@ export class SupplyChainService extends BaseContractService {
       // Esperar confirmación
       const receipt = await this.waitForTransaction(hash);
       
-      // Save to MongoDB via API route
-      try {
-        await fetch('/api/mongodb/supply-chain-actions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            serialNumber: serial,
-            transactionHash: hash,
-            role: 'TECNICO_SW_ROLE',
-            userAddress,
-            data: { osVersion, passed }
-          })
-        });
-      } catch (apiError) {
-        console.error('Error saving to MongoDB via API:', apiError);
-      }
+      // All state is on-chain. No MongoDB persistence layer exists.
       
       // Invalidar caché
       this.invalidateCache(`getNetbook:${serial}`);
@@ -301,24 +250,7 @@ export class SupplyChainService extends BaseContractService {
       // Esperar confirmación
       const receipt = await this.waitForTransaction(hash);
       
-      // Save to MongoDB via API route
-      try {
-        await fetch('/api/mongodb/supply-chain-actions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            serialNumber: serial,
-            transactionHash: hash,
-            role: 'ESCUELA_ROLE',
-            userAddress,
-            data: { schoolHash, studentHash }
-          })
-        });
-      } catch (apiError) {
-        console.error('Error saving to MongoDB via API:', apiError);
-      }
+      // All state is on-chain. No MongoDB persistence layer exists.
       
       // Invalidar caché
       this.invalidateCache(`getNetbook:${serial}`);
@@ -405,11 +337,10 @@ export class SupplyChainService extends BaseContractService {
    * Obtiene todas las netbooks por estado
    * @param state Estado de las netbooks a obtener
    * @returns Array de números de serie
+   * @note This function is not implemented on-chain. Use getAllSerialNumbers() + getNetbookState(serial) to filter client-side.
    */
   getNetbooksByState = async (state: number): Promise<string[]> => {
-    // Leer netbooks por estado
-    const result = await this.read<string[]>('getNetbooksByState', [state]);
-    return result;
+    throw new Error('getNetbooksByState is not implemented on-chain. Use getAllSerialNumbers() + getNetbookState(serial) to filter client-side.');
   }
 
   /**
@@ -465,13 +396,25 @@ export class SupplyChainService extends BaseContractService {
   }
 
   /**
-   * Otorga un rol a una dirección
-   * @param roleHash Hash del rol
+   * Otorga un rol a una dirección usando el nombre del rol (sin hash)
+   * @param roleName Nombre del rol (e.g., 'FABRICANTE_ROLE', 'AUDITOR_HW_ROLE')
    * @param userAddress Dirección del usuario
    * @returns Resultado de la transacción
    */
-  grantRole = async (roleHash: `0x${string}`, userAddress: Address): Promise<TransactionResult> => {
+  grantRole = async (roleName: string, userAddress: Address): Promise<TransactionResult> => {
     try {
+      // Validar que no se pase un hash
+      if (roleName.startsWith('0x')) {
+        throw new Error('grantRole espera un nombre de rol (e.g., "FABRICANTE_ROLE"), no un hash');
+      }
+
+      // Normalizar el nombre del rol para asegurar consistencia
+      const normalizedRole = roleName.toUpperCase().trim();
+
+      // Obtener el hash del rol desde el contrato usando getRoleByName
+      const roleHash = await getRoleByName(normalizedRole);
+
+      // Llamar a la función del contrato con el hash
       const { hash } = await this.write(
         'grantRole', 
         [roleHash, userAddress],
@@ -482,22 +425,9 @@ export class SupplyChainService extends BaseContractService {
         }
       );
       const receipt = await this.waitForTransaction(hash);
-      
-      // Guardar en MongoDB
-      try {
-        await fetch('/api/mongodb/supply-chain-actions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            transactionHash: hash,
-            role: 'DEFAULT_ADMIN_ROLE',
-            userAddress,
-            data: { roleHash }
-          })
-        });
-      } catch (apiError) {
-        console.error('Error saving to MongoDB via API:', apiError);
-      }
+
+      // No se guarda en MongoDB — todo es on-chain
+      // La acción está registrada en la blockchain
 
       this.invalidateCache('getRoleMembers');
       this.invalidateCache('getAllRolesSummary');
@@ -512,13 +442,25 @@ export class SupplyChainService extends BaseContractService {
   }
 
   /**
-   * Revoca un rol de una dirección
-   * @param roleHash Hash del rol
+   * Revoca un rol de una dirección usando el nombre del rol (sin hash)
+   * @param roleName Nombre del rol (e.g., 'FABRICANTE_ROLE', 'AUDITOR_HW_ROLE')
    * @param userAddress Dirección del usuario
    * @returns Resultado de la transacción
    */
-  revokeRole = async (roleHash: `0x${string}`, userAddress: Address): Promise<TransactionResult> => {
+  revokeRole = async (roleName: string, userAddress: Address): Promise<TransactionResult> => {
     try {
+      // Validar que no se pase un hash
+      if (roleName.startsWith('0x')) {
+        throw new Error('revokeRole espera un nombre de rol (e.g., "FABRICANTE_ROLE"), no un hash');
+      }
+
+      // Normalizar el nombre del rol para asegurar consistencia
+      const normalizedRole = roleName.toUpperCase().trim();
+
+      // Obtener el hash del rol desde el contrato usando getRoleByName
+      const roleHash = await getRoleByName(normalizedRole);
+
+      // Llamar a la función del contrato con el hash
       const { hash } = await this.write(
         'revokeRole', 
         [roleHash, userAddress],
@@ -529,22 +471,9 @@ export class SupplyChainService extends BaseContractService {
         }
       );
       const receipt = await this.waitForTransaction(hash);
-      
-      // Guardar en MongoDB
-      try {
-        await fetch('/api/mongodb/supply-chain-actions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            transactionHash: hash,
-            role: 'DEFAULT_ADMIN_ROLE',
-            userAddress,
-            data: { roleHash }
-          })
-        });
-      } catch (apiError) {
-        console.error('Error saving to MongoDB via API:', apiError);
-      }
+
+      // No se guarda en MongoDB — todo es on-chain
+      // La acción está registrada en la blockchain
 
       this.invalidateCache('getRoleMembers');
       this.invalidateCache('getAllRolesSummary');

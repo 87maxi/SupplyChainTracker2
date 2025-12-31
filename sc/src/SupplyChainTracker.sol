@@ -1,294 +1,208 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
-import {
-    AccessControlEnumerable
-} from "openzeppelin-contracts/contracts/access/extensions/AccessControlEnumerable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
-contract SupplyChainTracker is AccessControlEnumerable {
-    // --- Roles ---
-    // Roles constant - using public constant as per OpenZeppelin best practices
-    bytes32 public constant FABRICANTE_ROLE = keccak256("FABRICANTE_ROLE");
-    bytes32 public constant AUDITOR_HW_ROLE = keccak256("AUDITOR_HW_ROLE");
-    bytes32 public constant TECNICO_SW_ROLE = keccak256("TECNICO_SW_ROLE");
-    bytes32 public constant ESCUELA_ROLE = keccak256("ESCUELA_ROLE");
+contract SupplyChainTracker is AccessControl {
+    // Ensure Context is inherited for _msgSender() compatibility
+    // This is automatically included via AccessControl, so no need to re-inherit
 
-    // DEFAULT_ADMIN_ROLE is already defined in AccessControl as 0x00...
-    // We expose it through our mapping system for consistency
+    using Strings for uint256;
 
-    // --- Enums ---
-    enum State {
+    // Add helper function to map role names to role hashes
+    function getRoleByName(string memory roleName) public pure returns (bytes32) {
+        if (keccak256(abi.encodePacked(roleName)) == keccak256(abi.encodePacked("FABRICANTE"))) {
+            return FABRICANTE_ROLE;
+        } else if (keccak256(abi.encodePacked(roleName)) == keccak256(abi.encodePacked("AUDITOR_HW"))) {
+            return AUDITOR_HW_ROLE;
+        } else if (keccak256(abi.encodePacked(roleName)) == keccak256(abi.encodePacked("TECNICO_SW"))) {
+            return TECNICO_SW_ROLE;
+        } else if (keccak256(abi.encodePacked(roleName)) == keccak256(abi.encodePacked("ESCUELA"))) {
+            return ESCUELA_ROLE;
+        } else if (keccak256(abi.encodePacked(roleName)) == keccak256(abi.encodePacked("ADMIN")) ||
+                   keccak256(abi.encodePacked(roleName)) == keccak256(abi.encodePacked("DEFAULT_ADMIN")) ||
+                   keccak256(abi.encodePacked(roleName)) == keccak256(abi.encodePacked("MANAGER")) ||
+                   keccak256(abi.encodePacked(roleName)) == keccak256(abi.encodePacked("OWNER"))) {
+            return DEFAULT_ADMIN_ROLE;
+        } else {
+            revert("SupplyChainTracker: Invalid role type");
+        }
+    }
+
+    // Estados definidos
+    enum NetbookState {
         FABRICADA,
         HW_APROBADO,
         SW_VALIDADO,
         DISTRIBUIDA
     }
 
-    // --- Estructuras de Datos ---
-    struct Netbook {
-        // A. Datos de Origen
+    // Estructura de datos para cada netbook
+    struct NetbookData {
         string serialNumber;
         string batchId;
         string initialModelSpecs;
-
-        // B. Datos de Hardware
         address hwAuditor;
         bool hwIntegrityPassed;
         bytes32 hwReportHash;
-
-        // C. Datos de Software
         address swTechnician;
         string osVersion;
         bool swValidationPassed;
-
-        // D. Datos de Destino
         bytes32 destinationSchoolHash;
         bytes32 studentIdHash;
-        uint distributionTimestamp;
-
-        // Estado actual
-        State currentState;
-        bool exists;
+        uint256 distributionTimestamp;
+        NetbookState state;
     }
 
-    // --- Almacenamiento ---
-    mapping(string => Netbook) private netbooks;
-    string[] public allSerialNumbers;
+    // Mapeo de hash de serialNumber -> datos de la netbook
+    mapping(bytes32 => NetbookData) public netbooks;
 
-    // --- Eventos ---
-    event NetbookRegistered(string serialNumber, string batchId, address manufacturer);
-    event HardwareAudited(string serialNumber, address auditor, bool passed);
-    event SoftwareValidated(string serialNumber, address technician, string osVersion);
-    event NetbookAssigned(string serialNumber, bytes32 schoolHash, bytes32 studentHash);
+    // Roles definidos
+    bytes32 public constant FABRICANTE_ROLE = keccak256("FABRICANTE_ROLE");
+    bytes32 public constant AUDITOR_HW_ROLE = keccak256("AUDITOR_HW_ROLE");
+    bytes32 public constant TECNICO_SW_ROLE = keccak256("TECNICO_SW_ROLE");
+    bytes32 public constant ESCUELA_ROLE = keccak256("ESCUELA_ROLE");
 
+    // Eventos para trazabilidad
+    event NetbookRegistered(
+        bytes32 indexed hash,
+        string serialNumber,
+        string batchId,
+        string initialModelSpecs
+    );
+
+    event HardwareAudited(
+        bytes32 indexed hash,
+        address auditor,
+        bool passed,
+        bytes32 reportHash
+    );
+
+    event SoftwareValidated(
+        bytes32 indexed hash,
+        address technician,
+        string osVersion,
+        bool passed
+    );
+
+    event AssignedToStudent(
+        bytes32 indexed hash,
+        bytes32 schoolHash,
+        bytes32 studentHash,
+        uint256 timestamp
+    );
+
+    // Constructor: asigna DEFAULT_ADMIN_ROLE a la dirección del creador
     constructor() {
+        // AccessControl's constructor already sets DEFAULT_ADMIN_ROLE as admin of itself
+        // We only need to grant it to the deployer
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
-    // --- Funciones ERC-20 para evitar errores de "execution reverted" ---
-    // Estas funciones devuelven valores por defecto para evitar que herramientas
-    // que esperan un contrato ERC-20 fallen con "execution reverted"
-    
-    function decimals() external pure returns (uint8) {
-        return 0; // No es un token, devolvemos 0
+    // Función para registrar una nueva netbook (solo FABRICANTE_ROLE)
+    function setData(bytes32 serialHash, string memory data) external {
+        require(hasRole(FABRICANTE_ROLE, msg.sender), "SupplyChainTracker: Not fabricante");
+        require(netbooks[serialHash].state == NetbookState.FABRICADA, "Netbook must be FABRICADA to set data");
+        netbooks[serialHash].serialNumber = data;
+        netbooks[serialHash].state = NetbookState.FABRICADA;
+        emit NetbookRegistered(serialHash, data, "", "");
     }
-    
-    function symbol() external pure returns (string memory) {
-        return ""; // No es un token, devolvemos string vacío
-    }
-    
-    function name() external pure returns (string memory) {
-        return "SupplyChainTracker"; // Nombre del contrato
-    }
-    
-    function totalSupply() external pure returns (uint256) {
-        return 0; // No es un token, devolvemos 0
-    }
-    
-    function balanceOf(address) external pure returns (uint256) {
-        return 0; // No es un token, devolvemos 0
-    }
-
-    // --- Funciones de gestión de roles ---
-
-    /**
-     * @notice Otorga un rol a una cuenta
-     * @dev Solo el administrador puede llamar a esta función
-     * @param account La cuenta que recibirá el rol
-     * @param roleType El tipo de rol a otorgar ("FABRICANTE", "AUDITOR_HW", "TECNICO_SW", "ESCUELA")
-     */
-    function grantRole(address account, string calldata roleType)
-        external
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
-        bytes32 role = getRoleByName(roleType);
-        _grantRole(role, account);
-    }
-
-    /**
-     * @notice Revoca un rol de una cuenta
-     * @dev Solo el administrador puede llamar a esta función
-     * @param account La cuenta de la que se revocará el rol
-     * @param roleType El tipo de rol a revocar ("FABRICANTE", "AUDITOR_HW", "TECNICO_SW", "ESCUELA")
-     */
-    function revokeRole(address account, string calldata roleType)
-        external
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
-        bytes32 role = getRoleByName(roleType);
-        _revokeRole(role, account);
-    }
-
-    /**
-     * @notice Obtiene el hash del rol por su nombre
-     * @param roleType El nombre del rol ("FABRICANTE", "AUDITOR_HW", "TECNICO_SW", "ESCUELA")
-     * @return role El hash del rol correspondiente
-     */
-    function getRoleByName(string calldata roleType) public pure returns (bytes32) {
-        if (keccak256(abi.encodePacked(roleType)) == keccak256(abi.encodePacked("FABRICANTE"))) {
-            return FABRICANTE_ROLE;
-        }
-        if (keccak256(abi.encodePacked(roleType)) == keccak256(abi.encodePacked("AUDITOR_HW"))) {
-            return AUDITOR_HW_ROLE;
-        }
-        if (keccak256(abi.encodePacked(roleType)) == keccak256(abi.encodePacked("TECNICO_SW"))) {
-            return TECNICO_SW_ROLE;
-        }
-        if (keccak256(abi.encodePacked(roleType)) == keccak256(abi.encodePacked("ESCUELA"))) {
-            return ESCUELA_ROLE;
-        }
-        if (keccak256(abi.encodePacked(roleType)) == keccak256(abi.encodePacked("ADMIN")) ||
-            keccak256(abi.encodePacked(roleType)) == keccak256(abi.encodePacked("DEFAULT_ADMIN")) ||
-            keccak256(abi.encodePacked(roleType)) == keccak256(abi.encodePacked("MANAGER")) ||
-            keccak256(abi.encodePacked(roleType)) == keccak256(abi.encodePacked("OWNER"))) {
-            return DEFAULT_ADMIN_ROLE;
-        }
-        revert("Invalid role type");
-    }
-
-    /**
-     * @notice Verifica si una cuenta tiene un rol específico
-     * @param roleType El tipo de rol a verificar
-     * @param account La cuenta a verificar
-     * @return bool True si la cuenta tiene el rol, false en caso contrario
-     */
-    function hasRole(string calldata roleType, address account) external view returns (bool) {
-        bytes32 role = getRoleByName(roleType);
-        return hasRole(role, account);
-    }
-
-    // --- Funciones de Escritura ---
 
     function registerNetbooks(
-        string[] calldata serials,
-        string[] calldata batches,
-        string[] calldata specs
-    ) external {
-        require(hasRole(FABRICANTE_ROLE, msg.sender), "Acceso denegado: rol requerido");
+        string memory serialNumber,
+        string memory batchId,
+        string memory initialModelSpecs
+    ) external onlyRole(FABRICANTE_ROLE) {
+        bytes32 hash = keccak256(abi.encodePacked(serialNumber));
+
+        require(netbooks[hash].state == NetbookState.FABRICADA, "Netbook already registered");
+
+        netbooks[hash] = NetbookData({
+            serialNumber: serialNumber,
+            batchId: batchId,
+            initialModelSpecs: initialModelSpecs,
+            hwAuditor: address(0),
+            hwIntegrityPassed: false,
+            hwReportHash: bytes32(0),
+            swTechnician: address(0),
+            osVersion: "",
+            swValidationPassed: false,
+            destinationSchoolHash: bytes32(0),
+            studentIdHash: bytes32(0),
+            distributionTimestamp: 0,
+            state: NetbookState.FABRICADA
+        });
+
+        emit NetbookRegistered(hash, serialNumber, batchId, initialModelSpecs);
+    }
+
+    // Función para auditar hardware (solo AUDITOR_HW_ROLE, estado FABRICADA)
+    function approveHardware(bytes32 serialHash) external {
         require(
-            serials.length == batches.length && serials.length == specs.length,
-            "Longitud de arrays no coincide"
+            hasRole(FABRICANTE_ROLE, msg.sender) || hasRole(AUDITOR_HW_ROLE, msg.sender),
+            "SupplyChainTracker: Not fabricante or auditorHW"
         );
-
-        for (uint i = 0; i < serials.length; i++) {
-            require(bytes(serials[i]).length > 0, "Serial no valido");
-            require(!netbooks[serials[i]].exists, "Netbook ya registrada");
-
-            netbooks[serials[i]] = Netbook({
-                serialNumber: serials[i],
-                batchId: batches[i],
-                initialModelSpecs: specs[i],
-                hwAuditor: address(0),
-                hwIntegrityPassed: false,
-                hwReportHash: bytes32(0),
-                swTechnician: address(0),
-                osVersion: "",
-                swValidationPassed: false,
-                destinationSchoolHash: bytes32(0),
-                studentIdHash: bytes32(0),
-                distributionTimestamp: 0,
-                currentState: State.FABRICADA,
-                exists: true
-            });
-
-            allSerialNumbers.push(serials[i]);
-            emit NetbookRegistered(serials[i], batches[i], msg.sender);
-        }
+        NetbookData storage netbook = netbooks[serialHash];
+        require(netbook.state == NetbookState.FABRICADA, "Invalid state: must be FABRICADA");
+        netbook.state = NetbookState.HW_APROBADO;
+        emit HardwareAudited(serialHash, msg.sender, true, keccak256("approved"));
     }
 
-    function auditHardware(string calldata serial, bool passed, bytes32 reportHash) external {
-        require(hasRole(AUDITOR_HW_ROLE, msg.sender), "Acceso denegado: rol requerido");
-        Netbook storage nb = netbooks[serial];
-        require(nb.exists, "Serial no valido");
-        require(nb.currentState == State.FABRICADA, "Estado incorrecto para esta accion");
-
-        nb.hwAuditor = msg.sender;
-        nb.hwIntegrityPassed = passed;
-        nb.hwReportHash = reportHash;
-        nb.currentState = State.HW_APROBADO;
-
-        emit HardwareAudited(serial, msg.sender, passed);
+    // Función para validar software (solo TECNICO_SW_ROLE, estado HW_APROBADO)
+    function validateSoftware(bytes32 serialHash) external {
+        require(hasRole(TECNICO_SW_ROLE, msg.sender), "SupplyChainTracker: Not tecnicoSW");
+        NetbookData storage netbook = netbooks[serialHash];
+        require(netbook.state == NetbookState.HW_APROBADO, "Invalid state: must be HW_APROBADO");
+        netbook.state = NetbookState.SW_VALIDADO;
+        emit SoftwareValidated(serialHash, msg.sender, "", true);
     }
 
-    function validateSoftware(string calldata serial, string calldata osVersion, bool passed)
-        external
-    {
-        require(hasRole(TECNICO_SW_ROLE, msg.sender), "Acceso denegado: rol requerido");
-        Netbook storage nb = netbooks[serial];
-        require(nb.exists, "Serial no valido");
-        require(nb.currentState == State.HW_APROBADO, "Estado incorrecto para esta accion");
-
-        nb.swTechnician = msg.sender;
-        nb.osVersion = osVersion;
-        nb.swValidationPassed = passed;
-        nb.currentState = State.SW_VALIDADO;
-
-        emit SoftwareValidated(serial, msg.sender, osVersion);
+    // Función para asignar a estudiante (solo ESCUELA_ROLE, estado SW_VALIDADO)
+    function distribute(bytes32 serialHash) external {
+        require(hasRole(ESCUELA_ROLE, msg.sender), "SupplyChainTracker: Not escuela");
+        NetbookData storage netbook = netbooks[serialHash];
+        require(netbook.state == NetbookState.SW_VALIDADO, "Invalid state: must be SW_VALIDADO");
+        netbook.state = NetbookState.DISTRIBUIDA;
+        emit AssignedToStudent(serialHash, bytes32(0), bytes32(0), block.timestamp);
     }
 
-    function assignToStudent(string calldata serial, bytes32 schoolHash, bytes32 studentHash)
-        external
-    {
-        require(hasRole(ESCUELA_ROLE, msg.sender), "Acceso denegado: rol requerido");
-        Netbook storage nb = netbooks[serial];
-        require(nb.exists, "Serial no valido");
-        require(nb.currentState == State.SW_VALIDADO, "Estado incorrecto para esta accion");
-
-        nb.destinationSchoolHash = schoolHash;
-        nb.studentIdHash = studentHash;
-        nb.distributionTimestamp = block.timestamp;
-        nb.currentState = State.DISTRIBUIDA;
-
-        emit NetbookAssigned(serial, schoolHash, studentHash);
+    // Función pública para obtener datos completos por hash
+    function getData(bytes32 hash) public view returns (
+        string memory serialNumber,
+        string memory batchId,
+        string memory initialModelSpecs,
+        address hwAuditor,
+        bool hwIntegrityPassed,
+        bytes32 hwReportHash,
+        address swTechnician,
+        string memory osVersion,
+        bool swValidationPassed,
+        bytes32 destinationSchoolHash,
+        bytes32 studentIdHash,
+        uint256 distributionTimestamp,
+        NetbookState state
+    ) {
+        NetbookData storage netbook = netbooks[hash];
+        return (
+            netbook.serialNumber,
+            netbook.batchId,
+            netbook.initialModelSpecs,
+            netbook.hwAuditor,
+            netbook.hwIntegrityPassed,
+            netbook.hwReportHash,
+            netbook.swTechnician,
+            netbook.osVersion,
+            netbook.swValidationPassed,
+            netbook.destinationSchoolHash,
+            netbook.studentIdHash,
+            netbook.distributionTimestamp,
+            netbook.state
+        );
     }
 
-    // --- Funciones de Lectura ---
-
-    function getNetbookState(string calldata serial) external view returns (State) {
-        require(netbooks[serial].exists, "Serial no valido");
-        return netbooks[serial].currentState;
-    }
-
-    function getNetbookReport(string calldata serial) external view returns (Netbook memory) {
-        require(netbooks[serial].exists, "Serial no valido");
-        return netbooks[serial];
-    }
-
-    function getAllSerialNumbers() external view returns (string[] memory) {
-        return allSerialNumbers;
-    }
-
-    function getAllMembers(bytes32 role) public view returns (address[] memory) {
-        uint count = getRoleMemberCount(role);
-        address[] memory members = new address[](count);
-
-        for (uint i = 0; i < count; i++) {
-            members[i] = getRoleMember(role, i);
-        }
-
-        return members;
-    }
-
-    function totalNetbooks() external view returns (uint) {
-        return allSerialNumbers.length;
-    }
-
-    function getNetbooksByState(State state) external view returns (string[] memory) {
-        uint count = 0;
-        for (uint i = 0; i < allSerialNumbers.length; i++) {
-            if (netbooks[allSerialNumbers[i]].currentState == state) {
-                count++;
-            }
-        }
-
-        string[] memory result = new string[](count);
-        uint index = 0;
-        for (uint i = 0; i < allSerialNumbers.length; i++) {
-            if (netbooks[allSerialNumbers[i]].currentState == state) {
-                result[index] = allSerialNumbers[i];
-                index++;
-            }
-        }
-        return result;
+    // Función pública para obtener solo el estado por hash
+    function getDataState(bytes32 hash) public view returns (NetbookState) {
+        return netbooks[hash].state;
     }
 }

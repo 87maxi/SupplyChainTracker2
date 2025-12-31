@@ -6,7 +6,7 @@
 ## Intruciones de uso del workspace projecto 
 
 1. inicializa el projecto con el comando foundry en el directorio stablecoin/sc
-2. usa en todo momento el directorio **./sc** como workspace para este desarrollo
+2. usa en todo momento el directorio **sc** como workspace para este desarrollo
 3. usa siempre  las herramientas basadas en foundry
 4. usa siempre las convenciones de desarrollo de solidity
 5. tienes que hacer los procesos para mantener la coherencia en el desarrollo y el codigo
@@ -26,7 +26,7 @@
   7. realiza test de **seguridad exhaustivo**, Fuzzing Reentrancy
    
 ## reportes
- - utiliza el directorio docs, para todos los reportes que generes que sean en markdown
+ - utiliza el directorio **./docs**, para todos los reportes que generes que sean en markdown
  - usa siempre el criterio de ser especifico y detallado en los reportes
  - genera reportes de uso de gas, por funcion y de todo de la ejecucion de todo el contrato 
  - genera los reportes bien formateados

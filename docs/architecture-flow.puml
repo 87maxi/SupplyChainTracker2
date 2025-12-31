@@ -1,0 +1,34 @@
+@startuml
+left to right direction
+
+actor User
+participant "Wallet (MetaMask/Anvil)" as Wallet
+participant "Wagmi/Viem" as Web3Lib
+participant "SupplyChainTracker.sol" as Contract
+participant "Frontend UI" as UI
+
+User -> Web3Lib: Connects wallet
+Web3Lib -> Contract: Calls getRoleByName("FABRICANTE")
+Contract --> Web3Lib: Returns role hash
+Web3Lib -> Contract: Calls grantRole(account, roleHash)
+Contract --> Web3Lib: Transaction confirmed
+Web3Lib -> UI: Updates UI
+
+User -> UI: Requests netbook list
+UI -> Web3Lib: Calls getAllSerialNumbers()
+Web3Lib -> Contract: Returns all serials
+Contract --> Web3Lib: [list]
+Web3Lib -> UI: Returns serials
+
+UI -> Web3Lib: For each serial, calls getNetbookState(serial)
+Web3Lib -> Contract: Calls getNetbookState(serial)
+Contract --> Web3Lib: Returns state (0-3)
+Web3Lib -> UI: Returns state
+UI -> UI: Filters netbooks by state (client-side)
+
+UI -> Web3Lib: Calls auditHardware(serial, passed, reportHash)
+Web3Lib -> Contract: Calls auditHardware()
+Contract --> Web3Lib: Transaction confirmed
+Web3Lib -> UI: Updates UI
+
+@enduml

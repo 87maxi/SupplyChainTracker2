@@ -195,28 +195,35 @@ export default function PendingRoleRequests({ stats: initialStats }: { stats?: D
       const roleHashes = await getRoleHashes();
 
       const [
-        fabricanteCount, auditorHwCount, tecnicoSwCount, escuelaCount,
-        fabricadas, hwAprobadas, swValidadas, distribuidas
+        fabricanteCount, auditorHwCount, tecnicoSwCount, escuelaCount
       ] = await Promise.all([
         getRoleMemberCount(roleHashes.FABRICANTE).catch(() => 0),
         getRoleMemberCount(roleHashes.AUDITOR_HW).catch(() => 0),
         getRoleMemberCount(roleHashes.TECNICO_SW).catch(() => 0),
-        getRoleMemberCount(roleHashes.ESCUELA).catch(() => 0),
-        getNetbooksByState(State.FABRICADA).catch(() => []),
-        getNetbooksByState(State.HW_APROBADO).catch(() => []),
-        getNetbooksByState(State.SW_VALIDADO).catch(() => []),
-        getNetbooksByState(State.DISTRIBUIDA).catch(() => [])
+        getRoleMemberCount(roleHashes.ESCUELA).catch(() => 0)
       ]);
+
+      // Get all serial numbers and filter by state client-side
+      const allSerials = await getAllSerialNumbers().catch(() => []);
+      const stateCounts = { FABRICADA: 0, HW_APROBADO: 0, SW_VALIDADO: 0, DISTRIBUIDA: 0 };
+
+      for (const serial of allSerials) {
+        const state = await getNetbookState(serial).catch(() => -1);
+        if (state >= 0 && state <= 3) {
+          const stateNames = ['FABRICADA', 'HW_APROBADO', 'SW_VALIDADO', 'DISTRIBUIDA'];
+          stateCounts[stateNames[state] as keyof typeof stateCounts]++;
+        }
+      }
 
       setStats({
         fabricanteCount,
         auditorHwCount,
         tecnicoSwCount,
         escuelaCount,
-        totalFabricadas: fabricadas.length,
-        totalHwAprobadas: hwAprobadas.length,
-        totalSwValidadas: swValidadas.length,
-        totalDistribuidas: distribuidas.length
+        totalFabricadas: stateCounts.FABRICADA,
+        totalHwAprobadas: stateCounts.HW_APROBADO,
+        totalSwValidadas: stateCounts.SW_VALIDADO,
+        totalDistribuidas: stateCounts.DISTRIBUIDA
       });
 
       if (!silent) {

@@ -241,41 +241,9 @@ export abstract class BaseContractService {
     userAddress?: string;
     relatedSerial?: string;
   }): Promise<void> {
-    try {
-      // Get current block number and gas price for logging
-      const [blockNumber, gasPrice] = await Promise.all([
-        publicClient.getBlockNumber(),
-        publicClient.getGasPrice()
-      ]);
-
-      const transactionData = {
-        transactionHash: data.transactionHash,
-        blockNumber: Number(blockNumber),
-        from: data.from,
-        to: data.to,
-        gasUsed: 0, // Will be updated when transaction is confirmed
-        gasPrice: gasPrice.toString(),
-        timestamp: new Date().toISOString(),
-        status: 'pending',
-        functionName: data.functionName,
-        args: data.args,
-        role: data.role,
-        userAddress: data.userAddress || data.from,
-        relatedSerial: data.relatedSerial
-      };
-
-      // Log transaction via API route
-      await fetch('/api/mongodb/transactions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(transactionData)
-      });
-    } catch (error) {
-      console.error('Error logging transaction via API:', error);
-      // Don't throw, this is a background operation
-    }
+    // All state is on-chain. No MongoDB persistence layer exists.
+    // Transaction data is permanently stored on the blockchain.
+    // No need to log to external database.
   }
 
   /**
@@ -287,13 +255,8 @@ export abstract class BaseContractService {
     blockNumber?: number;
     gasUsed?: number;
   }): Promise<void> {
-    try {
-      // En una implementación real, aquí harías PATCH a la API
-      // Por ahora solo log para desarrollo
-      console.log('Transaction status update:', data);
-    } catch (error) {
-      console.error('Error updating transaction status:', error);
-      // Don't throw, this is a background operation
-    }
+    // All state is on-chain. No MongoDB persistence layer exists.
+    // Transaction status is determined by blockchain confirmation.
+    // No need to update external database.
   }
 }

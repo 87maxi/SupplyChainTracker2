@@ -12,7 +12,7 @@
   - [ ] `/` - Landing con conexión wallet
   - [ ] `/dashboard` - Panel principal
   - [ ] `/tokens` y `/tokens/create` - Gestión tokens
-  - [ ] `/tokens/[id]` y `/tokens/[id]/transfer` - Detalles y transferencias
+  - [ ] `/tokens/[hash]` y `/tokens/[hash]/transfer` - Detalles y transferencias
   - [ ] `/transfers` - Transferencias pendientes
   - [ ] `/admin` y `/admin/users` - Panel administración
   - [ ] `/profile` - Perfil usuario
@@ -23,7 +23,7 @@
 - [ ] Conexión wallet funcionando
 - [ ] Registro de usuarios por rol implementado
 - [ ] Aprobación por admin operativa
-- [ ] Creación de tokens con metadatos
+- [ ] Creación de tokens 
 - [ ] Sistema de transferencias completo
 - [ ] Aceptar/rechazar transferencias funcionando
 - [ ] Trazabilidad de productos visible

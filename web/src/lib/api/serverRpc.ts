@@ -72,14 +72,10 @@ export async function getNetbookState(serial: string) {
  * Get all netbooks in a specific state
  * @param state - State number (0=FABRICADA, 1=HW_APROBADO, 2=SW_VALIDADO, 3=DISTRIBUIDA)
  * @returns Array of serial numbers in that state
+ * @note This function is not implemented on-chain. Use getAllSerialNumbers() + getNetbookState(serial) to filter client-side.
  */
 export async function getNetbooksByState(state: number): Promise<string[]> {
-  try {
-    return await SupplyChainContract.getNetbooksByState(state);
-  } catch (error) {
-    console.error(`Error getting netbooks for state ${state}:`, error);
-    throw error;
-  }
+  throw new Error('getNetbooksByState is not implemented on-chain. Use getAllSerialNumbers() + getNetbookState(serial) to filter client-side.');
 }
 
 /**
