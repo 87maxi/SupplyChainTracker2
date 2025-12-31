@@ -14,7 +14,7 @@ export class CacheService {
    * @param data Datos a almacenar
    * @param ttl Tiempo de vida en milisegundos (opcional)
    */
-  static set(key: string, data: any, ttl?: number): void {
+  static set<T>(key: string, data: T, ttl?: number): void {
     if (typeof window === 'undefined') return; // SSR safety
     
     try {
@@ -33,7 +33,7 @@ export class CacheService {
    * @param key Clave del valor a recuperar
    * @returns El valor almacenado o null si no existe o ha expirado
    */
-  static get(key: string): any {
+  static get<T>(key: string): T | null {
     if (typeof window === 'undefined') return null;
     
     try {

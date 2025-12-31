@@ -174,7 +174,7 @@ export function HardwareAuditForm({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className={getDialogContentClass()}>
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-col h-full">
             <DialogHeader>
@@ -192,7 +192,7 @@ export function HardwareAuditForm({
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <form onSubmit={handleFormSubmit} className="grid gap-4 md:grid-cols-2">
+                  <form id="auditForm" onSubmit={handleFormSubmit} className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="auditSerial">Serial</Label>
                       <Input
@@ -274,21 +274,21 @@ export function HardwareAuditForm({
               </Card>
             </div>
             <DialogFooter className="sm:justify-end">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={loading}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                form="auditForm"
-                disabled={loading}
-              >
-                {loading ? (<>Registringando...</>) : (<>Registrar Auditoría</>) }
-              </Button>
+                                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => onOpenChange(false)}
+                    disabled={loading}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    form="auditForm" 
+                    disabled={loading}
+                  >
+                    {loading ? 'Registrando...' : 'Registrar Auditoría'}
+                  </Button>
             </DialogFooter>
           </div>
         </div>

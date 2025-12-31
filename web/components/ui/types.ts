@@ -6,11 +6,11 @@ export interface ChartTooltipContentProps {
     dataKey: string;
   }[];
   label?: string;
-  formatter?: (value: string | number, name: string, item: any) => [string | number, string];
+  formatter?: (value: string | number, name: string, item: unknown) => [string | number, string];
 }
 
 export interface ChartContainerProps {
   children: React.ReactNode;
   className?: string;
-  config?: Record<string, any>;
+  config?: Record<string, unknown>;
 }

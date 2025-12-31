@@ -1,7 +1,7 @@
 // web/src/services/contracts/supply-chain.service.ts
 
 import { BaseContractService } from './base-contract.service';
-import SupplyChainTrackerABI from '@/contracts/abi/SupplyChainTracker.json';
+import SupplyChainTrackerABI from '../../../contracts/abi/SupplyChainTracker.json';
 import { NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS } from '@/lib/env';
 import { 
   Netbook, 
@@ -362,7 +362,7 @@ export class SupplyChainService extends BaseContractService {
     z.string().min(1).parse(serial);
     
     // Leer reporte
-    const result = await this.read<any>('getNetbookReport', [serial]);
+    const result = await this.read<Netbook>('getNetbookReport', [serial]);
     
     // Asegurar que distributionTimestamp sea string
     const distributionTimestamp = typeof result.distributionTimestamp === 'string' 

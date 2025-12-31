@@ -29,8 +29,8 @@ function RoleMetricCard({
     <Card className="text-center hover:shadow-lg transition-shadow">
       <CardContent className="p-6">
         <Icon className={cn("h-8 w-8 mx-auto mb-2", color)} />
-        <div className="text-2xl font-bold">{count}</div>
-        <p className="text-sm text-muted-foreground">{title}</p>
+        <div className="text-2xl font-bold mb-1">{count}</div>
+        <p className="text-sm text-muted-foreground font-medium uppercase tracking-wider">{title}</p>
       </CardContent>
     </Card>
   );
@@ -48,8 +48,8 @@ export const DashboardMetrics = ({
         {[...Array(4)].map((_, i) => (
           <Card key={i} className="animate-pulse">
             <CardContent className="p-6">
-              <div className="h-4 bg-gray-200 rounded w-1/3 mb-4"></div>
-              <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+              <div className="h-3 bg-muted rounded w-1/3 mb-3"></div>
+              <div className="h-5 bg-muted rounded w-1/2"></div>
             </CardContent>
           </Card>
         ))}

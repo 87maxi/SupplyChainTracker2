@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     const userAddress = searchParams.get('userAddress');
     
     // Build query filter
-    const query: any = {};
+    const query: Record<string, any> = {};
     
     if (transactionHash) {
       query.transactionHash = transactionHash;

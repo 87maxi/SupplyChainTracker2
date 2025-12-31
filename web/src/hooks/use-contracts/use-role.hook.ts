@@ -41,7 +41,7 @@ export const useRoleContract = () => {
    * @param error Error a manejar
    * @param operation Operación que causó el error
    */
-  const handleError = useCallback((error: any, operation: string) => {
+  const handleError = useCallback((error: unknown, operation: string) => {
     const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
     
     toast({

@@ -1,6 +1,6 @@
 'use client';
 
-type EventCallback = (data?: any) => void;
+type EventCallback = (data?: unknown) => void;
 
 class EventBus {
     private listeners: Record<string, Set<EventCallback>> = {};
@@ -19,7 +19,7 @@ class EventBus {
         }
     }
 
-    emit(event: string, data?: any) {
+    emit(event: string, data?: unknown) {
         if (this.listeners[event]) {
             this.listeners[event].forEach(callback => callback(data));
         }

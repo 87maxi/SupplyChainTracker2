@@ -135,7 +135,7 @@ export const useUserRoles = (): UseUserRoles => {
       // Mark revalidation as complete
       completeRevalidation(cacheKey);
       
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error fetching user roles:', error);
 
       // Check for specific WalletConnect/Reown allowlist error
@@ -155,11 +155,15 @@ export const useUserRoles = (): UseUserRoles => {
     }
   }, [address, isConnected, cacheKey, hasRoleByHash]);
 
+  // Inicializa la verificación de roles al conectar o cambiar de dirección
   useEffect(() => {
-    checkRoles();
-  }, [checkRoles]);
+    if (isConnected && address) {
+      console.log('Address changed, refreshing roles for:', address);
+      checkRoles();
+    }
+  }, [isConnected, address]);
 
-  // Listen for role updates to refresh roles
+  // Escucha los cambios de rol para actualizar automáticamente
   useEffect(() => {
     const { eventBus, EVENTS } = require('@/lib/events');
     const unsubscribe = eventBus.on(EVENTS.ROLE_UPDATED, () => {
@@ -167,15 +171,7 @@ export const useUserRoles = (): UseUserRoles => {
       checkRoles();
     });
     return () => unsubscribe();
-  }, [checkRoles]);
-
-  // Force role refresh when address changes
-  useEffect(() => {
-    if (isConnected && address) {
-      console.log('Address changed, refreshing roles for:', address);
-      checkRoles();
-    }
-  }, [address, isConnected, checkRoles]);
+  }, []); // No depende de checkRoles para evitar ciclos
 
   // Effect to update refreshRoles
   useEffect(() => {

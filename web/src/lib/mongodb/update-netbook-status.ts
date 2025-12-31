@@ -10,7 +10,7 @@ export async function updateNetbookStatus(params: {
   try {
     const { netbookData: netbookDataCollection } = await getCollections();
     
-    const updateFields: Record<string, any> = {
+    const updateFields: Record<string, unknown> = {
       status: params.status,
       updatedBy: params.updatedBy.toLowerCase(),
       updatedAt: new Date()

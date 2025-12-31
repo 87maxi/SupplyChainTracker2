@@ -1,227 +1,207 @@
-"use client";
+'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Input } from '@/components/ui/input';
+import { useState, useCallback, useMemo } from 'react';
+import { getProvider } from '@/lib/web3';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, Filter, Download, Calendar, Clock } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Loader2, Search } from 'lucide-react';
+import { AuditLog } from '@/types/audit';
+import { useToast } from '@/hooks/use-toast';
+import { getEventService } from '@/lib/services/event-service';
+import { formatDistanceToNow } from 'date-fns';
+import { es } from 'date-fns/locale';
 
-// Mock data for audit logs
-const mockAuditLogs = [
-  {
-    id: 1,
-    timestamp: '2024-01-20T14:32:15Z',
-    eventType: 'role_assigned',
-    description: 'Rol FABRICANTE_ROLE asignado a 0x8ba1f109551bD432803012645Ac136dddF49456f',
-    actor: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
-    success: true
-  },
-  {
-    id: 2,
-    timestamp: '2024-01-20T13:45:22Z',
-    eventType: 'role_revoked',
-    description: 'Rol AUDITOR_HW_ROLE revocado de 0x70997970C51812dc3A010C7d01b50e0d17dc79C8',
-    actor: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
-    success: true
-  },
-  {
-    id: 3,
-    timestamp: '2024-01-20T12:15:08Z',
-    eventType: 'netbook_registered',
-    description: 'Netbook registrada con serial SC-001234',
-    actor: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
-    success: true
-  },
-  {
-    id: 4,
-    timestamp: '2024-01-20T11:30:44Z',
-    eventType: 'hardware_audited',
-    description: 'Netbook SC-001234 auditada con éxito',
-    actor: '0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC',
-    success: true
-  },
-  {
-    id: 5,
-    timestamp: '2024-01-20T10:18:27Z',
-    eventType: 'software_validated',
-    description: 'Netbook SC-001234 validada por software',
-    actor: '0x90F79bf6EB2c4f870365E785982E1f1010034008',
-    success: true
-  },
-  {
-    id: 6,
-    timestamp: '2024-01-19T16:55:12Z',
-    eventType: 'role_request_approved',
-    description: 'Solicitud de rol FABRICANTE_ROLE aprobada para 0x57f1887a8BF19b14fC0dF6B1f3E887b0B4BFf1B2',
-    actor: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
-    success: true
-  }
-];
+const ITEMS_PER_PAGE = 10;
 
-export default function AuditLogsPage() {
-  const [logs, setLogs] = useState(mockAuditLogs);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [eventTypeFilter, setEventTypeFilter] = useState<string>('all');
-  const [successFilter, setSuccessFilter] = useState<string>('all');
-  const [loading, setLoading] = useState(false);
+export default function AuditPage() {
+  const { address } = useWeb3();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [eventService, setEventService] = useState<any>(null);
 
-  useEffect(() => {
-    // Simulate filtering
-    setLoading(true);
-    const timer = setTimeout(() => {
-      let filtered = mockAuditLogs;
-
-      if (searchQuery) {
-        filtered = filtered.filter(log =>
-          log.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          log.actor.toLowerCase().includes(searchQuery.toLowerCase())
-        );
+  // Inicializar el servicio de eventos
+  useMemo(() => {
+    const initEventService = async () => {
+      try {
+        const service = await getEventService();
+        setEventService(service);
+        
+        // Escuchar eventos cuando el servicio esté listo
+        if (service) {
+          const allLogs = await service.getAuditLogs();
+          setLogs(Array.isArray(allLogs) ? allLogs : []);
+        }
+      } catch (error) {
+        console.error('Error initializing event service:', error);
+        toast({
+          title: 'Error',
+          description: 'No se pudo conectar al servicio de eventos',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
       }
+    };
 
-      if (eventTypeFilter !== 'all') {
-        filtered = filtered.filter(log => log.eventType === eventTypeFilter);
-      }
+    initEventService();
+  }, [toast]);
 
-      if (successFilter !== 'all') {
-        filtered = filtered.filter(log => 
-          successFilter === 'success' ? log.success : !log.success
-        );
-      }
+  const handleSearch = useCallback((term: string) => {
+    setSearchTerm(term);
+    setCurrentPage(1);
+  }, []);
 
-      setLogs(filtered);
-      setLoading(false);
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [searchQuery, eventTypeFilter, successFilter]);
-
-  const exportLogs = () => {
-    // In a real implementation, this would export the logs to a file
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + "ID,Timestamp,Event Type,Description,Actor,Success\n"
-      + logs.map(log => 
-          `${log.id},"${log.timestamp}","${log.eventType}","${log.description}","${log.actor}",${log.success}`
-        ).join("\n");
+  const applyFilters = useCallback(() => {
+    const filtered = logs.filter((log) => {
+      const matchesSearch = searchTerm === '' ||
+        log.transactionHash?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        log.actor.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesSearch;
+    });
     
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `audit-logs-${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    return filtered;
+  }, [logs, searchTerm]);
+
+  const filteredLogs = useMemo(() => applyFilters(), [applyFilters]);
+  const totalPages = Math.ceil(filteredLogs.length / ITEMS_PER_PAGE);
+  
+  const paginatedLogs = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredLogs.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredLogs, currentPage]);
+
+  const handlePageChange = useCallback((page: number) => {
+    setCurrentPage(page);
+  }, []);
+
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return formatDistanceToNow(date, { addSuffix: true, locale: es });
+    } catch (error) {
+      return 'Fecha inválida';
+    }
   };
 
-  const eventTypes = [
-    { value: 'all', label: 'Todos' },
-    { value: 'role_assigned', label: 'Asignación de Rol' },
-    { value: 'role_revoked', label: 'Revocación de Rol' },
-    { value: 'role_request_approved', label: 'Aprobación de Solicitud' },
-    { value: 'netbook_registered', label: 'Registro de Netbook' },
-    { value: 'hardware_audited', label: 'Auditoría de Hardware' },
-    { value: 'software_validated', label: 'Validación de Software' }
-  ];
+  const getActionBadgeVariant = (action: string) => {
+    switch (action) {
+      case 'REQUEST_ROLE':
+        return 'secondary';
+      case 'APPROVE_ROLE':
+      case 'REVOKE_ROLE':
+        return 'default';
+      case 'GRANT_ROLE':
+        return 'success';
+      default:
+        return 'outline';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="container mx-auto py-8 space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Registros de Auditoría</h1>
+          <h1 className="text-3xl font-bold">Auditoría del Sistema</h1>
           <p className="text-muted-foreground">
-            Historial completo de eventos y transacciones del sistema.
+            Registro de todas las acciones realizadas en el sistema
           </p>
         </div>
-
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar en descripciones, direcciones..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-8"
-                />
-              </div>
-              <div className="flex gap-2">
-                <select
-                  value={eventTypeFilter}
-                  onChange={(e) => setEventTypeFilter(e.target.value)}
-                  className="h-10 rounded-md border bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {eventTypes.map(type => (
-                    <option key={type.value} value={type.value}>{type.label}</option>
-                  ))}
-                </select>
-                <select
-                  value={successFilter}
-                  onChange={(e) => setSuccessFilter(e.target.value)}
-                  className="h-10 rounded-md border bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <option value="all">Todos los Estados</option>
-                  <option value="success">Éxito</option>
-                  <option value="failure">Error</option>
-                </select>
-                <Button onClick={exportLogs} variant="outline" size="icon" className="h-10 w-10">
-                  <Download className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-                <span className="ml-3 text-muted-foreground">Cargando registros...</span>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Fecha y Hora</TableHead>
-                    <TableHead>Tipo de Evento</TableHead>
-                    <TableHead>Descripción</TableHead>
-                    <TableHead>Actor</TableHead>
-                    <TableHead>Estado</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {logs.map((log) => (
-                    <TableRow key={log.id}>
-                      <TableCell className="font-mono">{log.id}</TableCell>
-                      <TableCell>{new Date(log.timestamp).toLocaleString('es-AR')}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            log.eventType === 'role_assigned' || log.eventType === 'role_request_approved' || log.eventType === 'netbook_registered' || log.eventType === 'hardware_audited' || log.eventType === 'software_validated'
-                              ? 'default'
-                              : 'destructive'
-                          }
-                        >
-                          {eventTypes.find(t => t.value === log.eventType)?.label || log.eventType}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="font-mono">{log.description}</TableCell>
-                      <TableCell className="font-mono text-xs">
-                        {log.actor.substring(0, 6)}...{log.actor.substring(38)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={log.success ? 'success' : 'destructive'}>
-                          {log.success ? 'Éxito' : 'Error'}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+        <div className="flex items-center space-x-2 w-full sm:w-auto">
+          <div className="relative flex-1 sm:flex-none">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por acción, dirección o hash..."
+              value={searchTerm}
+              onChange={(e) => handleSearch(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Registros de Auditoría ({filteredLogs.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {filteredLogs.length === 0 ? (
+            <div className="text-center py-10">
+              <p className="text-muted-foreground">
+                No se encontraron registros de auditoría
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="space-y-4">
+                {paginatedLogs.map((log, index) => (
+                  <div
+                    key={`${log.transactionHash}-${index}`}
+                    className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="space-y-2 mb-2 sm:mb-0">
+                      <div className="flex items-center space-x-2">
+                        <Badge variant={getActionBadgeVariant(log.action)}>
+                          {log.action}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Por: <span className="font-mono text-xs">{log.actor}</span>
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Cuándo: {formatDate(log.timestamp)}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-mono break-all">
+                        {log.transactionHash?.substring(0, 8)}...
+                        {log.transactionHash?.substring(log.transactionHash.length - 6)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {totalPages > 1 && (
+                <div className="flex justify-center space-x-2 mt-6">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    Anterior
+                  </Button>
+                  <span className="flex items-center px-4">
+                    Página {currentPage} de {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    Siguiente
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

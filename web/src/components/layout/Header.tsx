@@ -18,7 +18,7 @@ export const Header = () => {
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  // Evitar error de hidratación
+  // Sincroniza el estado del componente con el ciclo de vida del navegador
   useEffect(() => {
     setMounted(true);
   }, []);

@@ -4,7 +4,7 @@ import { formatEther } from 'viem';
 import { RoleMap } from '@/lib/roleUtils';
 
 // Importar el ABI y la dirección del contrato
-import SupplyChainTrackerABI from '@/contracts/abi/SupplyChainTracker.json';
+import SupplyChainTrackerABI from '../../../contracts/abi/SupplyChainTracker.json';
 import { NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS } from '@/lib/env';
 
 const contractAddress = NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS as `0x${string}`;
@@ -43,7 +43,7 @@ export async function getNetbookState(serial: string): Promise<number> {
 }
 
 // Función para obtener el reporte de una netbook
-export async function getNetbookReport(serial: string): Promise<any> {
+export async function getNetbookReport(serial: string): Promise<Netbook> {
   try {
     const result = await readContract(config, {
       address: contractAddress,

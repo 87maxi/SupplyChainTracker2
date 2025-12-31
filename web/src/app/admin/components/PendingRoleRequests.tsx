@@ -334,7 +334,6 @@ export default function PendingRoleRequests({ stats: initialStats }: { stats?: D
     refreshAllData();
 
     // Listen for global refresh events
-    const { eventBus, EVENTS } = require('@/lib/events');
     const unsubscribe = eventBus.on(EVENTS.REFRESH_DATA || 'REFRESH_DATA', () => {
       console.log('[PendingRoleRequests] Global refresh detected...');
       refreshAllData(true);
@@ -432,23 +431,23 @@ export default function PendingRoleRequests({ stats: initialStats }: { stats?: D
   // Main dashboard content
   return (
     <div className="space-y-10">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div>
-          <h2 className="text-4xl font-bold tracking-tight mb-2">Panel de Administración</h2>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+        <div className="space-y-1">
+          <h2 className="text-4xl font-bold tracking-tight">Panel de Administración</h2>
           <p className="text-muted-foreground text-lg">Gestión global de la red de suministro y permisos de usuario.</p>
         </div>
-        <div className="flex gap-4">
+        <div className="flex flex-wrap justify-center gap-4">
           <Button
             size="lg"
             variant="outline"
             onClick={() => refreshAllData()}
-            className="h-12 px-6"
+            className="h-12 px-6 min-w-[120px]"
             disabled={isLoading}
           >
             <RefreshCw className={`mr-2 h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
             Refrescar
           </Button>
-          <Button size="lg" variant="gradient" onClick={() => setShowRoleManager(true)} className="h-12 px-8 shadow-lg">
+          <Button size="lg" variant="gradient" onClick={() => setShowRoleManager(true)} className="h-12 px-8 min-w-[140px] shadow-lg">
             <Settings2 className="mr-2 h-5 w-5" />
             Gestión de Roles
           </Button>
@@ -456,11 +455,11 @@ export default function PendingRoleRequests({ stats: initialStats }: { stats?: D
       </div>
 
       <div className="space-y-6">
-        <div className="flex items-center gap-2">
-          <Package className="h-6 w-6 text-primary" />
+                  <div className="flex items-center gap-2 mb-4">
+          <Package className="h-7 w-7 text-primary" />
           <h3 className="text-2xl font-bold tracking-tight">Estado de las Netbooks</h3>
         </div>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
           <SummaryCard
             title="Fabricadas"
             count={stats.totalFabricadas}
@@ -493,11 +492,11 @@ export default function PendingRoleRequests({ stats: initialStats }: { stats?: D
       </div>
 
       <div className="space-y-6">
-        <div className="flex items-center gap-2">
-          <Users className="h-6 w-6 text-primary" />
+                  <div className="flex items-center gap-2 mb-4">
+          <Users className="h-7 w-7 text-primary" />
           <h3 className="text-2xl font-bold tracking-tight">Roles de los Usuarios</h3>
         </div>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
           <SummaryCard
             title="Fabricantes"
             count={stats.fabricanteCount}
@@ -531,8 +530,8 @@ export default function PendingRoleRequests({ stats: initialStats }: { stats?: D
 
       {pendingRequests.length > 0 && (
         <div className="space-y-6">
-          <div className="flex items-center gap-2">
-            <Users className="h-6 w-6 text-primary" />
+          <div className="flex items-center gap-2 mb-4">
+            <Users className="h-7 w-7 text-primary" />
             <h3 className="text-2xl font-bold tracking-tight">Solicitudes de Rol Pendientes</h3>
           </div>
           <Card>
@@ -541,32 +540,32 @@ export default function PendingRoleRequests({ stats: initialStats }: { stats?: D
                 <table className="w-full text-sm text-left">
                   <thead className="text-xs uppercase bg-muted/50">
                     <tr>
-                      <th className="px-6 py-4 font-medium">Usuario</th>
-                      <th className="px-6 py-4 font-medium">Rol Solicitado</th>
-                      <th className="px-6 py-4 font-medium">Fecha</th>
-                      <th className="px-6 py-4 font-medium text-right">Acciones</th>
+                      <th className="px-8 py-6 font-medium text-sm">Usuario</th>
+                      <th className="px-8 py-6 font-medium text-sm">Rol Solicitado</th>
+                      <th className="px-8 py-6 font-medium text-sm">Fecha</th>
+                      <th className="px-8 py-6 font-medium text-right text-sm">Acciones</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
                     {pendingRequests.map((request) => (
-                      <tr key={request.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="px-6 py-4 font-mono text-xs">
+                      <tr key={request.id} className="hover:bg-muted/30 transition-colors border-b border-muted last:border-b-0">
+                        <td className="px-8 py-6 font-mono text-sm">
                           {truncateAddress(request.address)}
                         </td>
-                        <td className="px-6 py-4 flex items-center gap-2">
-                          <Badge variant="outline" className="capitalize">
+                        <td className="px-8 py-6 flex items-center gap-3">
+                          <Badge variant="outline" className="capitalize text-sm py-1 px-3">
                             {request.role.replace('_', ' ')}
                           </Badge>
                           {request.signature && (
-                            <Badge variant="secondary" className="text-[10px] h-5 bg-emerald-500/10 text-emerald-500 border-emerald-500/20">
+                            <Badge variant="secondary" className="text-xs h-6 bg-emerald-500/10 text-emerald-500 border-emerald-500/20">
                               Firmada
                             </Badge>
                           )}
                         </td>
-                        <td className="px-6 py-4 text-muted-foreground">
+                        <td className="px-8 py-6 text-muted-foreground">
                           {new Date(request.timestamp).toLocaleDateString()}
                         </td>
-                        <td className="px-6 py-4 text-right space-x-2">
+                        <td className="px-8 py-6 text-right space-x-4">
                           <Button
                             size="sm"
                             variant="gradient"

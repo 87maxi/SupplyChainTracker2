@@ -2,8 +2,8 @@ import { ethers } from 'ethers';
 
 // Initialize provider from window.ethereum
 export const getProvider = async (): Promise<ethers.BrowserProvider> => {
-  if (typeof window !== 'undefined' && (window as any).ethereum) {
-    return new ethers.BrowserProvider((window as any).ethereum);
+  if (typeof window !== 'undefined' && window.ethereum) {
+    return new ethers.BrowserProvider(window.ethereum);
   }
   throw new Error('No Ethereum provider found');
 };

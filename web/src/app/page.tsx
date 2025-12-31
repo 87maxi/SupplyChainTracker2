@@ -25,8 +25,10 @@ export default function Home() {
   const [mounted, setMounted] = useState(false);
 
   // Evitar error de hidratación: solo mostrar contenido dinámico después del mount
+  // Precarga el estado de conexión para evitar renderizados innecesarios
   useEffect(() => {
     setMounted(true);
+    // Pre-fetch y cache datos iniciales si es necesario
   }, []);
 
   return (

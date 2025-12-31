@@ -33,8 +33,9 @@ describe('MongoDBService', () => {
   let service: MongoDBService;
 
   beforeEach(() => {
-    service = new MongoDBService();
+    // Clear any mocks
     jest.clearAllMocks();
+    service = new MongoDBService();
   });
 
   describe('saveRoleData', () => {

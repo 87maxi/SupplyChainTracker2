@@ -23,20 +23,31 @@ export default function SettingsPage() {
     rpcUrl: ''
   });
 
-  // Load settings from localStorage on mount
+  // Carga asincrónica de configuración con manejo de errores
   useEffect(() => {
-    const saved = localStorage.getItem('admin-settings');
-    if (saved) {
-      setSettings(prev => ({ ...prev, ...JSON.parse(saved) }));
-    } else {
-      // Only set defaults from environment if no saved settings
-      setSettings(prev => ({
-        ...prev,
-        contractAddress: process.env.NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS || prev.contractAddress,
-        rpcUrl: process.env.NEXT_PUBLIC_RPC_URL || prev.rpcUrl
-      }));
-    }
-    setLoading(false);
+    const loadSettings = async () => {
+      try {
+        const saved = localStorage.getItem('admin-settings');
+        if (saved) {
+          const parsedSettings = JSON.parse(saved);
+          setSettings(prev => ({ ...prev, ...parsedSettings }));
+        } else {
+          // Solo establecer valores por defecto desde el entorno si no hay configuración guardada
+          setSettings(prev => ({
+            ...prev,
+            contractAddress: process.env.NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS || prev.contractAddress,
+            rpcUrl: process.env.NEXT_PUBLIC_RPC_URL || prev.rpcUrl
+          }));
+        }
+      } catch (error) {
+        console.error('Error al cargar configuración:', error);
+        // Mantener valores por defecto en caso de error
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSettings();
   }, []);
 
   // Save settings to localStorage

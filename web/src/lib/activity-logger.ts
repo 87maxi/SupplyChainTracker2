@@ -7,7 +7,7 @@ export interface ActivityLog {
   description: string;
   address: string;
   timestamp: Date;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   status: 'success' | 'pending' | 'failed';
 }
 
@@ -23,7 +23,7 @@ export const getActivityLogs = (): ActivityLog[] => {
     if (!stored) return [];
     
     const logs = JSON.parse(stored);
-    return logs.map((log: any) => ({
+    return logs.map((log: Record<string, unknown>) => ({
       ...log,
       timestamp: new Date(log.timestamp)
     }));
@@ -100,7 +100,7 @@ export const ActivityLogger = {
     });
   },
 
-  system: (action: string, description: string, metadata?: Record<string, any>) => {
+  system: (action: string, description: string, metadata?: Record<string, unknown>) => {
     logActivity({
       type: 'system',
       action,
@@ -111,7 +111,7 @@ export const ActivityLogger = {
     });
   },
 
-  error: (address: string, action: string, error: string, metadata?: Record<string, any>) => {
+  error: (address: string, action: string, error: string, metadata?: Record<string, unknown>) => {
     logActivity({
       type: 'error',
       action,

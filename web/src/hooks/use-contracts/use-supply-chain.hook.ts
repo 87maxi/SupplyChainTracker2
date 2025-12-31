@@ -6,7 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ActivityLogger } from '@/lib/activity-logger';
 
 // Use singleton instance from services
-const { supplyChainService } = require('@/services/SupplyChainService');
+import { supplyChainService } from '@/services/SupplyChainService';
 
 /**
  * Hook personalizado para interactuar con el contrato SupplyChainTracker
@@ -39,7 +39,7 @@ export const useSupplyChainContract = () => {
    * @param error Error a manejar
    * @param operation Operación que causó el error
    */
-  const handleError = useCallback((error: any, operation: string) => {
+  const handleError = useCallback((error: unknown, operation: string) => {
     const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
     
     toast({

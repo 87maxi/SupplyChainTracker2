@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     
     // Build query filter
-    const query: any = {};
+    const query: Record<string, any> = {};
     
     if (status) {
       query.status = status;

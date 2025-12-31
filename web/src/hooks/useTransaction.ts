@@ -62,7 +62,7 @@ export const useTransaction = (): UseTransactionReturn => {
       // Extraer hash de transacción si está disponible
       let txHash: string | null = null;
       if (result && typeof result === 'object' && 'transactionHash' in result) {
-        txHash = (result as any).transactionHash;
+        txHash = result && typeof result === 'object' && 'transactionHash' in result ? (result as { transactionHash: string }).transactionHash : null;
       }
 
       setState({
@@ -81,7 +81,7 @@ export const useTransaction = (): UseTransactionReturn => {
 
       return result;
 
-    } catch (error: any) {
+    } catch (error) {
       console.error('Transaction error:', error);
       
       const errorMessageText = error.message || error.toString();
@@ -123,7 +123,7 @@ export const useRoleTransaction = () => {
   const transaction = useTransaction();
   
   const grantRole = useCallback(async (
-    grantRoleFn: (role: string, address: string) => Promise<any>,
+    grantRoleFn: (role: string, address: string) => Promise<unknown>,
     role: string,
     userAddress: string,
     roleName: string
@@ -139,7 +139,7 @@ export const useRoleTransaction = () => {
   }, [transaction]);
 
   const revokeRole = useCallback(async (
-    revokeRoleFn: (role: `0x${string}`, address: string) => Promise<any>,
+    revokeRoleFn: (role: `0x${string}`, address: string) => Promise<unknown>,
     role: string,
     userAddress: string,
     roleName: string

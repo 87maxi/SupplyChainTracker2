@@ -16,10 +16,13 @@ if (!MONGODB_DB) {
  * Global es usado aquí para mantener una conexión caché entre recargas en desarrollo.
  * Esto previene que las conexiones crezcan exponencialmente durante el uso de API Routes.
  */
-let cached = (global as any).mongodb;
+let cached: { conn: MongoClient | null; promise: Promise<MongoClient> | null } | undefined = (global as any).mongodb;
 
 if (!cached) {
   cached = (global as any).mongodb = { conn: null, promise: null };
+  }
+
+  return cached;
 }
 
 export interface MongoDBConfig {

@@ -27,7 +27,7 @@ const BATCH_CONFIG = {
 // Queue for batching role member requests
 const roleRequestsQueue: Array<{
   resolve: (value: string[]) => void;
-  reject: (reason?: any) => void;
+  reject: (reason?: unknown) => void;
   role: string;
 }> = [];
 

@@ -84,12 +84,12 @@ async function generateFakeData() {
 
     // Insert data
     if (roleData.length > 0) {
-      await roleDataCollection.insertMany(roleData);
+      await roleDataCollection.insertMany(roleData, { ordered: false });
       console.log('Inserted role data');
     }
 
     if (netbookData.length > 0) {
-      await netbookDataCollection.insertMany(netbookData);
+      await netbookDataCollection.insertMany(netbookData, { ordered: false });
       console.log('Inserted netbook data');
     }
 

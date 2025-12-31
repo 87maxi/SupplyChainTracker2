@@ -51,7 +51,7 @@ export function useUserStats() {
         };
         
         // Count roles
-        data.data.forEach((user: any) => {
+        data.data.forEach((user) => {
           switch (user.role) {
             case 'ADMIN_ROLE':
               roleCounts.admin = (roleCounts.admin || 0) + 1;

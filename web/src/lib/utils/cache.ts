@@ -9,7 +9,7 @@ interface CacheItem<T> {
 }
 
 // Global cache storage
-const globalCache = new Map<string, CacheItem<any>>();
+const globalCache = new Map<string, CacheItem<unknown>>();
 // Store to control revalidation and prevent multiple calls
 const revalidationQueue = new Map<string, boolean>();
 

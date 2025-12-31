@@ -42,13 +42,13 @@ export function useAnalyticsData() {
         };
 
         // Contar usuarios por rol
-        users.forEach((user: any) => {
+        users.forEach((user) => {
           const role = user.role.replace('_ROLE', '');
           analyticsStats.usersByRole[role] = (analyticsStats.usersByRole[role] || 0) + 1;
         });
 
         // Contar netbooks por estado
-        netbooks.forEach((netbook: any) => {
+        netbooks.forEach((netbook) => {
           analyticsStats.netbooksByStatus[netbook.currentState] = 
             (analyticsStats.netbooksByStatus[netbook.currentState] || 0) + 1;
         });
@@ -57,7 +57,7 @@ export function useAnalyticsData() {
         const monthlyData: { [key: string]: { fabricadas: number, distribuidas: number } } = {};
         
         // Combinar datos de usuarios y netbooks para el análisis de crecimiento
-        [...users, ...netbooks].forEach((item: any) => {
+        [...users, ...netbooks].forEach((item) => {
           const timestamp = item.distributionTimestamp ? 
             item.distributionTimestamp : Date.now();
           const date = new Date(Number(timestamp) * 1000);

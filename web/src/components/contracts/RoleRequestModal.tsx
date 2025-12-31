@@ -20,7 +20,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { RoleRequestService } from '@/services/RoleRequestService';
 import { useWeb3 } from '@/hooks/useWeb3';
-import { useSignMessage } from 'wagmi';
+import { useSignMessage, useAccount } from 'wagmi';
 
 interface RoleRequestModalProps {
     isOpen: boolean;
@@ -28,8 +28,8 @@ interface RoleRequestModalProps {
 }
 
 export function RoleRequestModal({ isOpen, onOpenChange }: RoleRequestModalProps) {
-    const { address } = useWeb3();
     const { signMessageAsync } = useSignMessage();
+    const { address } = useAccount();
     const [role, setRole] = useState('');
     const [loading, setLoading] = useState(false);
     const { toast } = useToast();
@@ -63,7 +63,11 @@ export function RoleRequestModal({ isOpen, onOpenChange }: RoleRequestModalProps
             const signature = await signMessageAsync({ message });
 
             // 2. Submit request with signature
-            await RoleRequestService.submitRoleRequest(address, role, signature);
+            await RoleRequestService.createRequest({
+              userAddress: address as string,
+              role,
+              signature
+            });
 
             toast({
                 title: "Solicitud enviada",
@@ -104,7 +108,7 @@ export function RoleRequestModal({ isOpen, onOpenChange }: RoleRequestModalProps
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                     <Select value={role} onValueChange={setRole}>
-                        <SelectTrigger>
+                        <SelectTrigger className="h-11">
                             <SelectValue placeholder="Seleccione un rol" />
                         </SelectTrigger>
                         <SelectContent>
@@ -116,7 +120,7 @@ export function RoleRequestModal({ isOpen, onOpenChange }: RoleRequestModalProps
                     </Select>
                 </div>
                 <DialogFooter>
-                    <Button onClick={handleSubmit} disabled={loading}>
+                    <Button onClick={handleSubmit} disabled={loading} className="h-11">
                         {loading ? 'Enviando...' : 'Enviar Solicitud'}
                     </Button>
                 </DialogFooter>

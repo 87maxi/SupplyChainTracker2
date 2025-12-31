@@ -7,7 +7,7 @@ export class AppError extends Error {
   constructor(
     public message: string,
     public code: string,
-    public originalError?: any
+    public originalError?: unknown
   ) {
     super(message);
     this.name = 'AppError';
@@ -23,7 +23,7 @@ export class ErrorHandler {
    * @param error Error recibido de Web3/Wagmi
    * @returns AppError con mensaje y código adecuado
    */
-  static handleWeb3Error(error: any): AppError {
+  static handleWeb3Error(error: unknown): AppError {
     // Códigos de error comunes de Web3
     if (error.code === 4001) {
       return new AppError('Transacción rechazada por el usuario', 'USER_REJECTED');
@@ -89,7 +89,7 @@ export class ErrorHandler {
    * @param error Error a registrar
    * @param context Información adicional sobre el contexto
    */
-  static logError(error: any, context?: Record<string, any>): void {
+  static logError(error: unknown, context?: Record<string, unknown>): void {
     console.error('Error registrado:', { error, context });
     
     // Aquí se podría integrar con servicios de monitoreo como Sentry, Rollbar, etc.

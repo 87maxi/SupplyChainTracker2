@@ -2,7 +2,16 @@ import { useState, useEffect } from 'react';
 import { Netbook } from '@/types/supply-chain-types';
 
 interface ProcessedData {
-  users: any[];
+  users: Array<{
+    _id: string;
+    address: string;
+    role: string;
+    status: string;
+    approvedAt?: string;
+    requestedOn: string;
+    eventName?: string;
+    timestamp?: string;
+  }>;
   netbooks: Netbook[];
   isLoading: boolean;
   error: string | null;
@@ -13,7 +22,7 @@ interface ProcessedData {
  * Hook para obtener y procesar datos combinados de usuarios y netbooks desde MongoDB
  */
 export const useProcessedUserAndNetbookData = (): ProcessedData => {
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<ProcessedData['users']>([]);
   const [netbooks, setNetbooks] = useState<Netbook[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +58,7 @@ export const useProcessedUserAndNetbookData = (): ProcessedData => {
       }
 
       // Procesar netbooks para mapear al tipo Netbook esperado
-      const processedNetbooks: Netbook[] = netbooksData.data.map((netbook: any) => {
+      const processedNetbooks: Netbook[] = netbooksData.data.map((netbook) => {
         // Mapear estados de MongoDB a los estados del contrato
         const stateMapping: Record<string, string> = {
           'production': 'FABRICADA',

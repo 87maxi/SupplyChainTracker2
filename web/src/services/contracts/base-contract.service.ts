@@ -15,7 +15,7 @@ export abstract class BaseContractService {
 
   constructor(
     protected contractAddress: `0x${string}`,
-    protected abi: any,
+    protected abi: readonly unknown[],
     protected cachePrefix: string
   ) {
     // walletClient se obtiene de forma lazy cuando se necesita
@@ -30,7 +30,7 @@ export abstract class BaseContractService {
    */
   protected async read<T>(
     functionName: string,
-    args: any[] = [],
+    args: readonly unknown[] = [],
     useCache: boolean = true
   ): Promise<T> {
     const cacheKey = `${this.cachePrefix}:${functionName}:${JSON.stringify(args)}`;
@@ -71,7 +71,7 @@ export abstract class BaseContractService {
    */
   protected async write(
     functionName: string,
-    args: any[] = [],
+    args: readonly unknown[] = [],
     metadata?: {
       role?: string;
       userAddress?: string;
@@ -128,7 +128,7 @@ export abstract class BaseContractService {
   ) {
     let retries = 0;
     
-    const attemptWait = async (): Promise<any> => {
+    const attemptWait = async (): Promise<Receipt> => {
       try {
         // Usar el cliente público unificado con timeout extendido para desarrollo
         const receipt = await publicClient.waitForTransactionReceipt({
@@ -234,7 +234,7 @@ export abstract class BaseContractService {
   private async logTransactionToAPI(data: {
     transactionHash: string;
     functionName: string;
-    args: any[];
+    args: readonly unknown[];
     from: string;
     to: string;
     role?: string;

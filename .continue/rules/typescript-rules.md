@@ -45,7 +45,7 @@
    - **anvil:** el objetivo de esta interfaz es interactuar con anvil, usa las cuentas de anvil para pruebas
    - no ejecutes anvil, esta corriendo con los contratos deployados 
    - analisa los errores de codigo con **npm run build --loglevel error**, no use npm run dev, no inicies servicios
-   - despues de crear o editar un archivo verifica que el archivo no este corupto y sea consistente
+   - **despues de crear o editar un archivo** verifica que el archivo no este corupto y sea consistente
    
 
 **2. Consistencia de Código:**
@@ -56,6 +56,10 @@
    - genera un **archivo .env.local** con todas las variables necesarias para iniciar la aplicacion
    - se consistente con la implementacion de package.json, define claramente todos los comandos necesarios para poder ejecutar la aplicacion **se muy extricto en esta definicion y en el uso** chequea que los comandos funcionen correctamente
    - dentro del directorio docs crea  un diagrama fucional de la aplicacion, y diagrama uml con las definiciones funcionales
+   - siempre que sea posible usa useMemo para evitar los renderizados ciclicos
+   - usa alternativas a useEffect para los efectos secundarios, si es necesario, evita que se renderice la aplicacion en un ciclo infinito
+
+
 
 
 ## Herramientas que se utilizan 

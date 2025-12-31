@@ -43,7 +43,7 @@ export function useNetbookStats() {
         };
         
         // Count statuses
-        data.data.forEach((netbook: any) => {
+        data.data.forEach((netbook) => {
           switch (netbook.status) {
             case 'production':
               statusCounts.production = (statusCounts.production || 0) + 1;

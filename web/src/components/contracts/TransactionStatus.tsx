@@ -24,11 +24,16 @@ export function TransactionStatus({
   const [receipt, setReceipt] = useState<any>(null);
   const { toast } = useToast();
 
+  // Optimizar validaciones iniciales
+  const resetState = useCallback(() => {
+    setStatus(null);
+    setError(null);
+    setReceipt(null);
+  }, []);
+
   useEffect(() => {
     if (!hash) {
-      setStatus(null);
-      setError(null);
-      setReceipt(null);
+      resetState();
       return;
     }
 

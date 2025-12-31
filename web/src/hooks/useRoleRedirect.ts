@@ -33,7 +33,7 @@ export const useRoleRedirect = () => {
         
         if (rolesSummary && typeof rolesSummary === 'object') {
           const userHasRoles = Object.values(rolesSummary).some(
-            (roleInfo: any) => 
+            (roleInfo) => 
               roleInfo?.members?.includes(address.toLowerCase())
           );
 

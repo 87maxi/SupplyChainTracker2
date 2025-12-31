@@ -23,6 +23,7 @@ export const RequireWallet = ({ children }: RequireWalletProps) => {
     // Rutas públicas que no requieren wallet conectada
     const publicRoutes = ['/'];
 
+    // Sincroniza el estado del componente con el ciclo de vida del navegador
     useEffect(() => {
         setMounted(true);
     }, []);

@@ -120,8 +120,7 @@ export const NetbookStateMetrics = () => {
 
         fetchData();
 
-        // Listen for global refresh events
-        const { eventBus, EVENTS } = require('@/lib/events');
+          // Listen for global refresh events
         const unsubscribe = eventBus.on(EVENTS.REFRESH_DATA || 'REFRESH_DATA', () => {
             console.log('[NetbookStateMetrics] Global refresh detected...');
             fetchData();
@@ -145,12 +144,12 @@ export const NetbookStateMetrics = () => {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div className="space-y-1">
                     <h2 className="text-2xl font-bold tracking-tight">Estado de Netbooks</h2>
                     <p className="text-muted-foreground">Distribución por etapa del ciclo de vida</p>
                 </div>
-                <div className="text-right">
+                <div className="flex flex-col items-end space-y-1">
                     <p className="text-3xl font-bold">{counts.total}</p>
                     <p className="text-sm text-muted-foreground">Total registradas</p>
                 </div>

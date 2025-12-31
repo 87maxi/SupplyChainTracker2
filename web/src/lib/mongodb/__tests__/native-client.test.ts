@@ -12,7 +12,7 @@ jest.mock('mongodb', () => ({
 }));
 
 describe('Native MongoDB Client', () => {
-  const mockClient = {
+  const mockClient = { db: jest.fn().mockReturnThis() } as unknown as jest.Mocked<MongoClient>;
     db: jest.fn().mockReturnValue({
       collection: jest.fn().mockImplementation((name) => ({
         createIndex: jest.fn().mockResolvedValue(undefined)
@@ -27,6 +27,7 @@ describe('Native MongoDB Client', () => {
     
     // Clear the global cache before each test
     (global as any).mongoDBCache = undefined;
+    jest.spyOn(MongoClient, 'connect').mockResolvedValue(mockClient);
   });
 
   describe('connectToDatabase', () => {

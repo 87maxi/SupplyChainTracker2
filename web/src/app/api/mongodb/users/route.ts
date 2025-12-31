@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     
     // Build query filter
-    const query: any = {};
+    const query: Record<string, any> = {};
     
     if (role) {
       query.role = role;

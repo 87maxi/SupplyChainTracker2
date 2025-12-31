@@ -50,24 +50,8 @@ export function useRoleRequests() {
     }
   }, []);
 
-  // Save requests to localStorage whenever they change
-  useEffect(() => {
-    try {
-      // Get all requests from localStorage to maintain non-pending requests
-      const stored = localStorage.getItem('role_requests');
-      let allRequests: RoleRequest[] = stored ? JSON.parse(stored) : [];
-      
-      // Remove any pending requests that are no longer in state
-      allRequests = allRequests.filter(req => req.status !== 'pending' && req.status !== 'processing');
-      
-      // Add current pending requests
-      const updatedRequests = [...allRequests, ...pendingRequests];
-      
-      localStorage.setItem('role_requests', JSON.stringify(updatedRequests));
-    } catch (error) {
-      console.error('Error saving role requests to localStorage:', error);
-    }
-  }, [pendingRequests]);
+  // The deleteMutation is defined in the component that needs it
+  // to avoid circular dependencies and build errors
 
   // Add a new role request
   const addRequest = (request: Omit<RoleRequest, 'id' | 'status' | 'timestamp'>) => {
