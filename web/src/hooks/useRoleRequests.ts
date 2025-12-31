@@ -14,9 +14,10 @@ export interface RoleRequest {
   id: string;
   address: string;
   role: string;
-  status: 'pending' | 'rejected';
+  status: 'pending' | 'rejected' | 'processing';
   timestamp: number;
   signature?: string;
+  transactionHash?: string;
 }
 
 // Keys for React Query
@@ -39,7 +40,7 @@ export function useRoleRequests() {
       if (stored) {
         const requests = JSON.parse(stored);
         // Filter only pending requests
-        const pending = requests.filter((req: RoleRequest) => req.status === 'pending');
+        const pending = requests.filter((req: RoleRequest) => req.status === 'pending' || req.status === 'processing');
         setPendingRequests(pending);
       }
     } catch (error) {
@@ -93,10 +94,24 @@ export function useRoleRequests() {
     return newRequest;
   };
 
+  // Update request status
+  const updateRequestStatus = (requestId: string, status: RoleRequest['status'], transactionHash?: string) => {
+    setPendingRequests(prev => 
+      prev.map(req => 
+        req.id === requestId 
+          ? { ...req, status, transactionHash }
+          : req
+      )
+    );
+  };
+
   // Approve a role request
   const approveMutation = useMutation({
     mutationFn: async ({ requestId, role, userAddress }: { requestId: string, role: string, userAddress: string }) => {
       console.log(`[useRoleRequests] Approving request ${requestId}...`);
+
+      // Update status to processing
+      updateRequestStatus(requestId, 'processing');
 
       // Get role hashes
       const roleHashes = await getRoleHashes();
@@ -120,31 +135,43 @@ export function useRoleRequests() {
         throw new Error(`Hash no encontrado para el rol: ${role}`);
       }
       
-      // Blockchain Transaction
-      const result = await supplyChainService.grantRole(roleHash, userAddress as `0x${string}`);
+      // Check blockchain connection first
+      const isConnected = await supplyChainService.checkConnection?.();
+      if (!isConnected) {
+        throw new Error('No hay conexión con la blockchain. Verifica que Anvil esté ejecutándose.');
+      }
+
+      // Blockchain Transaction - use grantRoleByHash since we have the role hash
+      const result = await supplyChainService.grantRoleByHash(roleHash, userAddress as `0x${string}`);
       if (!result.success || !result.hash) {
         throw new Error(result.error || 'Transaction failed');
       }
+      
       const hash = result.hash;
       console.log('[useRoleRequests] Transaction submitted:', hash);
 
-      // Wait for transaction confirmation
-      try {
-        // Use the standardized wait for transaction receipt from grantRole
-        console.log('[useRoleRequests] Transaction confirmed on blockchain');
-        
-        toast({
-          title: 'Confirmado en Blockchain',
-          description: 'La asignación de rol ha sido confirmada.',
-          variant: 'default'
-        });
-      } catch (e) {
-        console.error('Transaction confirmation failed:', e);
-        throw e;
-      }
+      // Update request with transaction hash
+      updateRequestStatus(requestId, 'processing', hash);
 
-      // Update request status to approved
+      // Wait for transaction confirmation is now handled by SupplyChainService
+      // with improved timeout handling and retries
+
+      toast({
+        title: 'Confirmado en Blockchain',
+        description: 'La asignación de rol ha sido confirmada.',
+        variant: 'default'
+      });
+
+      // Update request status to approved (removed from pending)
       setPendingRequests(prev => prev.filter(req => req.id !== requestId));
+
+      // Invalidate cached role data to force refresh
+      queryClient.invalidateQueries({ queryKey: ['roles'] });
+      queryClient.invalidateQueries({ queryKey: ['userRoles'] });
+      queryClient.invalidateQueries({ queryKey: ['roleMembers'] });
+
+      // Emit event through event bus to notify all components about role update
+      eventBus.emit(EVENTS.ROLE_UPDATED, { address: userAddress, role });
 
       return hash;
     },
@@ -155,8 +182,8 @@ export function useRoleRequests() {
       // Snapshot previous value
       const previousRequests = [...pendingRequests];
 
-      // Optimistically remove the request
-      setPendingRequests(prev => prev.filter(req => req.id !== requestId));
+      // Optimistically update status to processing
+      updateRequestStatus(requestId, 'processing');
 
       // Notify UI immediately
       toast({
@@ -178,6 +205,7 @@ export function useRoleRequests() {
     },
     onError: (err, variables, context) => {
       console.error('[useRoleRequests] Approval failed:', err);
+      
       // Rollback to previous state if mutation fails
       if (context?.previousRequests) {
         setPendingRequests(context.previousRequests);
@@ -197,6 +225,10 @@ export function useRoleRequests() {
           errorMessage = 'La transacción fue revertida. Verifica permisos.';
         } else if (err.message.includes('user rejected')) {
           errorMessage = 'Transacción rechazada por el usuario.';
+        } else if (err.message.includes('timeout')) {
+          errorMessage = 'La transacción tardó demasiado en confirmarse. Verifica que Anvil esté ejecutándose correctamente.';
+        } else if (err.message.includes('conexión')) {
+          errorMessage = err.message;
         } else {
           errorMessage = err.message;
         }

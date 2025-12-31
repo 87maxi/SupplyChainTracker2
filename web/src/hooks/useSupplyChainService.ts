@@ -209,6 +209,16 @@ export const useSupplyChainService = () => {
     }
   }, [getRoleHashForName]);
 
+  // Grant role by hash directly
+  const grantRoleByHash = useCallback(async (roleHash: `0x${string}`, userAddress: Address) => {
+    try {
+      return await supplyChainService.grantRole(roleHash, userAddress);
+    } catch (error) {
+      console.error('Error in grantRoleByHash:', error);
+      throw error;
+    }
+  }, []);
+
   const revokeRole = useCallback(async (roleHash: `0x${string}`, userAddress: Address) => {
     try {
       return await supplyChainService.revokeRole(roleHash, userAddress);
@@ -271,6 +281,16 @@ export const useSupplyChainService = () => {
     }
   }, []);
 
+  // Connection check
+  const checkConnection = useCallback(async (): Promise<boolean> => {
+    try {
+      return await supplyChainService.checkConnection();
+    } catch (error) {
+      console.error('Error checking connection:', error);
+      return false;
+    }
+  }, []);
+
   // Export all functions
   return {
     getRoleHashForName,
@@ -284,10 +304,12 @@ export const useSupplyChainService = () => {
     getNetbookState,
     getNetbookReport,
     grantRole,
+    grantRoleByHash,
     revokeRole,
     auditHardware,
     registerNetbooks,
     validateSoftware,
-    assignToStudent
+    assignToStudent,
+    checkConnection
   };
 };

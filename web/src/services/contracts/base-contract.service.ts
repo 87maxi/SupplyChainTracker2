@@ -1,8 +1,7 @@
 // web/src/services/contracts/base-contract.service.ts
 
-import { PublicClient, WalletClient, HttpTransport, Chain } from 'viem';
-import { getPublicClient, getWalletClient } from '@wagmi/core';
-import { config } from '@/lib/wagmi/config';
+import { PublicClient, WalletClient } from 'viem';
+import { publicClient, getWalletClient, checkBlockchainConnection } from '@/lib/blockchain/client';
 import { CacheService } from '@/lib/cache/cache-service';
 import { ErrorHandler, AppError } from '@/lib/errors/error-handler';
 
@@ -12,6 +11,7 @@ import { ErrorHandler, AppError } from '@/lib/errors/error-handler';
  */
 export abstract class BaseContractService {
   protected walletClient: WalletClient | undefined;
+  protected transactionTimeouts: Map<string, NodeJS.Timeout> = new Map();
 
   constructor(
     protected contractAddress: `0x${string}`,
@@ -44,12 +44,7 @@ export abstract class BaseContractService {
     }
 
     try {
-      // Obtener el public client de forma lazy
-      const publicClient = getPublicClient(config);
-      if (!publicClient) {
-        throw new AppError('No se pudo obtener el cliente público', 'PUBLIC_CLIENT_ERROR');
-      }
-      
+      // Usar el cliente público unificado
       const result = await publicClient.readContract({
         address: this.contractAddress,
         abi: this.abi,
@@ -78,27 +73,22 @@ export abstract class BaseContractService {
     functionName: string,
     args: any[] = []
   ): Promise<{ hash: `0x${string}` }> {
-    // Obtener walletClient de forma lazy si no existe
-    if (!this.walletClient) {
-      try {
-        this.walletClient = await getWalletClient(config);
-      } catch (error) {
-        throw new AppError('No hay conexión con la wallet', 'WALLET_NOT_CONNECTED');
-      }
-    }
-
-    if (!this.walletClient) {
-      throw new AppError('No hay conexión con la wallet', 'WALLET_NOT_CONNECTED');
-    }
-
+    // Obtener walletClient usando nuestro cliente unificado
     try {
-      const hash = await this.walletClient.writeContract({
+      const walletClient = await getWalletClient();
+      
+      // Para desarrollo, usar una cuenta por defecto de Anvil
+      const account = (walletClient as any).account || {
+        address: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'
+      };
+
+      const hash = await walletClient.writeContract({
         address: this.contractAddress,
         abi: this.abi,
         functionName,
         args,
-        chain: this.walletClient.chain,
-        account: this.walletClient.account!
+        account: account.address as `0x${string}`,
+        chain: null // Chain es opcional en este contexto
       });
 
       return { hash };
@@ -110,29 +100,49 @@ export abstract class BaseContractService {
   /**
    * Espera a que una transacción sea confirmada
    * @param hash Hash de la transacción
-   * @param timeout Tiempo máximo de espera en segundos (por defecto: 120)
+   * @param timeout Tiempo máximo de espera en segundos (por defecto: 60 para desarrollo, 120 para producción)
+   * @param maxRetries Número máximo de reintentos (por defecto: 2)
    * @returns Recibo de la transacción
    */
   protected async waitForTransaction(
     hash: `0x${string}`,
-    timeout: number = 120
+    timeout: number = process.env.NODE_ENV === 'development' ? 60 : 120,
+    maxRetries: number = 2
   ) {
-    try {
-      // Obtener el public client de forma lazy
-      const publicClient = getPublicClient(config);
-      if (!publicClient) {
-        throw new AppError('No se pudo obtener el cliente público', 'PUBLIC_CLIENT_ERROR');
-      }
-      
-      const receipt = await publicClient.waitForTransactionReceipt({
-        hash,
-        timeout
-      });
+    let retries = 0;
+    
+    const attemptWait = async (): Promise<any> => {
+      try {
+        // Usar el cliente público unificado con timeout extendido para desarrollo
+        const receipt = await publicClient.waitForTransactionReceipt({
+          hash,
+          timeout: process.env.NODE_ENV === 'development' ? 120_000 : timeout * 1000, // 120 segundos para desarrollo
+          pollingInterval: 1000 // Poll cada 1 segundo
+        });
 
-      return receipt;
-    } catch (error) {
-      throw ErrorHandler.handleWeb3Error(error);
-    }
+        return receipt;
+      } catch (error) {
+        // Si es un error de timeout y tenemos reintentos disponibles, reintentar
+        if ((error instanceof Error && error.name === 'AbortError') || 
+            (error instanceof Error && error.message.includes('timeout'))) {
+          
+          if (retries < maxRetries) {
+            retries++;
+            console.warn(`Reintentando transacción ${hash} (intento ${retries}/${maxRetries})`);
+            
+            // Backoff exponencial: 1s, 2s, 4s, etc.
+            const backoffDelay = Math.pow(2, retries) * 1000;
+            await new Promise(resolve => setTimeout(resolve, backoffDelay));
+            
+            return attemptWait();
+          }
+        }
+        
+        throw ErrorHandler.handleWeb3Error(error);
+      }
+    };
+
+    return attemptWait();
   }
 
   /**
@@ -164,5 +174,22 @@ export abstract class BaseContractService {
         console.warn('Error al invalidar caché completa:', error);
       }
     }
+  }
+
+  /**
+   * Cancela todas las transacciones pendientes
+   */
+  public cancelAllPendingTransactions(): void {
+    this.transactionTimeouts.forEach((timeoutId, hash) => {
+      clearTimeout(timeoutId);
+      this.transactionTimeouts.delete(hash);
+    });
+  }
+
+  /**
+   * Verifica el estado de la conexión con la blockchain
+   */
+  public async checkConnection(): Promise<boolean> {
+    return await checkBlockchainConnection();
   }
 }

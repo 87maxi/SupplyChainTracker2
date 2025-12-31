@@ -45,6 +45,7 @@
    - **anvil:** el objetivo de esta interfaz es interactuar con anvil, usa las cuentas de anvil para pruebas
    - no ejecutes anvil, esta corriendo con los contratos deployados 
    - analisa los errores de codigo con **npm run build --loglevel error**, no use npm run dev, no inicies servicios
+   - despues de crear o editar un archivo verifica que el archivo no este corupto y sea consistente
    
 
 **2. Consistencia de Código:**

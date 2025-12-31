@@ -68,6 +68,26 @@ contract SupplyChainTracker is AccessControlEnumerable {
     // --- Funciones ERC-20 para evitar errores de "execution reverted" ---
     // Estas funciones devuelven valores por defecto para evitar que herramientas
     // que esperan un contrato ERC-20 fallen con "execution reverted"
+    
+    function decimals() external pure returns (uint8) {
+        return 0; // No es un token, devolvemos 0
+    }
+    
+    function symbol() external pure returns (string memory) {
+        return ""; // No es un token, devolvemos string vacío
+    }
+    
+    function name() external pure returns (string memory) {
+        return "SupplyChainTracker"; // Nombre del contrato
+    }
+    
+    function totalSupply() external pure returns (uint256) {
+        return 0; // No es un token, devolvemos 0
+    }
+    
+    function balanceOf(address) external pure returns (uint256) {
+        return 0; // No es un token, devolvemos 0
+    }
 
     // --- Funciones de gestión de roles ---
 
