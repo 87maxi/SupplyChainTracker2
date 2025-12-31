@@ -1,4 +1,4 @@
-import { mongodbService } from '@/lib/mongodb';
+import { connectToDatabase } from '@/lib/mongodb';
 import { RoleData, NetbookData } from '@/types/mongodb';
 import { ContractRoles } from '@/types/contract';
 import { Address } from 'viem';
@@ -20,7 +20,8 @@ export class RoleDataService {
     timestamp?: Date;
   }): Promise<RoleData> {
     try {
-      const roleData = await mongodbService.saveRoleData({
+      const { db } = await connectToDatabase();
+      const result = await db.collection('role_data').insertOne({
         transactionHash: params.transactionHash,
         role: params.role,
         userAddress: params.userAddress,
@@ -28,8 +29,9 @@ export class RoleDataService {
         timestamp: params.timestamp || new Date()
       });
       
+      
       console.log(`[RoleDataService] Saved role data for transaction ${params.transactionHash}`);
-      return roleData;
+      return { ...params, _id: result.insertedId.toString() };
     } catch (error) {
       console.error('[RoleDataService] Error saving role data:', error);
       throw error;
@@ -50,7 +52,8 @@ export class RoleDataService {
     timestamp?: Date;
   }): Promise<NetbookData> {
     try {
-      const netbookData = await mongodbService.saveNetbookData({
+      const { db } = await connectToDatabase();
+      const result = await db.collection('netbook_data').insertOne({
         serialNumber: params.serialNumber,
         transactionHash: params.transactionHash,
         role: params.role,
@@ -59,8 +62,9 @@ export class RoleDataService {
         timestamp: params.timestamp || new Date()
       });
       
+      
       console.log(`[RoleDataService] Saved netbook data for serial ${params.serialNumber}, transaction ${params.transactionHash}`);
-      return netbookData;
+      return { ...params, _id: result.insertedId.toString() };
     } catch (error) {
       console.error('[RoleDataService] Error saving netbook data:', error);
       throw error;
@@ -74,7 +78,9 @@ export class RoleDataService {
    */
   static async getRoleDataByTransactionHash(transactionHash: `0x${string}`): Promise<RoleData | null> {
     try {
-      return await mongodbService.getRoleDataByTransactionHash(transactionHash);
+      const { db } = await connectToDatabase();
+      const roleData = await db.collection('role_data').findOne({ transactionHash });
+      return roleData ? { ...roleData, _id: roleData._id?.toString() } : null;
     } catch (error) {
       console.error('[RoleDataService] Error getting role data by transaction hash:', error);
       throw error;
@@ -88,7 +94,9 @@ export class RoleDataService {
    */
   static async getRoleDataByRole(role: ContractRoles): Promise<RoleData[]> {
     try {
-      return await mongodbService.getRoleDataByRole(role);
+      const { db } = await connectToDatabase();
+      const roleData = await db.collection('role_data').find({ role }).sort({ timestamp: -1 }).toArray();
+      return roleData.map(data => ({ ...data, _id: data._id?.toString() }));
     } catch (error) {
       console.error('[RoleDataService] Error getting role data by role:', error);
       throw error;
@@ -102,7 +110,9 @@ export class RoleDataService {
    */
   static async getRoleDataByUser(userAddress: Address): Promise<RoleData[]> {
     try {
-      return await mongodbService.getRoleDataByUser(userAddress);
+      const { db } = await connectToDatabase();
+      const roleData = await db.collection('role_data').find({ userAddress: userAddress.toLowerCase() }).sort({ timestamp: -1 }).toArray();
+      return roleData.map(data => ({ ...data, _id: data._id?.toString() }));
     } catch (error) {
       console.error('[RoleDataService] Error getting role data by user:', error);
       throw error;
@@ -116,7 +126,9 @@ export class RoleDataService {
    */
   static async getNetbookDataBySerial(serialNumber: string): Promise<NetbookData[]> {
     try {
-      return await mongodbService.getNetbookDataBySerial(serialNumber);
+      const { db } = await connectToDatabase();
+      const netbookData = await db.collection('netbook_data').find({ serialNumber }).sort({ timestamp: -1 }).toArray();
+      return netbookData.map(data => ({ ...data, _id: data._id?.toString() }));
     } catch (error) {
       console.error('[RoleDataService] Error getting netbook data by serial:', error);
       throw error;
@@ -130,7 +142,9 @@ export class RoleDataService {
    */
   static async getNetbookDataByTransactionHash(transactionHash: `0x${string}`): Promise<NetbookData | null> {
     try {
-      return await mongodbService.getNetbookDataByTransactionHash(transactionHash);
+      const { db } = await connectToDatabase();
+      const netbookData = await db.collection('netbook_data').findOne({ transactionHash });
+      return netbookData ? { ...netbookData, _id: netbookData._id?.toString() } : null;
     } catch (error) {
       console.error('[RoleDataService] Error getting netbook data by transaction hash:', error);
       throw error;
@@ -145,7 +159,9 @@ export class RoleDataService {
    */
   static async getNetbookDataByRole(serialNumber: string, role: ContractRoles): Promise<NetbookData | null> {
     try {
-      return await mongodbService.getNetbookDataByRole(serialNumber, role);
+      const { db } = await connectToDatabase();
+      const netbookData = await db.collection('netbook_data').findOne({ serialNumber, role });
+      return netbookData ? { ...netbookData, _id: netbookData._id?.toString() } : null;
     } catch (error) {
       console.error('[RoleDataService] Error getting netbook data by role:', error);
       throw error;
@@ -159,7 +175,9 @@ export class RoleDataService {
    */
   static async getAllNetbookData(serialNumber: string): Promise<NetbookData[]> {
     try {
-      return await mongodbService.getAllNetbookData(serialNumber);
+      const { db } = await connectToDatabase();
+      const netbookData = await db.collection('netbook_data').find({ serialNumber }).sort({ timestamp: -1 }).toArray();
+      return netbookData.map(data => ({ ...data, _id: data._id?.toString() }));
     } catch (error) {
       console.error('[RoleDataService] Error getting all netbook data:', error);
       throw error;

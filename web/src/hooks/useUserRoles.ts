@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useWeb3 } from '@/hooks/useWeb3';
-import { hasRole } from '@/services/SupplyChainService';
+import { useSupplyChainService } from '@/hooks/useSupplyChainService';
 import { readContract } from '@wagmi/core';
 import { config } from '@/lib/wagmi/config';
 import SupplyChainTrackerABI from '@/contracts/abi/SupplyChainTracker.json';
@@ -26,6 +26,7 @@ import { getCache, setCache, isCacheStale, isRevalidating, startRevalidation, co
 
 export const useUserRoles = (): UseUserRoles => {
   const { address, isConnected } = useWeb3();
+  const { hasRoleByHash } = useSupplyChainService();
   const cacheKey = `user_roles_${address || 'unknown'}`;
   const [userRoles, setUserRoles] = useState<UseUserRoles>({    isAdmin: false,
     isManufacturer: false,
@@ -77,13 +78,14 @@ export const useUserRoles = (): UseUserRoles => {
       const escuelaRoleStr = hashes.ESCUELA;
       const defaultAdminRoleStr = hashes.ADMIN;
 
-      // Check roles using ContractRoles
+      // Check roles using role hashes directly for better reliability
       const [isAdmin, isManufacturer, isHardwareAuditor, isSoftwareTechnician, isSchool] = await Promise.all([
-        hasRole('DEFAULT_ADMIN_ROLE', address as `0x${string}`),
-        hasRole('FABRICANTE_ROLE', address as `0x${string}`),
-        hasRole('AUDITOR_HW_ROLE', address as `0x${string}`),
-        hasRole('TECNICO_SW_ROLE', address as `0x${string}`),
-        hasRole('ESCUELA_ROLE', address as `0x${string}`)
+        // Use bytes32(0) for DEFAULT_ADMIN_ROLE as per OpenZeppelin AccessControl standard
+        hasRoleByHash('0x0000000000000000000000000000000000000000000000000000000000000000', address as `0x${string}`),
+        hasRoleByHash(hashes.FABRICANTE, address as `0x${string}`),
+        hasRoleByHash(hashes.AUDITOR_HW, address as `0x${string}`),
+        hasRoleByHash(hashes.TECNICO_SW, address as `0x${string}`),
+        hasRoleByHash(hashes.ESCUELA, address as `0x${string}`)
       ]);
 
       console.log('Role check results:', {
@@ -151,7 +153,7 @@ export const useUserRoles = (): UseUserRoles => {
         setUserRoles(prev => ({ ...prev, isLoading: false }));
       }
     }
-  }, [address, isConnected, cacheKey]);
+  }, [address, isConnected, cacheKey, hasRoleByHash]);
 
   useEffect(() => {
     checkRoles();

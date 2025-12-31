@@ -53,21 +53,15 @@ export function useRoleRequests() {
   // Save requests to localStorage whenever they change
   useEffect(() => {
     try {
-      // Get all requests (including non-pending) from localStorage
+      // Get all requests from localStorage to maintain non-pending requests
       const stored = localStorage.getItem('role_requests');
-      const allRequests = stored ? JSON.parse(stored) : [];
+      let allRequests: RoleRequest[] = stored ? JSON.parse(stored) : [];
       
-      // Update pending requests
-      const updatedRequests = allRequests.map((req: RoleRequest) => 
-        pendingRequests.find(p => p.id === req.id) || req
-      );
+      // Remove any pending requests that are no longer in state
+      allRequests = allRequests.filter(req => req.status !== 'pending' && req.status !== 'processing');
       
-      // Add new pending requests
-      pendingRequests.forEach(req => {
-        if (!updatedRequests.find((r: RoleRequest) => r.id === req.id)) {
-          updatedRequests.push(req);
-        }
-      });
+      // Add current pending requests
+      const updatedRequests = [...allRequests, ...pendingRequests];
       
       localStorage.setItem('role_requests', JSON.stringify(updatedRequests));
     } catch (error) {
@@ -163,6 +157,7 @@ export function useRoleRequests() {
       });
 
       // Update request status to approved (removed from pending)
+      // This will trigger the useEffect that saves to localStorage
       setPendingRequests(prev => prev.filter(req => req.id !== requestId));
 
       // Invalidate cached role data to force refresh

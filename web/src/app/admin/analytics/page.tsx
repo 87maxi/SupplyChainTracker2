@@ -1,15 +1,15 @@
 "use client";
 
 import { useWeb3 } from '@/hooks/useWeb3';
-import { useSupplyChainService } from '@/hooks/useSupplyChainService';
+import { useUserRoles } from '@/hooks/useUserRoles';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, Factory, ShieldCheck, Gavel } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { AllRolesSummary } from '@/types/supply-chain-types';
 import { AnalyticsChart } from './components/AnalyticsChart';
 import { DateRangeSelector } from './components/DateRangeSelector';
+import { useAnalyticsData } from '@/hooks/useAnalyticsData';
 
 /**
  * Página de Analytics & Reporting para administradores
@@ -19,65 +19,13 @@ import { DateRangeSelector } from './components/DateRangeSelector';
  */
 export default function AnalyticsPage() {
   const { address, isConnected, connectWallet } = useWeb3();
-  const { hasRole, getAllRolesSummary } = useSupplyChainService();
+  const { isAdmin, isLoading: rolesLoading } = useUserRoles();
   const { toast } = useToast();
+  const { data, stats, isLoading: analyticsLoading, error } = useAnalyticsData();
 
-  const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [rolesSummary, setRolesSummary] = useState<AllRolesSummary | null>(null);
+  const loading = rolesLoading || analyticsLoading;
 
-  // Transform roles summary data into analytics chart format
-  const getAnalyticsData = (summary: AllRolesSummary | null): Array<{date: string, fabricadas: number, distribuidas: number}> => {
-    if (!summary) return [];
-    
-    // Extract counts for fabricantes and escuelas
-    const fabricantesCount = summary.FABRICANTE_ROLE?.count || 0;
-    const escuelasCount = summary.ESCUELA_ROLE?.count || 0;
-    
-    // Create a simple time series with the current month
-    const currentDate = new Date();
-    const currentMonth = currentDate.toLocaleString('default', { month: 'short', year: '2-digit' });
-    
-    // Return mock data using the role counts as proxies for fabricated and distributed count
-    return [
-      { date: currentMonth, fabricadas: fabricantesCount * 50, distribuidas: escuelasCount * 25 }
-    ];
-  };
-
-  useEffect(() => {
-    const fetchAnalyticsData = async () => {
-      if (!isConnected || !address) {
-        setLoading(false);
-        setIsAdmin(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        
-        // Verificar rol de administrador
-        const userIsAdmin = await hasRole("DEFAULT_ADMIN_ROLE", address);
-        setIsAdmin(userIsAdmin);
-        
-        if (userIsAdmin) {
-          const summary = await getAllRolesSummary();
-          setRolesSummary(summary);
-        }
-      } catch (error: any) {
-        console.error('Error fetching analytics data:', error);
-        toast({
-          title: "Error de carga",
-          description: `No se pudieron cargar los datos: ${error.message}`,
-          variant: "destructive",
-        });
-        setIsAdmin(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAnalyticsData();
-  }, [isConnected, address, hasRole, getAllRolesSummary, toast]);
+  // No need for manual admin check - useUserRoles already handles this
 
   // Renderizado según estado
   if (!isConnected) {
@@ -151,65 +99,54 @@ export default function AnalyticsPage() {
       <DateRangeSelector />
 
       {/* Metrics Overview */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total de Usuarios</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {rolesSummary 
-                ? Object.values(rolesSummary).reduce((sum, role) => sum + (role?.count || 0), 0)
-                : 0
-              }
-            </div>
-            <p className="text-xs text-muted-foreground">Todos los roles combinados</p>
+            <div className="text-2xl font-bold">{stats?.totalUsers || 0}</div>
+            <p className="text-xs text-muted-foreground">Todos los usuarios registrados</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Administradores</CardTitle>
-            <div className="h-4 w-4 text-red-500 flex items-center justify-center">
-              <Gavel className="h-4 w-4" />
-            </div>
+            <CardTitle className="text-sm font-medium">Total de Netbooks</CardTitle>
+            <Factory className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{rolesSummary?.DEFAULT_ADMIN_ROLE?.count || 0}</div>
-            <p className="text-xs text-muted-foreground">Usuarios con acceso máximo</p>
+            <div className="text-2xl font-bold">{stats?.totalNetbooks || 0}</div>
+            <p className="text-xs text-muted-foreground">Dispositivos registrados</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Fabricantes</CardTitle>
-            <div className="h-4 w-4 text-blue-500 flex items-center justify-center">
-              <Factory className="h-4 w-4" />
-            </div>
+            <CardTitle className="text-sm font-medium">Usuarios Activos</CardTitle>
+            <ShieldCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{rolesSummary?.FABRICANTE_ROLE?.count || 0}</div>
-            <p className="text-xs text-muted-foreground">Instalaciones registradas</p>
+            <div className="text-2xl font-bold">{stats?.usersByRole.ADMIN_ROLE || 0}</div>
+            <p className="text-xs text-muted-foreground">Administradores</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Auditores HW</CardTitle>
-            <div className="h-4 w-4 text-green-500 flex items-center justify-center">
-              <ShieldCheck className="h-4 w-4" />
-            </div>
+            <CardTitle className="text-sm font-medium">Participantes</CardTitle>
+            <Gavel className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{rolesSummary?.AUDITOR_HARDWARE_ROLE?.count || 0}</div>
-            <p className="text-xs text-muted-foreground">Verificación de dispositivos</p>
+            <div className="text-2xl font-bold">{Object.keys(stats?.usersByRole || {}).length}</div>
+            <p className="text-xs text-muted-foreground">Roles activos</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Gráfico de análisis general */}
-      <AnalyticsChart data={getAnalyticsData(rolesSummary)} />
+      <AnalyticsChart data={data} />
 
     </div>
   );

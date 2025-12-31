@@ -18,7 +18,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { submitRoleRequest } from '@/services/RoleRequestService';
+import { RoleRequestService } from '@/services/RoleRequestService';
 import { useWeb3 } from '@/hooks/useWeb3';
 import { useSignMessage } from 'wagmi';
 
@@ -63,7 +63,7 @@ export function RoleRequestModal({ isOpen, onOpenChange }: RoleRequestModalProps
             const signature = await signMessageAsync({ message });
 
             // 2. Submit request with signature
-            await submitRoleRequest(address, role, signature);
+            await RoleRequestService.submitRoleRequest(address, role, signature);
 
             toast({
                 title: "Solicitud enviada",

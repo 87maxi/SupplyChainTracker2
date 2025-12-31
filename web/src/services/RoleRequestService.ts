@@ -1,85 +1,80 @@
-'use client';
-
+import { MongoDBClient } from '@/lib/mongodb-client';
 import { RoleRequest } from '@/types/role-request';
+import { Address } from 'viem';
 
-// Use localStorage as persistent storage
-const STORAGE_KEY = 'role_requests';
-
-// Read requests from localStorage
-function readRequests(): RoleRequest[] {
+/**
+ * Service to handle role requests persistence in MongoDB
+ */
+export class RoleRequestService {
+  /**
+   * Submit a new role request
+   */
+  static async submitRoleRequest(address: Address, role: string, signature?: string): Promise<RoleRequest> {
     try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (!stored) return [];
-        
-        const requests = JSON.parse(stored);
-        // Ensure all requests have required properties
-        return requests.map((req: any) => ({
-            id: req.id,
-            address: req.address,
-            role: req.role,
-            status: req.status || 'pending',
-            timestamp: req.timestamp || Date.now(),
-            signature: req.signature
-        }));
+      return await MongoDBClient.submitRoleRequest(address, role, signature);
     } catch (error) {
-        console.error('Error reading role requests from localStorage:', error);
-        return [];
+      console.error('[RoleRequestService] Error submitting role request:', error);
+      throw error;
     }
-}
+  }
 
-// Write requests to localStorage
-function writeRequests(requests: RoleRequest[]) {
+  /**
+   * Get all pending role requests
+   */
+  static async getPendingRoleRequests(): Promise<RoleRequest[]> {
     try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(requests));
-        console.log('Successfully wrote role requests to localStorage');
+      return await MongoDBClient.getPendingRoleRequests();
     } catch (error) {
-        console.error('Error writing role requests to localStorage:', error);
-        throw new Error('No se pudo guardar la solicitud en el almacenamiento local.');
+      console.error('[RoleRequestService] Error getting pending requests:', error);
+      throw error;
     }
-}
+  }
 
-export async function submitRoleRequest(address: string, role: string, signature?: string) {
-    const newRequest: RoleRequest = {
-        id: Math.random().toString(36).substring(7),
-        address,
-        role,
-        status: 'pending',
-        timestamp: Date.now(),
-        signature,
-    };
-
-    const requests = readRequests();
-    requests.push(newRequest);
-    writeRequests(requests);
-
-    console.log('Role request submitted and saved:', newRequest);
-    
-    // In a real app, you might dispatch an event or use a state manager
-    // to notify other parts of the app of the change
-    
-    return newRequest;
-}
-
-export async function getRoleRequests() {
-    const requests = readRequests();
-    console.log('Fetching role requests from localStorage, count:', requests.length);
-    return requests;
-}
-
-export async function updateRoleRequestStatus(id: string, status: 'approved' | 'rejected') {
-    const requests = readRequests();
-    const index = requests.findIndex(req => req.id === id);
-    if (index !== -1) {
-        requests[index].status = status;
-        writeRequests(requests);
+  /**
+   * Get all role requests (including approved/rejected)
+   */
+  static async getAllRoleRequests(): Promise<RoleRequest[]> {
+    try {
+      return await MongoDBClient.getAllRoleRequests();
+    } catch (error) {
+      console.error('[RoleRequestService] Error getting all requests:', error);
+      throw error;
     }
-}
+  }
 
-export async function deleteRoleRequest(id: string) {
-    let requests = readRequests();
-    const initialLength = requests.length;
-    requests = requests.filter(req => req.id !== id);
-    if (requests.length !== initialLength) {
-        writeRequests(requests);
+  /**
+   * Update role request status
+   */
+  static async updateRoleRequestStatus(id: string, status: 'approved' | 'rejected'): Promise<void> {
+    try {
+      await MongoDBClient.updateRoleRequestStatus(id, status);
+    } catch (error) {
+      console.error('[RoleRequestService] Error updating request status:', error);
+      throw error;
     }
+  }
+
+  /**
+   * Delete role request
+   */
+  static async deleteRoleRequest(id: string): Promise<void> {
+    try {
+      await MongoDBClient.deleteRoleRequest(id);
+    } catch (error) {
+      console.error('[RoleRequestService] Error deleting request:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get role requests by user address
+   */
+  static async getRoleRequestsByUser(address: Address): Promise<RoleRequest[]> {
+    try {
+      return await MongoDBClient.getRoleRequestsByUser(address);
+    } catch (error) {
+      console.error('[RoleRequestService] Error getting user requests:', error);
+      throw error;
+    }
+  }
 }

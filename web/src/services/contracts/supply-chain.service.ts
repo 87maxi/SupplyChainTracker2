@@ -89,7 +89,15 @@ export class SupplyChainService extends BaseContractService {
       validateRegisterInput.parse({ serials, batches, specs });
       
       // Realizar transacción
-      const { hash } = await this.write('registerNetbooks', [serials, batches, specs]);
+      const { hash } = await this.write(
+        'registerNetbooks', 
+        [serials, batches, specs],
+        {
+          role: 'FABRICANTE_ROLE',
+          userAddress: userAddress,
+          relatedSerial: serials[0] // Usar el primer serial como referencia
+        }
+      );
       
       // Esperar confirmación
       const receipt = await this.waitForTransaction(hash);
@@ -148,7 +156,15 @@ export class SupplyChainService extends BaseContractService {
       AuditHardwareSchema.parse({ serial, passed, reportHash });
       
       // Realizar transacción
-      const { hash } = await this.write('auditHardware', [serial, passed, reportHash]);
+      const { hash } = await this.write(
+        'auditHardware', 
+        [serial, passed, reportHash],
+        {
+          role: 'AUDITOR_HW_ROLE',
+          userAddress: userAddress,
+          relatedSerial: serial
+        }
+      );
       
       // Esperar confirmación
       const receipt = await this.waitForTransaction(hash);
@@ -206,7 +222,15 @@ export class SupplyChainService extends BaseContractService {
       ValidateSoftwareSchema.parse({ serial, osVersion, passed });
       
       // Realizar transacción
-      const { hash } = await this.write('validateSoftware', [serial, osVersion, passed]);
+      const { hash } = await this.write(
+        'validateSoftware', 
+        [serial, osVersion, passed],
+        {
+          role: 'TECNICO_SW_ROLE',
+          userAddress: userAddress,
+          relatedSerial: serial
+        }
+      );
       
       // Esperar confirmación
       const receipt = await this.waitForTransaction(hash);
@@ -264,7 +288,15 @@ export class SupplyChainService extends BaseContractService {
       AssignToStudentSchema.parse({ serial, schoolHash, studentHash });
       
       // Realizar transacción
-      const { hash } = await this.write('assignToStudent', [serial, schoolHash, studentHash]);
+      const { hash } = await this.write(
+        'assignToStudent', 
+        [serial, schoolHash, studentHash],
+        {
+          role: 'ESCUELA_ROLE',
+          userAddress: userAddress,
+          relatedSerial: serial
+        }
+      );
       
       // Esperar confirmación
       const receipt = await this.waitForTransaction(hash);
@@ -440,7 +472,15 @@ export class SupplyChainService extends BaseContractService {
    */
   grantRole = async (roleHash: `0x${string}`, userAddress: Address): Promise<TransactionResult> => {
     try {
-      const { hash } = await this.write('grantRole', [roleHash, userAddress]);
+      const { hash } = await this.write(
+        'grantRole', 
+        [roleHash, userAddress],
+        {
+          role: 'DEFAULT_ADMIN_ROLE',
+          userAddress: userAddress,
+          relatedSerial: undefined
+        }
+      );
       const receipt = await this.waitForTransaction(hash);
       
       // Guardar en MongoDB
@@ -479,7 +519,15 @@ export class SupplyChainService extends BaseContractService {
    */
   revokeRole = async (roleHash: `0x${string}`, userAddress: Address): Promise<TransactionResult> => {
     try {
-      const { hash } = await this.write('revokeRole', [roleHash, userAddress]);
+      const { hash } = await this.write(
+        'revokeRole', 
+        [roleHash, userAddress],
+        {
+          role: 'DEFAULT_ADMIN_ROLE',
+          userAddress: userAddress,
+          relatedSerial: undefined
+        }
+      );
       const receipt = await this.waitForTransaction(hash);
       
       // Guardar en MongoDB

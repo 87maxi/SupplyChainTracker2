@@ -27,6 +27,17 @@ import { HardwareAuditForm } from '@/components/contracts/HardwareAuditForm';
 import { SoftwareValidationForm } from '@/components/contracts/SoftwareValidationForm';
 import { StudentAssignmentForm } from '@/components/contracts/StudentAssignmentForm';
 
+// Importar componentes de estadísticas y tablas
+import { UserStats } from '@/app/dashboard/components/UserStats';
+import { NetbookStats } from '@/app/dashboard/components/NetbookStats';
+import { UserDataTable } from '@/app/dashboard/components/UserDataTable';
+import { NetbookDataTable } from '@/app/dashboard/components/NetbookDataTable';
+
+// Importar hooks para obtener datos de MongoDB
+import { useUserStats } from '@/hooks/useUserStats';
+import { useNetbookStats } from '@/hooks/useNetbookStats';
+import { useProcessedUserAndNetbookData } from '@/hooks/useProcessedUserAndNetbookData';
+
 // Reusable Status Badge Component
 function StatusBadge({ status }: { status: NetbookState }) {
   const getStatusConfig = (status: NetbookState) => {
@@ -149,18 +160,57 @@ function TempDashboard({ onConnect }: { onConnect: () => void }) {
 }
 
 export default function ManagerDashboard() {
+  // Obtener estadísticas desde MongoDB usando los nuevos endpoints
+  const { stats: userStatsData, isLoading: usersLoading } = useUserStats();
+  const { stats: netbookStatsData, isLoading: netbooksLoading } = useNetbookStats();
+  
+  // Obtener datos procesados combinados de usuarios y netbooks
+  const { users, netbooks: netbooksTable, isLoading: dataLoading, refetch: fetchDashboardData } = useProcessedUserAndNetbookData();
+  
+  // Combinar estados de carga
+  const isLoading = usersLoading || netbooksLoading || dataLoading;
+  
+  // Funciones para manejar filtros
+  const handleUserFilterChange = (filter: { key: string; value: string }) => {
+    console.log('User filter changed:', filter);
+  };
+  
+  const handleNetbookFilterChange = (filter: { key: string; value: string }) => {
+    console.log('Netbook filter changed:', filter);
+  };
   const { isConnected, connectWallet } = useWeb3();
   const { getAllSerialNumbers, getNetbookState, getNetbookReport } = useSupplyChainService();
   const { isHardwareAuditor, isSoftwareTechnician, isSchool, isAdmin } = useUserRoles();
 
-  const [netbooks, setNetbooks] = useState<Netbook[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [summary, setSummary] = useState({
-    FABRICADA: 0,
-    HW_APROBADO: 0,
-    SW_VALIDADO: 0,
-    DISTRIBUIDA: 0
+  // Utilizar los datos cargados desde MongoDB
+  // const [netbooks, setNetbooks] = useState<Netbook[]>([]);
+  // const [loading, setLoading] = useState(true);
+  
+  // Utilizar datos de estadísticas desde MongoDB en lugar del conteo directo
+  const summary = {
+    FABRICADA: netbookStatsData?.production || 0,
+    HW_APROBADO: netbookStatsData?.distribution || 0,
+    SW_VALIDADO: netbookStatsData?.retail || 0,
+    DISTRIBUIDA: netbookStatsData?.sold || 0
+  };
+
+  // Utilizar usuarios y netbooks ya definidos anteriormente
+  // const { users } = useFetchUsers();
+  // const { netbooks } = useProcessedUserAndNetbookData();
+  
+  // Filtrar tareas pendientes basado en roles
+  const pendingTasks = netbooksTable.filter((n: Netbook) => {
+    if (!n) return false;
+    if ((n.currentState === 'FABRICADA') && (isHardwareAuditor || isAdmin)) return true;
+    if ((n.currentState === 'HW_APROBADO') && (isSoftwareTechnician || isAdmin)) return true;
+    if ((n.currentState === 'SW_VALIDADO') && (isSchool || isAdmin)) return true;
+    return false;
   });
+
+  // Usar los datos de netbookStatsData para las estadísticas
+  // y los datos de fetch para las tablas con paginación
+  // Establecer netbooksForTable con los datos obtenidos de useFetchNetbooks
+  const netbooksForTable = netbooksTable;
 
   // Form states
   const [selectedSerial, setSelectedSerial] = useState<string>('');
@@ -189,76 +239,17 @@ export default function ManagerDashboard() {
     }
   }, []);
 
-  const fetchDashboardData = useCallback(async () => {
-    if (!isConnected) {
-      setLoading(false);
-      return;
-    }
 
-    setLoading(true);
-    try {
-      const serials = await getAllSerialNumbers();
 
-      const netbookData = await Promise.all(
-        serials.map(async (serial: string) => {
-          try {
-            // Obtener el estado y el reporte por separado
-            const state = await getNetbookState(serial);
-            const report = await getNetbookReport(serial);
-            
-            // Combinar en un solo objeto netbook
-            if (report) {
-              return {
-                ...report,
-                currentState: state,
-                serialNumber: serial,
-                // Añadir timestamp de registro si no existe en el reporte
-                distributionTimestamp: report.distributionTimestamp || 0
-              };
-            }
-            return null;
-          } catch (error) {
-            console.error(`Error fetching data for ${serial}:`, error);
-            return null;
-          }
-        })
-      );
-
-      const validNetbooks = netbookData.filter((n): n is Netbook => n !== null);
-      setNetbooks(validNetbooks);
-
-      setSummary({
-    FABRICADA: validNetbooks.filter((n: Netbook) => n.currentState === "FABRICADA").length,
-    HW_APROBADO: validNetbooks.filter((n: Netbook) => n.currentState === "HW_APROBADO").length,
-    SW_VALIDADO: validNetbooks.filter((n: Netbook) => n.currentState === "SW_VALIDADO").length,
-    DISTRIBUIDA: validNetbooks.filter((n: Netbook) => n.currentState === "DISTRIBUIDA").length
-  });
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [isConnected, getAllSerialNumbers, getNetbookState, getNetbookReport]);
-
-  useEffect(() => {
-    fetchDashboardData();
-  }, [fetchDashboardData]);
-
-  // Remove the initialized state since it's not needed
-  // The component should render based on isConnected and loading states only
+  // El efecto para actualizar datos del dashboard se ha eliminado porque los datos
+  // ya vienen del hook useProcessedUserAndNetbookData
+  // y se actualizan automáticamente cada 30 segundos
 
   if (!isConnected) {
     return <TempDashboard onConnect={connectWallet} />;
   }
 
-  // Filter pending tasks based on roles
-  const pendingTasks = netbooks.filter((n: Netbook) => {
-    if (!n) return false;
-    if ((n.currentState === 'FABRICADA') && (isHardwareAuditor || isAdmin)) return true;
-    if ((n.currentState === 'HW_APROBADO') && (isSoftwareTechnician || isAdmin)) return true;
-    if ((n.currentState === 'SW_VALIDADO') && (isSchool || isAdmin)) return true;
-    return false;
-  });
+
 
   return (
     <div className="container mx-auto px-4 py-12 space-y-12">
@@ -275,7 +266,7 @@ export default function ManagerDashboard() {
 
       <RoleActions />
 
-      {loading ? (
+      {isLoading ? (
         <div className="flex flex-col items-center justify-center py-24 space-y-4">
           <Loader2 className="h-12 w-12 text-primary animate-spin" />
           <p className="text-lg text-muted-foreground animate-pulse">Sincronizando con la blockchain...</p>
@@ -311,31 +302,16 @@ export default function ManagerDashboard() {
           )}
 
           {/* Tracking List */}
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-                <Search className="h-6 w-6 text-primary" />
-                Seguimiento Detallado
-              </h2>
-              <Badge variant="secondary" className="px-3">
-                {netbooks.length} Dispositivos
-              </Badge>
-            </div>
-
-            <div className="grid gap-4">
-              {netbooks.length > 0 ? (
-                netbooks.map((netbook) => (
-                  <TrackingCard key={netbook.serialNumber} netbook={netbook} />
-                ))
-              ) : (
-                <Card className="border-dashed">
-                  <CardContent className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-                    <Package className="h-12 w-12 mb-4 opacity-20" />
-                    <p>No se encontraron netbooks registradas en el sistema.</p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+          {/* Renderizar las tablas con filtros */}
+          <div className="grid gap-8 md:grid-cols-2">
+            <UserDataTable 
+              data={users} 
+              onFilterChange={handleUserFilterChange} 
+            />
+            <NetbookDataTable 
+              data={netbooksForTable} 
+              onFilterChange={handleNetbookFilterChange} 
+            />
           </div>
         </>
       )}

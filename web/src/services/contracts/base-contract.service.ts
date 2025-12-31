@@ -71,7 +71,12 @@ export abstract class BaseContractService {
    */
   protected async write(
     functionName: string,
-    args: any[] = []
+    args: any[] = [],
+    metadata?: {
+      role?: string;
+      userAddress?: string;
+      relatedSerial?: string;
+    }
   ): Promise<{ hash: `0x${string}` }> {
     // Obtener walletClient usando nuestro cliente unificado
     try {
@@ -89,6 +94,18 @@ export abstract class BaseContractService {
         args,
         account: account.address as `0x${string}`,
         chain: null // Chain es opcional en este contexto
+      });
+
+      // Log transaction via API (async, no await for performance)
+      this.logTransactionToAPI({
+        transactionHash: hash,
+        functionName,
+        args,
+        from: account.address,
+        to: this.contractAddress,
+        ...metadata
+      }).catch(error => {
+        console.error('Error logging transaction via API:', error);
       });
 
       return { hash };
@@ -120,8 +137,26 @@ export abstract class BaseContractService {
           pollingInterval: 1000 // Poll cada 1 segundo
         });
 
+        // Update transaction status via API
+        this.updateTransactionInAPI({
+          transactionHash: hash,
+          status: 'success',
+          blockNumber: Number(receipt.blockNumber),
+          gasUsed: Number(receipt.gasUsed)
+        }).catch(error => {
+          console.error('Error updating transaction via API:', error);
+        });
+
         return receipt;
       } catch (error) {
+        // Update transaction status to failed
+        this.updateTransactionInAPI({
+          transactionHash: hash,
+          status: 'failed'
+        }).catch(error => {
+          console.error('Error updating transaction status to failed:', error);
+        });
+
         // Si es un error de timeout y tenemos reintentos disponibles, reintentar
         if ((error instanceof Error && error.name === 'AbortError') || 
             (error instanceof Error && error.message.includes('timeout'))) {
@@ -191,5 +226,74 @@ export abstract class BaseContractService {
    */
   public async checkConnection(): Promise<boolean> {
     return await checkBlockchainConnection();
+  }
+
+  /**
+   * Log transaction via API route
+   */
+  private async logTransactionToAPI(data: {
+    transactionHash: string;
+    functionName: string;
+    args: any[];
+    from: string;
+    to: string;
+    role?: string;
+    userAddress?: string;
+    relatedSerial?: string;
+  }): Promise<void> {
+    try {
+      // Get current block number and gas price for logging
+      const [blockNumber, gasPrice] = await Promise.all([
+        publicClient.getBlockNumber(),
+        publicClient.getGasPrice()
+      ]);
+
+      const transactionData = {
+        transactionHash: data.transactionHash,
+        blockNumber: Number(blockNumber),
+        from: data.from,
+        to: data.to,
+        gasUsed: 0, // Will be updated when transaction is confirmed
+        gasPrice: gasPrice.toString(),
+        timestamp: new Date().toISOString(),
+        status: 'pending',
+        functionName: data.functionName,
+        args: data.args,
+        role: data.role,
+        userAddress: data.userAddress || data.from,
+        relatedSerial: data.relatedSerial
+      };
+
+      // Log transaction via API route
+      await fetch('/api/mongodb/transactions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(transactionData)
+      });
+    } catch (error) {
+      console.error('Error logging transaction via API:', error);
+      // Don't throw, this is a background operation
+    }
+  }
+
+  /**
+   * Update transaction status via API route
+   */
+  private async updateTransactionInAPI(data: {
+    transactionHash: string;
+    status: 'success' | 'failed';
+    blockNumber?: number;
+    gasUsed?: number;
+  }): Promise<void> {
+    try {
+      // En una implementación real, aquí harías PATCH a la API
+      // Por ahora solo log para desarrollo
+      console.log('Transaction status update:', data);
+    } catch (error) {
+      console.error('Error updating transaction status:', error);
+      // Don't throw, this is a background operation
+    }
   }
 }
