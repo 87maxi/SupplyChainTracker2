@@ -1,61 +1,83 @@
-/**
- * Script de depuración para verificar la configuración de la aplicación
- */
-import { config } from '@/lib/wagmi/config';
-import { publicClient } from '@/lib/blockchain/client';
-import { NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS } from '@/lib/env';
-import { SupplyChainTrackerABI } from '@/lib/contracts/abi/SupplyChainTracker.json';
+import dotenv from 'dotenv';
+import axios from 'axios';
 
-async function debugConfig() {
-  console.log("=== Debugging Configuration ===");
-  
-  // Verificar variables de entorno
-  console.log("Environment Variables:");
-  console.log("- NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS:", NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS);
-  console.log("- NEXT_PUBLIC_RPC_URL:", process.env.NEXT_PUBLIC_RPC_URL);
-  console.log("- NEXT_PUBLIC_NETWORK_ID:", process.env.NEXT_PUBLIC_NETWORK_ID);
-  
-  // Verificar cliente público
-  console.log("\nPublic Client:");
-  console.log("- Is defined:", !!publicClient);
-  if (publicClient) {
-    console.log("- Chain ID:", publicClient.chain.id);
-    console.log("- Transport:", publicClient.transport);
-  }
-  
-  // Verificar configuración de Wagmi
-  console.log("\nWagmi Config:");
-  console.log("- Is defined:", !!config);
-  if (config) {
-    console.log("- Chains:", config.chains.map(c => c.name));
-    console.log("- Connectors:", config.connectors.length);
-  }
-  
-  // Verificar dirección del contrato
-  console.log("\nContract:");
-  console.log("- Address is defined:", !!NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS);
-  if (NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS) {
-    console.log("- Address:", NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS);
+// Cargar variables de entorno
+dotenv.config();
+
+console.log('=== VALIDACIÓN DE CONFIGURACIÓN DE ENTORNO ===\n');
+
+// Validar variables esenciales
+class ConfigValidator {
+  static validate() {
+    const errors = [];
     
-    // Intentar obtener el código del contrato
-    try {
-      const code = await publicClient.getBytecode({
-        address: NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS
-      });
-      console.log("- Contract deployed:", code ? "Yes" : "No");
-    } catch (error) {
-      console.log("- Contract error:", error.message);
+    // Validar dirección del contrato
+    if (!process.env.NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS) {
+      errors.push('❌ NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS no está definida');
+    } else {
+      console.log(`✅ NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS: ${process.env.NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS}`);
     }
-  }
-  
-  // Verificar ABI
-  console.log("\nABI:");
-  console.log("- ABI has functions:", !!SupplyChainTrackerABI && SupplyChainTrackerABI.length > 0);
-  if (SupplyChainTrackerABI) {
-    const functions = SupplyChainTrackerABI.filter(item => item.type === 'function');
-    console.log("- Number of functions:", functions.length);
-    console.log("- Function names:", functions.map(f => f.name));
+    
+    // Validar RPC URL
+    if (!process.env.NEXT_PUBLIC_RPC_URL) {
+      errors.push('❌ NEXT_PUBLIC_RPC_URL no está definida');
+    } else {
+      console.log(`✅ NEXT_PUBLIC_RPC_URL: ${process.env.NEXT_PUBLIC_RPC_URL}`);
+    }
+    
+    // Validar network ID
+    if (!process.env.NEXT_PUBLIC_NETWORK_ID) {
+      errors.push('❌ NEXT_PUBLIC_NETWORK_ID no está definida');
+    } else {
+      console.log(`✅ NEXT_PUBLIC_NETWORK_ID: ${process.env.NEXT_PUBLIC_NETWORK_ID}`);
+    }
+    
+    // Validar MongoDB URI
+    if (!process.env.MONGODB_URI) {
+      errors.push('❌ MONGODB_URI no está definida');
+    } else {
+      console.log('✅ MONGODB_URI: ' + process.env.MONGODB_URI.replace(/:([^:]+)@/, ':*****@'));
+    }
+    
+    // Verificar conexión con Anvil
+    if (process.env.NEXT_PUBLIC_RPC_URL) {
+      axios.post(process.env.NEXT_PUBLIC_RPC_URL, {
+        jsonrpc: '2.0',
+        method: 'eth_chainId',
+        params: [],
+        id: 1
+      }, {
+        timeout: 5000
+      })
+      .then(response => {
+        const chainId = parseInt(response.data.result, 16);
+        if (chainId === 31337) {
+          console.log('✅ Conexión exitosa con Anvil (chainId: 31337)');
+        } else {
+          errors.push(`❌ Conexión con nodo RPC, pero chainId inesperado: ${chainId}`);
+        }
+      })
+      .catch(err => {
+        errors.push(`❌ No se pudo conectar con Anvil en ${process.env.NEXT_PUBLIC_RPC_URL}: ${err.message}`);
+      });
+    }
+    
+    // Simular prueba de conexión con MongoDB
+    console.log('ℹ️  Prueba de conexión con MongoDB requerida manualmente');
+    
+    // Mostrar resultados
+    setTimeout(() => {
+      if (errors.length === 0) {
+        console.log('\n✅ TODAS LAS VALIDACIONES PASARON');
+        process.exit(0);
+      } else {
+        console.log('\n❌ ERRORES ENCONTRADOS:');
+        errors.forEach(error => console.log(error));
+        process.exit(1);
+      }
+    }, 1000);
   }
 }
 
-debugConfig();
+// Ejecutar validación
+ConfigValidator.validate();

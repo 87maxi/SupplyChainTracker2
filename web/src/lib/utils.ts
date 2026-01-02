@@ -1,14 +1,36 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { getAddress } from 'viem';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+// Helper function to validate and normalize Ethereum addresses
+export function validateAndNormalizeAddress(address: string): string {
+  if (!address) {
+    throw new Error('Address is required');
+  }
+  
+  try {
+    // Use viem's getAddress to validate and normalize the address
+    // This will throw if the address is invalid and return the checksummed version
+    return getAddress(address);
+  } catch (error) {
+    throw new Error(`Invalid Ethereum address: ${address}. ${error.message}`);
+  }
+}
+
 // Helper function to truncate wallet addresses
 export function truncateAddress(address: string): string {
   if (!address) return '';
-  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+  try {
+    const normalizedAddress = validateAndNormalizeAddress(address);
+    return `${normalizedAddress.slice(0, 6)}...${normalizedAddress.slice(-4)}`;
+  } catch (error) {
+    console.warn('Invalid address provided to truncateAddress:', address);
+    return address; // Return original if invalid
+  }
 }
 
 // Helper function to format large numbers with commas
@@ -31,10 +53,16 @@ export function getEtherscanUrl(hash: string, network: string = 'ethereum'): str
 
 // Helper function to get block explorer URL for an address
 export function getAddressExplorerUrl(address: string, network: string = 'ethereum'): string {
-  const baseUrl = network === 'ethereum' ? 'https://etherscan.io' : 
-                    network === 'polygon' ? 'https://polygonscan.com' :
-                    network === 'sepolia' ? 'https://sepolianscan.io' : 'https://etherscan.io';
-  return `${baseUrl}/address/${address}`;
+  try {
+    const normalizedAddress = validateAndNormalizeAddress(address);
+    const baseUrl = network === 'ethereum' ? 'https://etherscan.io' : 
+                      network === 'polygon' ? 'https://polygonscan.com' :
+                      network === 'sepolia' ? 'https://sepolianscan.io' : 'https://etherscan.io';
+    return `${baseUrl}/address/${normalizedAddress}`;
+  } catch (error) {
+    console.warn('Invalid address provided to getAddressExplorerUrl:', address);
+    return '';
+  }
 }
 
 // Helper function to calculate gas cost in ETH
