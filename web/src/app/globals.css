@@ -134,5 +134,33 @@
   .bg-gradient-subtle {
     background: linear-gradient(135deg, hsl(var(--background)), hsl(var(--primary) / 0.05));
   }
-}
 
+  /* Layout Utilities */
+  .flex-center {
+    @apply flex items-center justify-center;
+  }
+
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-lg;
+  }
+
+  .smooth-transition {
+    @apply transition-all duration-200;
+  }
+
+  .section-padding {
+    @apply py-8 md:py-12;
+  }
+
+  .content-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .grid-responsive {
+    @apply grid gap-6 md:gap-8;
+  }
+
+  .btn-icon {
+    @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+  }
+}

@@ -3,6 +3,8 @@
 import { useEffect } from 'react';
 import { contractRegistry } from '@/services/contract-registry.service';
 import { SupplyChainService } from '@/services/SupplyChainService';
+// Importar BaseContractService para la verificación de instancia
+import { BaseContractService } from '@/services/contracts/base-contract.service';
 
 // Componente para ejecutar diagnósticos y verificar el estado del servicio
 export default function DiagnosticRunner() {
@@ -35,6 +37,3 @@ export default function DiagnosticRunner() {
   
   return null;
 }
-
-// Importar BaseContractService para la verificación de instancia
-import { BaseContractService } from '@/services/contracts/base-contract.service';

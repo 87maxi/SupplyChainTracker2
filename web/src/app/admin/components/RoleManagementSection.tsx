@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useWeb3 } from '@/hooks/useWeb3';
-import { useSupplyChainService } from '@/hooks/useRoleCallsManager';
+import { useRoleCallsManager } from '@/hooks/useRoleCallsManager';
 import { useState } from 'react';
 import { eventBus, EVENTS } from '@/lib/events';
 import { ToastAction } from '@/components/ui/toast';
@@ -26,7 +26,7 @@ const availableRoles = [
 type RoleValue = typeof availableRoles[number]['value'];
 
 export const RoleManagementSection = () => {
-  const { handleGrantRole } = useSupplyChainService();
+  const { grantRole } = useRoleCallsManager();
   const { toast } = useToast();
 
   const [selectedRole, setSelectedRole] = useState<RoleValue>('FABRICANTE_ROLE');
@@ -48,7 +48,7 @@ export const RoleManagementSection = () => {
     try {
       // Use roleMapper to convert role name to hash
       const roleHash = await roleMapper.getRoleHash(selectedRole);
-      const result = await handleGrantRole(newMemberAddress as `0x${string}`, selectedRole as RoleName);
+      const result = await grantRole(roleHash, newMemberAddress as `0x${string}`);
       
       if (result.success) {
         toast({
@@ -72,15 +72,15 @@ export const RoleManagementSection = () => {
   };
 
   return (
-    <Card>
+    <Card className="transition-all duration-300 hover:shadow-lg">
       <CardHeader>
         <CardTitle>Otorgar Nuevo Rol</CardTitle>
         <CardDescription>Asigna roles manualmente a direcciones específicas</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col sm:flex-row gap-6">
           <div className="flex-1">
-            <Label htmlFor="role-select">Seleccionar Rol</Label>
+            <Label htmlFor="role-select" className="mb-2 block">Seleccionar Rol</Label>
             <Select value={selectedRole} onValueChange={(value) => setSelectedRole(value as RoleValue)}>
               <SelectTrigger id="role-select">
                 <SelectValue placeholder="Selecciona un rol" />
@@ -96,15 +96,16 @@ export const RoleManagementSection = () => {
           </div>
 
           <div className="flex-1">
-            <Label htmlFor="new-member">Dirección de Wallet</Label>
+            <Label htmlFor="new-member" className="mb-2 block">Dirección de Wallet</Label>
             <div className="flex gap-2">
               <Input
                 id="new-member"
                 placeholder="0x..."
                 value={newMemberAddress}
                 onChange={(e) => setNewMemberAddress(e.target.value)}
+                className="flex-1"
               />
-              <Button onClick={handleAddMember} disabled={loading}>
+              <Button onClick={handleAddMember} disabled={loading} className="self-end">
                 {loading ? 'Procesando...' : 'Otorgar Rol'}
               </Button>
             </div>

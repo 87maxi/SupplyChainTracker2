@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useWeb3 } from '@/hooks/useWeb3';
-import { getAllRolesSummary } from '@/services/SupplyChainService';
+import { useSupplyChainService } from '@/hooks/useSupplyChainService';
 import { getCache, setCache, isCacheStale, clearCache, clearAllCache } from '@/lib/utils/cache';
 
 interface RoleMembers {
@@ -115,6 +115,7 @@ const scheduleBatch = () => {
 // Exported hook for getting role members
 export const useRoleCallsManager = () => {
   const { address } = useWeb3();
+  const { grantRoleByHash } = useSupplyChainService();
 
   // Function to get members of a role with batching and caching
   const getRoleMembers = useCallback(async (role: string): Promise<string[]> => {
@@ -126,6 +127,11 @@ export const useRoleCallsManager = () => {
       scheduleBatch();
     });
   }, []);
+
+  // Function to grant a role
+  const grantRole = useCallback(async (roleHash: `0x${string}`, account: `0x${string}`) => {
+    return await grantRoleByHash(roleHash, account);
+  }, [grantRoleByHash]);
 
   // Function to refresh all role data
   const refreshAllRoles = useCallback(() => {
@@ -176,6 +182,8 @@ export const useRoleCallsManager = () => {
 
   return {
     getRoleMembers,
+    grantRole,
+    grantRoleByHash, // Also export the original function for consistency
     refreshAllRoles,
     clearRoleCache,
     getCacheStats

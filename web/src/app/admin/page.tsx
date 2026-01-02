@@ -77,22 +77,22 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="container mx-auto py-8 relative min-h-screen">
+    <div className="container mx-auto px-4 py-8 relative min-h-screen">
       <div className="absolute inset-0 bg-gradient-overlay opacity-30 pointer-events-none"></div>
       <div className="relative z-10">
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold">Admin Dashboard</h1>
-          <p className="mt-2 text-lg text-muted-foreground">
+        <div className="mb-10 text-center">
+          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+          <p className="mt-3 text-lg text-muted-foreground max-w-3xl mx-auto">
             Manage your organization's access control and system configuration
           </p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {adminActions.map((action) => {
             const Icon = action.icon;
             return (
               <Link key={action.title} href={action.link}>
-                <Card className="h-full transition-all hover:shadow-lg">
+                <Card className="h-full transition-all duration-300 hover:shadow-lg">
                   <CardHeader>
                     <div className="flex items-center space-x-4">
                       <div className={`rounded-lg p-3 text-white ${action.color}`}>
@@ -118,7 +118,7 @@ export default function AdminDashboard() {
         </div>
 
         <div className="mt-12">
-          <Card>
+          <Card className="transition-all duration-300 hover:shadow-lg">
             <CardHeader>
               <CardTitle>Quick Actions</CardTitle>
               <CardDescription>
@@ -126,20 +126,20 @@ export default function AdminDashboard() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Button className="h-16 text-lg">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Button className="h-16 text-lg transition-all duration-300 hover:scale-[1.02]">
                   <Users className="mr-2 h-5 w-5" />
                   Manage Users
                 </Button>
-                <Button className="h-16 text-lg">
+                <Button className="h-16 text-lg transition-all duration-300 hover:scale-[1.02]">
                   <Shield className="mr-2 h-5 w-5" />
                   Review Roles
                 </Button>
-                <Button className="h-16 text-lg">
+                <Button className="h-16 text-lg transition-all duration-300 hover:scale-[1.02]">
                   <Settings className="mr-2 h-5 w-5" />
                   System Settings
                 </Button>
-                <Button className="h-16 text-lg">
+                <Button className="h-16 text-lg transition-all duration-300 hover:scale-[1.02]">
                   <LayoutDashboard className="mr-2 h-5 w-5" />
                   View Analytics
                 </Button>

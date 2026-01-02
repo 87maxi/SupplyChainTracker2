@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { getProvider } from '@/lib/web3';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,7 +26,7 @@ export default function AuditPage() {
   const [eventService, setEventService] = useState<any>(null);
 
   // Inicializar el servicio de eventos
-  useMemo(() => {
+  useEffect(() => {
     const initEventService = async () => {
       try {
         const service = await getEventService();

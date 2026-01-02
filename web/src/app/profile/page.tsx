@@ -124,14 +124,14 @@ export default function ProfilePage() {
 
   if (!isConnected) {
     return (
-      <div className="container mx-auto px-4 py-12">
+      <div className="max-width-container padding-section">
         <Card className="border-dashed border-2">
           <CardContent className="flex flex-col items-center justify-center py-16 space-y-6">
             <h3 className="text-xl font-medium text-foreground mb-2">Acceso Restringido</h3>
             <p className="text-muted-foreground mb-6 text-center max-w-md">
               Por favor, conecta tu wallet para ver la información de tu perfil.
             </p>
-            <Button size="lg" variant="gradient" onClick={() => connectWallet()} className="h-12 px-8 gap-2">
+            <Button size="lg" variant="gradient" onClick={() => connectWallet()} className="h-12 px-8 gap-2 btn-responsive-lg">
               <LinkIcon className="h-4 w-4" /> Conectar Wallet
             </Button>
           </CardContent>
@@ -142,7 +142,7 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-12 relative">
+      <div className="max-width-container padding-section relative">
         <div className="absolute inset-0 bg-gradient-overlay opacity-30 pointer-events-none"></div>
         <div className="relative z-10">
           <div className="flex flex-col items-center justify-center py-24 space-y-4">
@@ -155,93 +155,92 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-12 relative">
+    <div className="container mx-auto px-4 py-8 relative">
       <div className="absolute inset-0 bg-gradient-overlay opacity-30 pointer-events-none"></div>
       <div className="relative z-10">
         <h1 className="text-3xl font-bold mb-8">Mi Perfil</h1>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Información de la Cuenta</CardTitle>
-          <CardDescription>Detalles de tu wallet y roles asignados en el sistema.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {error && <div className="text-red-500 p-4 rounded-md bg-red-50 mb-4">{error}</div>}
+        <Card>
+          <CardHeader>
+            <CardTitle>Información de la Cuenta</CardTitle>
+            <CardDescription>Detalles de tu wallet y roles asignados en el sistema.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {error && <div className="text-red-500 p-4 rounded-md bg-red-50 mb-4">{error}</div>}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label>Dirección de la Wallet</Label>
-              <div className="p-3 bg-card-foreground/5 rounded-md font-mono text-sm flex items-center justify-between">
-                <span>{address}</span>
-                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => address && copyToClipboard(address)}>
-                  <ClipboardCopy className="h-4 w-4" />
-                </Button>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label>Dirección de la Wallet</Label>
+                <div className="p-3 bg-card-foreground/5 rounded-md font-mono text-sm flex items-center justify-between">
+                  <span className="break-all">{address}</span>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => address && copyToClipboard(address)}>
+                    <ClipboardCopy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Saldo ETH</Label>
+                <div className="p-3 bg-card-foreground/5 rounded-md flex items-center gap-2">
+                  <Wallet className="h-4 w-4 text-primary" />
+                  <span className="font-semibold">{balance !== null ? `${parseFloat(balance).toFixed(4)} ETH` : 'Cargando...'}</span>
+                </div>
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label>Saldo ETH</Label>
-              <div className="p-3 bg-card-foreground/5 rounded-md flex items-center gap-2">
-                <Wallet className="h-4 w-4 text-primary" />
-                <span className="font-semibold">{balance !== null ? `${parseFloat(balance).toFixed(4)} ETH` : 'Cargando...'}</span>
+              <Label>Roles en el Sistema</Label>
+              <div className="flex flex-wrap gap-2 p-3 bg-card-foreground/5 rounded-md">
+                {userRoles.length > 0 ? (
+                  userRoles.map((role, index) => (
+                    <Badge key={index} variant="secondary" className="px-3 py-1 text-sm">{role}</Badge>
+                  ))
+                ) : (
+                  <span className="text-muted-foreground">Sin roles asignados</span>
+                )}
               </div>
             </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label>Roles en el Sistema</Label>
-            <div className="flex flex-wrap gap-2 p-3 bg-card-foreground/5 rounded-md">
-              {userRoles.length > 0 ? (
-                userRoles.map((role, index) => (
-                  <Badge key={index} variant="secondary" className="px-3 py-1 text-sm">{role}</Badge>
-                ))
-              ) : (
-                <span className="text-muted-foreground">Sin roles asignados</span>
-              )}
+            <Button
+              onClick={() => disconnect()}
+              variant="outline"
+              className="mt-4"
+            >
+              Desconectar Wallet
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle>Solicitar Acceso</CardTitle>
+            <CardDescription>Selecciona el rol al que deseas solicitar acceso.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="role">Seleccionar Rol</Label>
+              <Select value={selectedRole} onValueChange={setSelectedRole}>
+                <SelectTrigger id="role">
+                  <SelectValue placeholder="Selecciona un rol" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="FABRICANTE">Fabricante</SelectItem>
+                  <SelectItem value="AUDITOR_HW">Auditor Hardware</SelectItem>
+                  <SelectItem value="TECNICO_SW">Técnico Software</SelectItem>
+                  <SelectItem value="ESCUELA">Escuela</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          </div>
-
-          <Button
-            onClick={() => disconnect()}
-            variant="outline"
-            className="mt-4"
-          >
-            Desconectar Wallet
-          </Button>
-        </CardContent>
-      </Card>
-
-      <Card className="mt-8">
-        <CardHeader>
-          <CardTitle>Solicitar Acceso</CardTitle>
-          <CardDescription>Selecciona el rol al que deseas solicitar acceso.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="role">Seleccionar Rol</Label>
-            <Select value={selectedRole} onValueChange={setSelectedRole}>
-              <SelectTrigger id="role">
-                <SelectValue placeholder="Selecciona un rol" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="FABRICANTE">Fabricante</SelectItem>
-                <SelectItem value="AUDITOR_HW">Auditor Hardware</SelectItem>
-                <SelectItem value="TECNICO_SW">Técnico Software</SelectItem>
-                <SelectItem value="ESCUELA">Escuela</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <Button 
-            onClick={submitRoleRequest}
-            disabled={!selectedRole || loading}
-            className="w-full sm:w-auto"
-          >
-            Solicitar Rol
-          </Button>
-        </CardContent>
-      </Card>
-        </div>
+            <Button 
+              onClick={submitRoleRequest}
+              disabled={!selectedRole || loading}
+              className="w-full sm:w-auto"
+            >
+              Solicitar Rol
+            </Button>
+          </CardContent>
+        </Card>
       </div>
+    </div>
   );
-
 }

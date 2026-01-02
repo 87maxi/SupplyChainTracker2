@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { Button } from '@components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@components/ui/card';
-import { Input } from '@components/ui/input';
-import { Label } from '@components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@components/ui/select';
-import { useToast } from '@hooks/use-toast';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
 import { useRoleCallsManager } from '@/hooks/useRoleCallsManager';
 import { useRoleData } from '@/hooks/useRoleData';
 import { ROLE_HASHES } from '@/lib/constants/roles';
@@ -44,11 +44,11 @@ export function RoleManager() {
   const [address, setAddress] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const { grantRole } = useRoleCallsManager();
+  const { grantRoleByHash } = useRoleCallsManager();
   const { data: accountInfo, refetch: refetchAccountInfo } = useRoleData();
 
   // Verificar si el usuario puede conceder roles
-  const canGrantRoles = accountInfo?.roles?.includes('admin') || false;
+  const canGrantRoles = accountInfo?.roles?.includes('DEFAULT_ADMIN_ROLE') || false;
 
   const handleGrantRole = async () => {
     if (!selectedRole || !address) {
@@ -80,7 +80,7 @@ export function RoleManager() {
         throw new Error('Rol no válido');
       }
       
-      const result = await grantRole(roleHash, address);
+      const result = await grantRoleByHash(roleHash, address);
       
       if (result.success) {
         toast({

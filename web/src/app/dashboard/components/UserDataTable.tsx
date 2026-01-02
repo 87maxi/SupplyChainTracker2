@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { DataTable } from "./ui/data-table"
 import { userColumns, User } from "./data/user-columns"
 
-export function UserDataTable({ data, onFilterChange }: { data: User[]; onFilterChange: (filter: { key: string; value: string }) => void }) {
+export function UserDataTable({ data = [], onFilterChange }: { data?: User[]; onFilterChange: (filter: { key: string; value: string }) => void }) {
   const [filter, setFilter] = useState({ key: '', value: '' })
 
   const handleFilterChange = ({ key, value }: { key: string; value: string }) => {
@@ -12,5 +12,5 @@ export function UserDataTable({ data, onFilterChange }: { data: User[]; onFilter
     onFilterChange({ key, value }) // Llamar a la función de filtro externa
   }
 
-  return <DataTable columns={userColumns} data={data} onFilterChange={handleFilterChange} />
+  return <DataTable columns={userColumns} data={data || []} onFilterChange={handleFilterChange} />
 }

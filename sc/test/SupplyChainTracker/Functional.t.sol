@@ -26,19 +26,17 @@ contract FunctionalTest is Test {
         tracker = new SupplyChainTracker();
         
         // Usar direcciones conocidas
-        // Cuenta 0: Anvil Default Account
+        // Cuenta 0: Anvil Default Account (será admin por el constructor)
         // Cuenta 1: Fabricante
         // Cuenta 2: Auditor
         // Cuenta 3: Técnico
         // Cuenta 4: Escuela
-        // Cuenta 5: Admin
-        // Cuenta 10: Usuario sin autorización (para pruebas)
         
-        fabricante = address(uint160(2));
-        auditor = address(uint160(3));
-        tecnico = address(uint160(4));
-        escuela = address(uint160(5));
-        admin = address(uint160(6));
+        fabricante = address(uint160(1));
+        auditor = address(uint160(2));
+        tecnico = address(uint160(3));
+        escuela = address(uint160(4));
+        admin = address(this); // Usar la dirección del contrato de test como admin
         
         // Asegurar que las cuentas tengan saldo
         vm.deal(fabricante, 1 ether);
@@ -47,14 +45,16 @@ contract FunctionalTest is Test {
         vm.deal(escuela, 1 ether);
         vm.deal(admin, 1 ether);
         
-        // Otorgar roles
+        // Otorgar roles (el admin ya tiene DEFAULT_ADMIN_ROLE por el constructor)
         vm.startPrank(admin);
-        tracker.grantRole(tracker.DEFAULT_ADMIN_ROLE(), admin);
         tracker.grantRole(tracker.FABRICANTE_ROLE(), fabricante);
         tracker.grantRole(tracker.AUDITOR_HW_ROLE(), auditor);
         tracker.grantRole(tracker.TECNICO_SW_ROLE(), tecnico);
         tracker.grantRole(tracker.ESCUELA_ROLE(), escuela);
         vm.stopPrank();
+        
+        // Verificar que el admin tiene el rol correcto
+        require(tracker.hasRole(tracker.DEFAULT_ADMIN_ROLE(), admin), "Admin should have DEFAULT_ADMIN_ROLE");
     }
 
     string constant REGISTER_METADATA = "{\"deviceType\":\"netbook\",\"manufacturer\":\"TechCorp\",\"warrantyPeriod\":\"2 years\"}";

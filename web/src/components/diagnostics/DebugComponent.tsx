@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { SupplyChainService } from '@/services/SupplyChainService';
 import { contractRegistry } from '@/services/contract-registry.service';
+// Importar BaseContractService para la verificación de instancia
+import { BaseContractService } from '@/services/contracts/base-contract.service';
 
 // Componente de depuración para inspeccionar la instancia del servicio
 export default function DebugComponent() {
@@ -73,6 +75,3 @@ export default function DebugComponent() {
     </div>
   );
 }
-
-// Importar BaseContractService para la verificación de instancia
-import { BaseContractService } from '@/services/contracts/base-contract.service';
