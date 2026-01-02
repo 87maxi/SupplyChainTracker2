@@ -4,8 +4,7 @@
 import { BaseContractService } from './base-contract.service';
 import { ROLE_HASHES } from '@/lib/constants/roles';
 import { PublicClient, WalletClient, formatEther, parseEther } from 'viem';
-import { Config, usePublicClient, useWalletClient, useAccount } from 'wagmi';
-import { useEffect, useState } from 'react';
+import { Config } from 'wagmi';
 import { CacheService } from '@/lib/cache/cache-service';
 import { ErrorHandler } from '@/lib/errors/error-handler';
 import { ActivityLogger } from '@/lib/activity-logger';
@@ -59,27 +58,13 @@ export class RoleService extends BaseContractService {
   ) {
     super(contractAddress, abi);
     this.config = config;
-    this.initializeClients();
+    // Client initialization is handled by the base contract service
+    // through the virtual readContract/writeContract methods
   }
 
-  private initializeClients() {
-    try {
-      // Obtener clientes de Wagmi
-      this.publicClient = usePublicClient({ config: this.config });
-      const walletClientResult = useWalletClient({ config: this.config });
-      
-      if (walletClientResult.data) {
-        this.walletClient = walletClientResult.data;
-      }
-      
-      console.log('[RoleService] Clientes inicializados:', {
-        hasPublicClient: !!this.publicClient,
-        hasWalletClient: !!this.walletClient
-      });
-    } catch (error) {
-      console.error('[RoleService] Error al inicializar clientes:', error);
-    }
-  }
+  // Removed initializeClients method that was calling React hooks
+  // Client initialization is now handled by the base contract service
+  // The publicClient and walletClient are provided through the base service methods
 
   /**
    * Verifica si el usuario actual es administrador
