@@ -8,7 +8,7 @@ import { config } from '@/lib/wagmi/config';
 import SupplyChainTrackerABI from '@/lib/contracts/abi/SupplyChainTracker.json';
 import { ContractRoles } from '@/types/contract';
 import { NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS } from '@/lib/env';
-import { getRoleHashes } from '@/lib/roleUtils';
+import { ROLE_HASHES } from '@/lib/constants/roles';
 
 interface UseUserRoles {
   isAdmin: boolean;
@@ -69,23 +69,21 @@ export const useUserRoles = (): UseUserRoles => {
     try {
       const contractAddress = NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS as `0x${string}`;
 
-      // Get role hashes from the contract (using cached utility)
-      const hashes = await getRoleHashes();
-
-      const fabricanteRoleStr = hashes.FABRICANTE;
-      const auditorHwRoleStr = hashes.AUDITOR_HW;
-      const tecnicoSwRoleStr = hashes.TECNICO_SW;
-      const escuelaRoleStr = hashes.ESCUELA;
-      const defaultAdminRoleStr = hashes.ADMIN;
+      // Use precomputed role hashes from constants
+      const fabricanteRoleStr = ROLE_HASHES.FABRICANTE;
+      const auditorHwRoleStr = ROLE_HASHES.AUDITOR_HW;
+      const tecnicoSwRoleStr = ROLE_HASHES.TECNICO_SW;
+      const escuelaRoleStr = ROLE_HASHES.ESCUELA;
+      const defaultAdminRoleStr = ROLE_HASHES.ADMIN;
 
       // Check roles using role hashes directly for better reliability
       const [isAdmin, isManufacturer, isHardwareAuditor, isSoftwareTechnician, isSchool] = await Promise.all([
-        // Use bytes32(0) for DEFAULT_ADMIN_ROLE as per OpenZeppelin AccessControl standard
-        hasRoleByHash('0x0000000000000000000000000000000000000000000000000000000000000000', address as `0x${string}`),
-        hasRoleByHash(hashes.FABRICANTE, address as `0x${string}`),
-        hasRoleByHash(hashes.AUDITOR_HW, address as `0x${string}`),
-        hasRoleByHash(hashes.TECNICO_SW, address as `0x${string}`),
-        hasRoleByHash(hashes.ESCUELA, address as `0x${string}`)
+        // Use constant for DEFAULT_ADMIN_ROLE as per OpenZeppelin AccessControl standard
+        hasRoleByHash(defaultAdminRoleStr, address as `0x${string}`),
+        hasRoleByHash(fabricanteRoleStr, address as `0x${string}`),
+        hasRoleByHash(auditorHwRoleStr, address as `0x${string}`),
+        hasRoleByHash(tecnicoSwRoleStr, address as `0x${string}`),
+        hasRoleByHash(escuelaRoleStr, address as `0x${string}`)
       ]);
 
       console.log('Role check results:', {
