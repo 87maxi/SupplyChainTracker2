@@ -5,7 +5,7 @@ import { useWeb3 } from '@/hooks/useWeb3';
 import { useSupplyChainService } from '@/hooks/useSupplyChainService';
 import { readContract } from '@wagmi/core';
 import { config } from '@/lib/wagmi/config';
-import SupplyChainTrackerABI from '@/contracts/abi/SupplyChainTracker.json';
+import SupplyChainTrackerABI from '@/lib/contracts/abi/SupplyChainTracker.json';
 import { ContractRoles } from '@/types/contract';
 import { NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS } from '@/lib/env';
 import { getRoleHashes } from '@/lib/roleUtils';
@@ -22,7 +22,7 @@ interface UseUserRoles {
   refreshRoles: () => void;
 }
 
-import { getCache, setCache, isCacheStale, isRevalidating, startRevalidation, completeRevalidation } from '@/lib/utils/cache';
+import { CacheService } from '@/lib/cache/cache-service';
 
 export const useUserRoles = (): UseUserRoles => {
   const { address, isConnected } = useWeb3();
@@ -50,16 +50,16 @@ export const useUserRoles = (): UseUserRoles => {
     }
 
     // Check cache first
-    const cachedRoles = getCache<UseUserRoles>(cacheKey);
+    const cachedRoles = CacheService.get<UseUserRoles>(cacheKey);
     if (cachedRoles && !isCacheStale(cacheKey)) {
       setUserRoles(cachedRoles);
       return;
     }
 
     // If we have stale data, serve it while revalidating
-    if (cachedRoles && !isRevalidating(cacheKey)) {
+    if (cachedRoles) {
       setUserRoles(cachedRoles);
-      startRevalidation(cacheKey);
+
     } else if (!cachedRoles) {
       setUserRoles(prev => ({ ...prev, isLoading: true }));
     }
@@ -105,6 +105,9 @@ export const useUserRoles = (): UseUserRoles => {
       if (isSoftwareTechnician) activeRoleNames.push('TECNICO_SW_ROLE');
       if (isSchool) activeRoleNames.push('ESCUELA_ROLE');
 
+          // Cache the result with 30 second TTL and stale-while-revalidate
+      CacheService.set(cacheKey, newRoles, 30000);
+      
       const newRoles: UseUserRoles = {
         isAdmin,
         isManufacturer,
@@ -126,14 +129,12 @@ export const useUserRoles = (): UseUserRoles => {
         refreshRoles: checkRoles
       };
 
-      // Cache the result with 30 second TTL and stale-while-revalidate
-      setCache(cacheKey, newRoles, 30000, true);
+
       
       // Always update state
       setUserRoles(newRoles);
       
-      // Mark revalidation as complete
-      completeRevalidation(cacheKey);
+
       
     } catch (error) {
       console.error('Error fetching user roles:', error);
@@ -143,8 +144,7 @@ export const useUserRoles = (): UseUserRoles => {
         console.error('CRITICAL: Origin http://localhost:3000 not found on Allowlist. Please update your configuration on cloud.reown.com');
       }
 
-      // Mark revalidation as complete on error
-      completeRevalidation(cacheKey);
+
       
       // If we have stale data and we're revalidating, keep showing it
       if (userRoles.isLoading && getCache(cacheKey)) {

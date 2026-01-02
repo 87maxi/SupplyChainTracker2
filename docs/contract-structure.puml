@@ -1,110 +1,63 @@
 @startuml
-' SupplyChainTracker Contract UML Diagram
+' Contract Structure Diagram for SupplyChainTracker
+skinparam classAttributeIconSize 0
 
-' Enums
-enum State {
-    FABRICADA
-    HW_APROBADO
-    SW_VALIDADO
-    DISTRIBUIDA
-}
-
-' Structs
-class Netbook {
-    +serialNumber: string
-    +batchId: string
-    +initialModelSpecs: string
-    +hwAuditor: address
-    +hwIntegrityPassed: bool
-    +hwReportHash: bytes32
-    +swTechnician: address
-    +osVersion: string
-    +swValidationPassed: bool
-    +destinationSchoolHash: bytes32
-    +studentIdHash: bytes32
-    +distributionTimestamp: uint
-    +currentState: State
-}
-
-' Roles
-class Roles {
-    +DEFAULT_ADMIN_ROLE: bytes32
-    +FABRICANTE_ROLE: bytes32
-    +AUDITOR_HW_ROLE: bytes32
-    +TECNICO_SW_ROLE: bytes32
-    +ESCUELA_ROLE: bytes32
-}
-
-' Main Contract
-class SupplyChainTracker {
-    -netbooks: mapping(string => Netbook)
-    -allSerialNumbers: string[]
-}
-
-' Inheritance
-SupplyChainTracker --|> AccessControl
-AccessControl --|> IAccessControl
-AccessControl --|> Context
-AccessControl --|> ERC165
-
-' Composition
-SupplyChainTracker o-- Netbook
-SupplyChainTracker o-- State
-SupplyChainTracker o-- Roles
-
-' Events
-class Events {
-    +NetbookRegistered(serialNumber: string)
-    +HardwareAudited(serialNumber: string)
-    +SoftwareValidated(serialNumber: string)
-    +AssignedToStudent(serialNumber: string)
-}
-
-SupplyChainTracker ..> Events : emits
-
-' Write Functions
-package "Write Functions" {
-    class WriteFunctions {
-        +registerNetbooks(serials[], batches[], specs[]) : void
-        +auditHardware(serial, passed, reportHash) : void
-        +validateSoftware(serial, version, passed) : void
-        +assignToStudent(serial, schoolHash, studentHash) : void
+package "SupplyChainTracker Contract" {
+    
+    class "SupplyChainTracker" as Contract {
+        + FABRICANTE_ROLE: bytes32
+        + AUDITOR_HW_ROLE: bytes32
+        + TECNICO_SW_ROLE: bytes32
+        + ESCUELA_ROLE: bytes32
+        + DEFAULT_ADMIN_ROLE: bytes32
+        --
+        + constructor()
+        + registerNetbooks()
+        + auditHardware()
+        + validateSoftware()
+        + assignToStudent()
+        + getNetbookState()
+        + getNetbookReport()
+        + getTokenMetadata()
+        + getTokenId()
+        + getSerialNumber()
     }
-}
-
-SupplyChainTracker ..> WriteFunctions : contains
-
-' Read Functions
-package "Read Functions" {
-    class ReadFunctions {
-        +getNetbookState(serial) : State
-        +getNetbookReport(serial) : Netbook
+    
+    class "Netbook" as Struct {
+        + serialNumber: string
+        + batchId: string
+        + initialModelSpecs: string
+        + hwAuditor: address
+        + hwIntegrityPassed: bool
+        + hwReportHash: bytes32
+        + swTechnician: address
+        + osVersion: string
+        + swValidationPassed: bool
+        + destinationSchoolHash: bytes32
+        + studentIdHash: bytes32
+        + distributionTimestamp: uint
+        + currentState: State
+        + exists: bool
+        + tokenId: uint256
     }
-}
-
-SupplyChainTracker ..> ReadFunctions : contains
-
-' Modifiers
-package "Modifiers" {
-    class Modifiers {
-        +validSerial(serial)
-        +stateExpected(serial, expectedState)
-        +_checkRoleCustom(role)
+    
+    enum "State" as Enum {
+        FABRICADA
+        HW_APROBADO
+        SW_VALIDADO
+        DISTRIBUIDA
     }
-}
-
-SupplyChainTracker ..> Modifiers : uses
-
-' State Transitions
-State --> State : FABRICADA → HW_APROBADO
-State --> State : HW_APROBADO → SW_VALIDADO
-State --> State : SW_VALIDADO → DISTRIBUIDA
-
-title SupplyChainTracker Contract Structure
-' Skin parameters for better visualization
-skinparam class {
-    BackgroundColor White
-    BorderColor Gray
-    ArrowColor Blue
+    
+    Contract "1" *-- "*" Struct : contains >
+    Struct "1" -- "1" Enum : currentState >
+    
+    note right of Contract
+        Implements AccessControl and AccessControlEnumerable
+        Uses a state machine pattern for netbook lifecycle
+        Each netbook is tokenized with a unique tokenId
+        All PII data is stored as hashes for privacy
+        Full traceability through event logging
+    end note
+    
 }
 @enduml

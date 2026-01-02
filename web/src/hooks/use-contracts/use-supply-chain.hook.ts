@@ -1,7 +1,7 @@
 // web/src/hooks/use-contracts/use-supply-chain.hook.ts
 
 import { useCallback, useState } from 'react';
-import { SupplyChainService } from '@/services/contracts/supply-chain.service';
+import { supplyChainService } from '@/services/SupplyChainService';
 import { useToast } from '@/hooks/use-toast';
 import { ActivityLogger } from '@/lib/activity-logger';
 

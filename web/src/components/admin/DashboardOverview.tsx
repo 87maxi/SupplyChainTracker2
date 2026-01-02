@@ -3,11 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, RefreshCw, Settings2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
-import RoleManager from '@/components/contracts/RoleManager';
-import { Button } from '@/components/ui/button';
-import {
+import { AlertTriangle, RefreshCw, Settings2 ,
   Building,
   Shield,
   Users,
@@ -19,6 +15,9 @@ import {
   Network,
   TrendingUp
 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import RoleManager from '@/components/contracts/RoleManager';
+import { Button } from '@/components/ui/button';
 import { NetbookStatusChart } from '@/components/charts/NetbookStatusChart';
 import { UserRolesChart } from '@/components/charts/UserRolesChart';
 import { AnalyticsChart } from '@/components/charts/AnalyticsChart';
@@ -32,7 +31,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TransactionConfirmation } from '@/components/contracts/TransactionConfirmation';
-import { truncateAddress } from '@/lib/utils';
+import { truncateAddress , cn } from '@/lib/utils';
 import { getRoleHashes } from '@/lib/roleUtils';
 import { getRoleRequests, updateRoleRequestStatus, deleteRoleRequest } from '@/services/RoleRequestService';
 import { RoleRequest } from '@/types/role-request';
@@ -64,7 +63,6 @@ interface UserRoleData {
   id?: string;
 }
 
-import { cn } from '@/lib/utils';
 
 // Summary Card Component
 function SummaryCard({ title, count, description, icon: Icon, color }: { title: string, count: number, description: string, icon: any, color: string }) {

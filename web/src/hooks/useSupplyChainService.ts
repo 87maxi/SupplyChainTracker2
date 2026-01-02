@@ -5,10 +5,8 @@ import { Address } from 'viem';
 import { ContractRoles, ContractRoleName } from '@/types/contract';
 import { AllRolesSummary } from '@/types/supply-chain-types';
 import { roleMapper } from '@/lib/roleMapping';
-import { SupplyChainService } from '@/services/contracts/supply-chain.service';
+import { supplyChainService } from '@/services/SupplyChainService';
 
-// Crear una instancia única del servicio
-const supplyChainService = new SupplyChainService();
 
 export const useSupplyChainService = () => {
   const { address } = useAccount();

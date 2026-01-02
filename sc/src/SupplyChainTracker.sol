@@ -1,22 +1,49 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {
-    AccessControlEnumerable
-} from "openzeppelin-contracts/contracts/access/extensions/AccessControlEnumerable.sol";
+import "../lib/openzeppelin-contracts/contracts/access/AccessControl.sol";
+import "../lib/openzeppelin-contracts/contracts/access/extensions/IAccessControlEnumerable.sol";
+import "../lib/openzeppelin-contracts/contracts/access/extensions/AccessControlEnumerable.sol";
 
-contract SupplyChainTracker is AccessControlEnumerable {
+/// @title SupplyChainTracker
+/// @notice Enhanced blockchain-based supply chain tracking system for netbooks with JSON metadata support
+/// @dev Implements a state machine pattern with role-based access control
+/// @dev This contract uses AccessControlEnumerable to enable role enumeration
+/// @dev Each netbook is associated with a token ID for tracking its lifecycle
+contract SupplyChainTracker is AccessControl, AccessControlEnumerable {
+    /// @dev Overrides _grantRole to satisfy multiple inheritance
+    function _grantRole(bytes32 role, address account) internal virtual override(AccessControl, AccessControlEnumerable) returns (bool) {
+        return super._grantRole(role, account);
+    }
+
+    /// @dev Overrides _revokeRole to satisfy multiple inheritance
+    function _revokeRole(bytes32 role, address account) internal virtual override(AccessControl, AccessControlEnumerable) returns (bool) {
+        return super._revokeRole(role, account);
+    }
+
+    /// @dev Overrides supportsInterface to satisfy multiple inheritance
+    function supportsInterface(bytes4 interfaceId) public view virtual override(AccessControl, AccessControlEnumerable) returns (bool) {
+        return super.supportsInterface(interfaceId);
+    }
     // --- Roles ---
-    // Roles constant - using public constant as per OpenZeppelin best practices
+    /// @notice Role for manufacturers to register new netbooks
     bytes32 public constant FABRICANTE_ROLE = keccak256("FABRICANTE_ROLE");
+    
+    /// @notice Role for hardware auditors to verify physical integrity
     bytes32 public constant AUDITOR_HW_ROLE = keccak256("AUDITOR_HW_ROLE");
+    
+    /// @notice Role for software technicians to validate installed software
     bytes32 public constant TECNICO_SW_ROLE = keccak256("TECNICO_SW_ROLE");
+    
+    /// @notice Role for schools to assign netbooks to students
     bytes32 public constant ESCUELA_ROLE = keccak256("ESCUELA_ROLE");
 
     // DEFAULT_ADMIN_ROLE is already defined in AccessControl as 0x00...
     // We expose it through our mapping system for consistency
 
     // --- Enums ---
+    /// @notice Lifecycle states for netbooks in the supply chain
+    /// @dev States progress linearly: FABRICADA -> HW_APROBADO -> SW_VALIDADO -> DISTRIBUIDA
     enum State {
         FABRICADA,
         HW_APROBADO,
@@ -24,7 +51,20 @@ contract SupplyChainTracker is AccessControlEnumerable {
         DISTRIBUIDA
     }
 
-    // --- Estructuras de Datos ---
+    // --- Data Structures ---
+    /// @notice Complete tracking record for a netbook throughout its supply chain lifecycle
+    /// @dev All data is immutable once set; PII is stored as hashes for privacy
+    // Mapping de serial a token ID
+    mapping(string => uint256) public serialToTokenId;
+    mapping(uint256 => string) public tokenIdToSerial;
+    
+    // Contador de tokens
+    uint256 private _tokenIdCounter;
+    
+    // Datos de metadatos por token
+    mapping(uint256 => string) private _tokenMetadata;
+    
+    // Estructura de datos para el netbook
     struct Netbook {
         // A. Datos de Origen
         string serialNumber;
@@ -49,80 +89,102 @@ contract SupplyChainTracker is AccessControlEnumerable {
         // Estado actual
         State currentState;
         bool exists;
+        uint256 tokenId;
     }
 
-    // --- Almacenamiento ---
+    // --- Storage ---
+    /// @notice Mapping of serial numbers to netbook records
+    // Almacén principal de netbooks por número de serie
     mapping(string => Netbook) private netbooks;
+    
+    // Almacenar todos los números de serie registrados para enumeración
     string[] public allSerialNumbers;
+    
+    // Estructura para almacenar datos de trazabilidad por hash de transacción
+    mapping(bytes32 => string) public transactionToSerial;
+    
+    // Evento para rastrear cambios en los datos de trazabilidad
+    event TraceabilityDataUpdated(bytes32 indexed transactionHash, string serialNumber, string dataType, string dataValue);
 
-    // --- Eventos ---
-    event NetbookRegistered(string serialNumber, string batchId, address manufacturer);
-    event HardwareAudited(string serialNumber, address auditor, bool passed);
-    event SoftwareValidated(string serialNumber, address technician, string osVersion);
-    event NetbookAssigned(string serialNumber, bytes32 schoolHash, bytes32 studentHash);
+    // --- Events ---
+    /// @notice Emitted when a new netbook is registered by a manufacturer
+    /// @param serialNumber Unique identifier of the netbook
+    /// @param batchId Production batch identifier
+    /// @param manufacturer Address of the registering manufacturer
+    event NetbookRegistered(string indexed serialNumber, string batchId, address indexed manufacturer);
+    
+    /// @notice Emitted when hardware audit is completed
+    /// @param serialNumber Unique identifier of the netbook
+    /// @param auditor Address of the auditing entity
+    /// @param passed Whether hardware integrity passed inspection
+    event HardwareAudited(string indexed serialNumber, address indexed auditor, bool passed);
+    
+    /// @notice Emitted when software validation is completed
+    /// @param serialNumber Unique identifier of the netbook
+    /// @param technician Address of the validating technician
+    /// @param osVersion Operating system version installed
+    event SoftwareValidated(string indexed serialNumber, address indexed technician, string osVersion);
+    
+    /// @notice Emitted when a netbook is assigned to a student
+    /// @param serialNumber Unique identifier of the netbook
+    /// @param schoolHash Hash of the school identifier (protects PII)
+    /// @param studentHash Hash of the student identifier (protects PII)
+    event NetbookAssigned(string indexed serialNumber, bytes32 schoolHash, bytes32 studentHash);
 
-    constructor() {
+        constructor() {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
-
-    // --- Funciones ERC-20 para evitar errores de "execution reverted" ---
-    // Estas funciones devuelven valores por defecto para evitar que herramientas
-    // que esperan un contrato ERC-20 fallen con "execution reverted"
     
-    function decimals() external pure returns (uint8) {
-        return 0; // No es un token, devolvemos 0
-    }
-    
-    function symbol() external pure returns (string memory) {
-        return ""; // No es un token, devolvemos string vacío
-    }
-    
-    function name() external pure returns (string memory) {
-        return "SupplyChainTracker"; // Nombre del contrato
-    }
-    
-    function totalSupply() external pure returns (uint256) {
-        return 0; // No es un token, devolvemos 0
-    }
-    
-    function balanceOf(address) external pure returns (uint256) {
-        return 0; // No es un token, devolvemos 0
-    }
-
-    // --- Funciones de gestión de roles ---
-
     /**
-     * @notice Otorga un rol a una cuenta
-     * @dev Solo el administrador puede llamar a esta función
-     * @param account La cuenta que recibirá el rol
-     * @param roleType El tipo de rol a otorgar ("FABRICANTE", "AUDITOR_HW", "TECNICO_SW", "ESCUELA")
+     * @notice Obtiene el metadata asociado a un token
+     * @param tokenId El ID del token
+     * @return El string JSON con los metadata
      */
-    function grantRole(address account, string calldata roleType)
-        external
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
-        bytes32 role = getRoleByName(roleType);
+    function getTokenMetadata(uint256 tokenId) public view returns (string memory) {
+        return _tokenMetadata[tokenId];
+    }
+    
+    /**
+     * @notice Obtiene el ID del token para un número de serie
+     * @param serialNumber El número de serie
+     * @return El ID del token
+     */
+    function getTokenId(string memory serialNumber) public view returns (uint256) {
+        return serialToTokenId[serialNumber];
+    }
+    
+    /**
+     * @notice Obtiene el número de serie para un ID de token
+     * @param tokenId El ID del token
+     * @return El número de serie
+     */
+    function getSerialNumber(uint256 tokenId) public view returns (string memory) {
+        return tokenIdToSerial[tokenId];
+    }
+
+    
+
+    // --- Role Management Functions ---
+
+    function grantRole(bytes32 role, address account) public override(AccessControl, IAccessControl) onlyRole(DEFAULT_ADMIN_ROLE) {
         _grantRole(role, account);
     }
 
-    /**
-     * @notice Revoca un rol de una cuenta
-     * @dev Solo el administrador puede llamar a esta función
-     * @param account La cuenta de la que se revocará el rol
-     * @param roleType El tipo de rol a revocar ("FABRICANTE", "AUDITOR_HW", "TECNICO_SW", "ESCUELA")
-     */
-    function revokeRole(address account, string calldata roleType)
-        external
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
-        bytes32 role = getRoleByName(roleType);
+    /// @notice Revokes a role from an account
+    /// @dev Only the admin can call this function
+    /// @param role The role identifier to revoke
+    /// @param account The account to revoke the role from
+    /// @custom:role DEFAULT_ADMIN_ROLE
+    function revokeRole(bytes32 role, address account) public override(AccessControl, IAccessControl) onlyRole(DEFAULT_ADMIN_ROLE) {
         _revokeRole(role, account);
     }
 
     /**
      * @notice Obtiene el hash del rol por su nombre
+     * @dev Este función esta deprecada y será removida en futuras versiones
      * @param roleType El nombre del rol ("FABRICANTE", "AUDITOR_HW", "TECNICO_SW", "ESCUELA")
      * @return role El hash del rol correspondiente
+     * @custom:deprecated Usa constantes de roles directamente en su lugar
      */
     function getRoleByName(string calldata roleType) public pure returns (bytes32) {
         if (keccak256(abi.encodePacked(roleType)) == keccak256(abi.encodePacked("FABRICANTE"))) {
@@ -146,34 +208,51 @@ contract SupplyChainTracker is AccessControlEnumerable {
         revert("Invalid role type");
     }
 
-    /**
-     * @notice Verifica si una cuenta tiene un rol específico
-     * @param roleType El tipo de rol a verificar
-     * @param account La cuenta a verificar
-     * @return bool True si la cuenta tiene el rol, false en caso contrario
-     */
-    function hasRole(string calldata roleType, address account) external view returns (bool) {
-        bytes32 role = getRoleByName(roleType);
-        return hasRole(role, account);
+
+
+    function hasRole(bytes32 role, address account) public view override(AccessControl, IAccessControl) returns (bool) {
+        return super.hasRole(role, account);
     }
 
     // --- Funciones de Escritura ---
 
+    /// @notice Registers new netbooks in the supply chain
+    /// @dev Only accounts with FABRICANTE_ROLE can call this function
+    /// @param serials Array of unique serial numbers for the netbooks
+    /// @param batches Array of batch identifiers corresponding to each netbook
+    /// @param specs Array of initial model specifications for each netbook
+    /// @custom:role FABRICANTE_ROLE
+    /// @custom:emits NetbookRegistered event for each registered netbook
+    /// @notice Registers new netbooks in the supply chain
+    /// @dev Only accounts with FABRICANTE_ROLE can call this function
+    /// @param serials Array of unique serial numbers for the netbooks
+    /// @param batches Array of batch identifiers corresponding to each netbook
+    /// @param specs Array of initial model specifications for each netbook
+    /// @param metadata Array of JSON metadata strings for each netbook
+    /// @custom:role FABRICANTE_ROLE
+    /// @custom:emits NetbookRegistered event for each registered netbook
+    /// @custom:emits TraceabilityDataUpdated event with initial data
     function registerNetbooks(
         string[] calldata serials,
         string[] calldata batches,
-        string[] calldata specs
+        string[] calldata specs,
+        string[] memory metadata
     ) external {
-        require(hasRole(FABRICANTE_ROLE, msg.sender), "Acceso denegado: rol requerido");
+        require(hasRole(FABRICANTE_ROLE, msg.sender), "Access denied: FABRICANTE_ROLE required");
         require(
-            serials.length == batches.length && serials.length == specs.length,
-            "Longitud de arrays no coincide"
+            serials.length == batches.length && serials.length == specs.length && serials.length == metadata.length,
+            "Array length mismatch"
         );
 
         for (uint i = 0; i < serials.length; i++) {
-            require(bytes(serials[i]).length > 0, "Serial no valido");
-            require(!netbooks[serials[i]].exists, "Netbook ya registrada");
+            require(bytes(serials[i]).length > 0, "Invalid serial number");
+            require(!netbooks[serials[i]].exists, "Netbook already registered");
 
+            // Incrementar y obtener el nuevo ID de token
+            uint256 newTokenId = _tokenIdCounter;
+            _tokenIdCounter++;
+            
+            // Crear el registro del netbook con el ID del token
             netbooks[serials[i]] = Netbook({
                 serialNumber: serials[i],
                 batchId: batches[i],
@@ -188,91 +267,198 @@ contract SupplyChainTracker is AccessControlEnumerable {
                 studentIdHash: bytes32(0),
                 distributionTimestamp: 0,
                 currentState: State.FABRICADA,
-                exists: true
+                exists: true,
+                tokenId: newTokenId
             });
-
+            
+            // Mapear el número de serie al ID del token
+            serialToTokenId[serials[i]] = newTokenId;
+            tokenIdToSerial[newTokenId] = serials[i];
+            
+            // Almacenar los metadata
+            _tokenMetadata[newTokenId] = metadata[i];
+            
+            // Registrar en el historial de trazabilidad
+            bytes32 txHash = keccak256(abi.encodePacked(msg.sender, block.timestamp, serials[i]));
+            transactionToSerial[txHash] = serials[i];
+            
+            // Emitir eventos
             allSerialNumbers.push(serials[i]);
             emit NetbookRegistered(serials[i], batches[i], msg.sender);
+            emit TraceabilityDataUpdated(txHash, serials[i], "initial_state", "FABRICADA");
+            emit TraceabilityDataUpdated(txHash, serials[i], "metadata", metadata[i]);
         }
     }
 
-    function auditHardware(string calldata serial, bool passed, bytes32 reportHash) external {
-        require(hasRole(AUDITOR_HW_ROLE, msg.sender), "Acceso denegado: rol requerido");
+    /// @notice Performs hardware audit on a netbook
+    /// @dev Transitions netbook from FABRICADA to HW_APROBADO state if successful
+    /// @notice Performs hardware audit on a netbook
+    /// @dev Only accounts with AUDITOR_HW_ROLE can call this function
+    /// @param serial Unique serial number of the netbook to audit
+    /// @param passed Whether the hardware integrity passed inspection
+    /// @param reportHash Cryptographic hash of the complete audit report (stored off-chain)
+    /// @param metadata JSON string with additional hardware audit data
+    /// @custom:role AUDITOR_HW_ROLE
+    /// @custom:precondition Netbook must exist and be in FABRICADA state
+    /// @custom:postcondition Netbook state advances to HW_APROBADO
+    /// @custom:emits HardwareAudited event with audit details
+    /// @custom:emits TraceabilityDataUpdated event with audit metadata
+    function auditHardware(string calldata serial, bool passed, bytes32 reportHash, string memory metadata) external {
+        require(hasRole(AUDITOR_HW_ROLE, msg.sender), "Access denied: AUDITOR_HW_ROLE required");
         Netbook storage nb = netbooks[serial];
-        require(nb.exists, "Serial no valido");
-        require(nb.currentState == State.FABRICADA, "Estado incorrecto para esta accion");
+        require(nb.exists, "Netbook not found");
+        require(nb.currentState == State.FABRICADA, "Invalid state for hardware audit");
 
         nb.hwAuditor = msg.sender;
         nb.hwIntegrityPassed = passed;
         nb.hwReportHash = reportHash;
         nb.currentState = State.HW_APROBADO;
 
+        // Actualizar metadatos
+        uint256 tokenId = nb.tokenId;
+        _tokenMetadata[tokenId] = metadata;
+        
+        // Registrar en el historial de trazabilidad
+        bytes32 txHash = keccak256(abi.encodePacked(msg.sender, block.timestamp, serial, "hardware_audit"));
+        transactionToSerial[txHash] = serial;
+        
         emit HardwareAudited(serial, msg.sender, passed);
+        emit TraceabilityDataUpdated(txHash, serial, "hardware_audit", metadata);
+        emit TraceabilityDataUpdated(txHash, serial, "state_transition", "FABRICADA -> HW_APROBADO");
     }
 
-    function validateSoftware(string calldata serial, string calldata osVersion, bool passed)
+    /// @notice Validates software installation on a netbook
+    /// @dev Transitions netbook from HW_APROBADO to SW_VALIDADO state if successful
+    /// @dev Only accounts with TECNICO_SW_ROLE can call this function
+    /// @param serial Unique serial number of the netbook to validate
+    /// @param osVersion Version of the operating system installed
+    /// @param passed Whether the software validation passed
+    /// @param metadata JSON string with additional software validation data
+    /// @custom:role TECNICO_SW_ROLE
+    /// @custom:precondition Netbook must exist and be in HW_APROBADO state
+    /// @custom:postcondition Netbook state advances to SW_VALIDADO
+    /// @custom:emits SoftwareValidated event with validation details
+    /// @custom:emits TraceabilityDataUpdated event with validation metadata
+    function validateSoftware(string calldata serial, string calldata osVersion, bool passed, string memory metadata)
         external
     {
-        require(hasRole(TECNICO_SW_ROLE, msg.sender), "Acceso denegado: rol requerido");
+        require(hasRole(TECNICO_SW_ROLE, msg.sender), "Access denied: TECNICO_SW_ROLE required");
         Netbook storage nb = netbooks[serial];
-        require(nb.exists, "Serial no valido");
-        require(nb.currentState == State.HW_APROBADO, "Estado incorrecto para esta accion");
+        require(nb.exists, "Netbook not found");
+        require(nb.currentState == State.HW_APROBADO, "Invalid state for software validation");
 
         nb.swTechnician = msg.sender;
         nb.osVersion = osVersion;
         nb.swValidationPassed = passed;
         nb.currentState = State.SW_VALIDADO;
 
+        // Actualizar metadatos
+        uint256 tokenId = nb.tokenId;
+        _tokenMetadata[tokenId] = metadata;
+        
+        // Registrar en el historial de trazabilidad
+        bytes32 txHash = keccak256(abi.encodePacked(msg.sender, block.timestamp, serial, "software_validation"));
+        transactionToSerial[txHash] = serial;
+        
         emit SoftwareValidated(serial, msg.sender, osVersion);
+        emit TraceabilityDataUpdated(txHash, serial, "software_validation", metadata);
+        emit TraceabilityDataUpdated(txHash, serial, "state_transition", "HW_APROBADO -> SW_VALIDADO");
     }
 
-    function assignToStudent(string calldata serial, bytes32 schoolHash, bytes32 studentHash)
+    /// @notice Assigns a netbook to a student
+    /// @dev Transitions netbook from SW_VALIDADO to DISTRIBUIDA state
+    /// @dev Only accounts with ESCUELA_ROLE can call this function
+    /// @param serial Unique serial number of the netbook to assign
+    /// @param schoolHash Cryptographic hash of the school identifier (protects PII)
+    /// @param studentHash Cryptographic hash of the student identifier (protects PII)
+    /// @param metadata JSON string with additional assignment data
+    /// @custom:role ESCUELA_ROLE
+    /// @custom:precondition Netbook must exist and be in SW_VALIDADO state
+    /// @custom:postcondition Netbook state advances to DISTRIBUIDA with timestamp
+    /// @custom:emits NetbookAssigned event with assignment details
+    /// @custom:emits TraceabilityDataUpdated event with assignment metadata
+    function assignToStudent(string calldata serial, bytes32 schoolHash, bytes32 studentHash, string memory metadata)
         external
     {
-        require(hasRole(ESCUELA_ROLE, msg.sender), "Acceso denegado: rol requerido");
+        require(hasRole(ESCUELA_ROLE, msg.sender), "Access denied: ESCUELA_ROLE required");
         Netbook storage nb = netbooks[serial];
-        require(nb.exists, "Serial no valido");
-        require(nb.currentState == State.SW_VALIDADO, "Estado incorrecto para esta accion");
+        require(nb.exists, "Netbook not found");
+        require(nb.currentState == State.SW_VALIDADO, "Invalid state for student assignment");
 
         nb.destinationSchoolHash = schoolHash;
         nb.studentIdHash = studentHash;
         nb.distributionTimestamp = block.timestamp;
         nb.currentState = State.DISTRIBUIDA;
 
+        // Actualizar metadatos
+        uint256 tokenId = nb.tokenId;
+        _tokenMetadata[tokenId] = metadata;
+        
+        // Registrar en el historial de trazabilidad
+        bytes32 txHash = keccak256(abi.encodePacked(msg.sender, block.timestamp, serial, "student_assignment"));
+        transactionToSerial[txHash] = serial;
+        
         emit NetbookAssigned(serial, schoolHash, studentHash);
+        emit TraceabilityDataUpdated(txHash, serial, "student_assignment", metadata);
+        emit TraceabilityDataUpdated(txHash, serial, "state_transition", "SW_VALIDADO -> DISTRIBUIDA");
     }
 
-    // --- Funciones de Lectura ---
+    // --- Read Functions ---
 
+    /// @notice Gets the current state of a netbook
+    /// @param serial Unique serial number of the netbook
+    /// @return currentState The current state in the supply chain lifecycle
+    /// @custom:requirements Netbook must exist in the system
     function getNetbookState(string calldata serial) external view returns (State) {
-        require(netbooks[serial].exists, "Serial no valido");
+        require(netbooks[serial].exists, "Netbook not found");
         return netbooks[serial].currentState;
     }
 
+    /// @notice Gets the complete tracking report for a netbook
+    /// @param serial Unique serial number of the netbook
+    /// @return report The complete netbook record with all lifecycle data
+    /// @custom:requirements Netbook must exist in the system
+    /// @custom:security All PII is stored as cryptographic hashes for privacy
     function getNetbookReport(string calldata serial) external view returns (Netbook memory) {
-        require(netbooks[serial].exists, "Serial no valido");
+        require(netbooks[serial].exists, "Netbook not found");
         return netbooks[serial];
     }
 
+    /// @notice Gets all registered serial numbers
+    /// @return serials Array of all netbook serial numbers in the system
+    /// @custom:view This function does not modify state
     function getAllSerialNumbers() external view returns (string[] memory) {
         return allSerialNumbers;
     }
 
+    /// @notice Gets all accounts that have been granted a specific role
+    /// @param role The role identifier to query
+    /// @return members Array of addresses that have the specified role
+    /// @custom:view This function does not modify state
+    /// @custom:security Uses AccessControl's built-in enumeration functions
     function getAllMembers(bytes32 role) public view returns (address[] memory) {
-        uint count = getRoleMemberCount(role);
+        uint256 count = getRoleMemberCount(role);
         address[] memory members = new address[](count);
 
-        for (uint i = 0; i < count; i++) {
+        for (uint256 i = 0; i < count; i++) {
             members[i] = getRoleMember(role, i);
         }
 
         return members;
     }
 
+    /// @notice Gets the total number of registered netbooks
+    /// @return count The total number of netbooks in the system
+    /// @custom:view This function does not modify state
     function totalNetbooks() external view returns (uint) {
         return allSerialNumbers.length;
     }
 
+    /// @notice Gets all netbooks in a specific state
+    /// @param state The state to filter by
+    /// @return serials Array of serial numbers for netbooks in the specified state
+    /// @custom:view This function does not modify state
+    /// @custom:efficiency Linear time complexity O(n) where n is the number of netbooks
     function getNetbooksByState(State state) external view returns (string[] memory) {
         uint count = 0;
         for (uint i = 0; i < allSerialNumbers.length; i++) {

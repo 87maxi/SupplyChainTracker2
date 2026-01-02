@@ -1,7 +1,7 @@
 // web/src/services/contracts/role.service.ts
 
 import { BaseContractService } from './base-contract.service';
-import SupplyChainTrackerABI from '@/contracts/abi/SupplyChainTracker.json';
+import SupplyChainTrackerABI from '@/lib/contracts/abi/SupplyChainTracker.json';
 import { NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS } from '@/lib/env';
 import { CacheService } from '@/lib/cache/cache-service';
 import { ContractRoles } from '@/types/contract';

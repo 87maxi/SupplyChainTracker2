@@ -6,7 +6,7 @@ import { getRoleByName } from './contracts/SupplyChainContract';
 const contractAddress = NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS as `0x${string}`;
 
 // Import the ABI directly to avoid JSON import issues
-import SupplyChainTrackerABI from './contracts/abi/SupplyChainTracker.json';
+import SupplyChainTrackerABI from '@/lib/contracts/abi/SupplyChainTracker.json';
 
 // Get a map of role names to their hashes from the contract
 // Updated RoleMap to include full role names as keys

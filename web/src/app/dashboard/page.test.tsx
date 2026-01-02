@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import ManagerDashboard from '@/app/dashboard/page';
-import { SupplyChainService } from '@/services/contracts/supply-chain.service';
+import { supplyChainService } from '@/services/SupplyChainService';
 
 // Tipos para los mocks
 import { type Mock } from 'jest-mock';
@@ -20,13 +20,13 @@ describe('ManagerDashboard', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // Mock del servicio
-    Object.assign(SupplyChainService, mockSupplyChainService);
+    Object.assign(supplyChainService, mockSupplyChainService);
   });
 
   it('renders dashboard with title', async () => {
     // Mock de datos
-    (SupplyChainService.getAllSerialNumbers as jest.Mock).mockResolvedValue([]);
-    (SupplyChainService.isWalletConnected as jest.Mock).mockReturnValue(false);
+    (supplyChainService.getAllSerialNumbers as jest.Mock).mockResolvedValue([]);
+    (supplyChainService.isWalletConnected as jest.Mock).mockReturnValue(false);
     
     // This test will fail due to the ES module issue, so we'll skip it for now
     // render(await ManagerDashboard());
@@ -35,12 +35,12 @@ describe('ManagerDashboard', () => {
   });
 
   it('displays loading state initially', async () => {
-    (SupplyChainService.getAllSerialNumbers as jest.Mock).mockImplementation(() => {
+    (supplyChainService.getAllSerialNumbers as jest.Mock).mockImplementation(() => {
       return new Promise((resolve) => {
         setTimeout(() => resolve([]), 100);
       });
     });
-    (SupplyChainService.isWalletConnected as jest.Mock).mockReturnValue(false);
+    (supplyChainService.isWalletConnected as jest.Mock).mockReturnValue(false);
     
     // This test will fail due to the ES module issue, so we'll skip it for now
     // render(await ManagerDashboard());
@@ -48,8 +48,8 @@ describe('ManagerDashboard', () => {
   });
 
   it('shows connect wallet button when not connected', async () => {
-    (SupplyChainService.getAllSerialNumbers as jest.Mock).mockResolvedValue([]);
-    (SupplyChainService.isWalletConnected as jest.Mock).mockReturnValue(false);
+    (supplyChainService.getAllSerialNumbers as jest.Mock).mockResolvedValue([]);
+    (supplyChainService.isWalletConnected as jest.Mock).mockReturnValue(false);
     
     // This test will fail due to the ES module issue, so we'll skip it for now
     // render(await ManagerDashboard());
@@ -58,12 +58,12 @@ describe('ManagerDashboard', () => {
 
   it('displays tracking cards when data is loaded', async () => {
     // Mock de datos para una netbook
-    (SupplyChainService.getAllSerialNumbers as jest.Mock).mockResolvedValue(['NB-001']);
-    (SupplyChainService.getNetbookReport as jest.Mock).mockResolvedValue({
+    (supplyChainService.getAllSerialNumbers as jest.Mock).mockResolvedValue(['NB-001']);
+    (supplyChainService.getNetbookReport as jest.Mock).mockResolvedValue({
       serialNumber: 'NB-001',
       currentState: 0, // FABRICADA
     });
-    (SupplyChainService.isWalletConnected as jest.Mock).mockReturnValue(true);
+    (supplyChainService.isWalletConnected as jest.Mock).mockReturnValue(true);
     
     // This test will fail due to the ES module issue, so we'll skip it for now
     // render(await ManagerDashboard());
@@ -73,10 +73,10 @@ describe('ManagerDashboard', () => {
 
   it('displays correct status badges for different states', async () => {
     // Mock de datos para netbooks en diferentes estados
-    (SupplyChainService.getAllSerialNumbers as jest.Mock).mockResolvedValue(['NB-001', 'NB-002', 'NB-003', 'NB-004']);
+    (supplyChainService.getAllSerialNumbers as jest.Mock).mockResolvedValue(['NB-001', 'NB-002', 'NB-003', 'NB-004']);
     
     // Mock para diferentes estados
-    (SupplyChainService.getNetbookReport as jest.Mock)
+    (supplyChainService.getNetbookReport as jest.Mock)
       .mockResolvedValueOnce({
         serialNumber: 'NB-001',
         currentState: 0, // FABRICADA
@@ -94,7 +94,7 @@ describe('ManagerDashboard', () => {
         currentState: 3, // DISTRIBUIDA
       });
     
-    (SupplyChainService.isWalletConnected as jest.Mock).mockReturnValue(true);
+    (supplyChainService.isWalletConnected as jest.Mock).mockReturnValue(true);
     
     // This test will fail due to the ES module issue, so we'll skip it for now
     // render(await ManagerDashboard());
@@ -106,7 +106,7 @@ describe('ManagerDashboard', () => {
 
   it('displays summary cards with correct counts', async () => {
     // Mock de datos
-    (SupplyChainService.getAllSerialNumbers as jest.Mock).mockResolvedValue([
+    (supplyChainService.getAllSerialNumbers as jest.Mock).mockResolvedValue([
       'NB-001', // FABRICADA
       'NB-002', // FABRICADA
       'NB-003', // HW_APROBADO
@@ -116,7 +116,7 @@ describe('ManagerDashboard', () => {
     ]);
     
     // Mock para estados
-    (SupplyChainService.getNetbookReport as jest.Mock)
+    (supplyChainService.getNetbookReport as jest.Mock)
       .mockResolvedValueOnce({ currentState: 0 })
       .mockResolvedValueOnce({ currentState: 0 })
       .mockResolvedValueOnce({ currentState: 1 })
@@ -124,7 +124,7 @@ describe('ManagerDashboard', () => {
       .mockResolvedValueOnce({ currentState: 3 })
       .mockResolvedValueOnce({ currentState: 3 });
     
-    (SupplyChainService.isWalletConnected as jest.Mock).mockReturnValue(true);
+    (supplyChainService.isWalletConnected as jest.Mock).mockReturnValue(true);
     
     // This test will fail due to the ES module issue, so we'll skip it for now
     // render(await ManagerDashboard());
@@ -136,8 +136,8 @@ describe('ManagerDashboard', () => {
 
   it('renders dashboard with title', async () => {
     // Mock de datos
-    (SupplyChainService.getAllSerialNumbers as jest.Mock).mockResolvedValue([]);
-    (SupplyChainService.isWalletConnected as jest.Mock).mockReturnValue(false);
+    (supplyChainService.getAllSerialNumbers as jest.Mock).mockResolvedValue([]);
+    (supplyChainService.isWalletConnected as jest.Mock).mockReturnValue(false);
     
     // This test will fail due to the ES module issue, so we'll skip it for now
     // render(await ManagerDashboard());
@@ -146,12 +146,12 @@ describe('ManagerDashboard', () => {
   });
 
   it('displays loading state initially', async () => {
-    (SupplyChainService.getAllSerialNumbers as jest.Mock).mockImplementation(() => {
+    (supplyChainService.getAllSerialNumbers as jest.Mock).mockImplementation(() => {
       return new Promise((resolve) => {
         setTimeout(() => resolve([]), 100);
       });
     });
-    (SupplyChainService.isWalletConnected as jest.Mock).mockReturnValue(false);
+    (supplyChainService.isWalletConnected as jest.Mock).mockReturnValue(false);
     
     // This test will fail due to the ES module issue, so we'll skip it for now
     // render(await ManagerDashboard());
@@ -159,8 +159,8 @@ describe('ManagerDashboard', () => {
   });
 
   it('shows connect wallet button when not connected', async () => {
-    (SupplyChainService.getAllSerialNumbers as jest.Mock).mockResolvedValue([]);
-    (SupplyChainService.isWalletConnected as jest.Mock).mockReturnValue(false);
+    (supplyChainService.getAllSerialNumbers as jest.Mock).mockResolvedValue([]);
+    (supplyChainService.isWalletConnected as jest.Mock).mockReturnValue(false);
     
     // This test will fail due to the ES module issue, so we'll skip it for now
     // render(await ManagerDashboard());
@@ -169,12 +169,12 @@ describe('ManagerDashboard', () => {
 
   it('displays tracking cards when data is loaded', async () => {
     // Mock de datos para una netbook
-    (SupplyChainService.getAllSerialNumbers as jest.Mock).mockResolvedValue(['NB-001']);
-    (SupplyChainService.getNetbookReport as jest.Mock).mockResolvedValue({
+    (supplyChainService.getAllSerialNumbers as jest.Mock).mockResolvedValue(['NB-001']);
+    (supplyChainService.getNetbookReport as jest.Mock).mockResolvedValue({
       serialNumber: 'NB-001',
       currentState: 0, // FABRICADA
     });
-    (SupplyChainService.isWalletConnected as jest.Mock).mockReturnValue(true);
+    (supplyChainService.isWalletConnected as jest.Mock).mockReturnValue(true);
     
     // This test will fail due to the ES module issue, so we'll skip it for now
     // render(await ManagerDashboard());
@@ -184,10 +184,10 @@ describe('ManagerDashboard', () => {
 
   it('displays correct status badges for different states', async () => {
     // Mock de datos para netbooks en diferentes estados
-    (SupplyChainService.getAllSerialNumbers as jest.Mock).mockResolvedValue(['NB-001', 'NB-002', 'NB-003', 'NB-004']);
+    (supplyChainService.getAllSerialNumbers as jest.Mock).mockResolvedValue(['NB-001', 'NB-002', 'NB-003', 'NB-004']);
     
     // Mock para diferentes estados
-    (SupplyChainService.getNetbookReport as jest.Mock)
+    (supplyChainService.getNetbookReport as jest.Mock)
       .mockResolvedValueOnce({
         serialNumber: 'NB-001',
         currentState: 0, // FABRICADA
@@ -205,7 +205,7 @@ describe('ManagerDashboard', () => {
         currentState: 3, // DISTRIBUIDA
       });
     
-    (SupplyChainService.isWalletConnected as jest.Mock).mockReturnValue(true);
+    (supplyChainService.isWalletConnected as jest.Mock).mockReturnValue(true);
     
     // This test will fail due to the ES module issue, so we'll skip it for now
     // render(await ManagerDashboard());
@@ -217,7 +217,7 @@ describe('ManagerDashboard', () => {
 
   it('displays summary cards with correct counts', async () => {
     // Mock de datos
-    (SupplyChainService.getAllSerialNumbers as jest.Mock).mockResolvedValue([
+    (supplyChainService.getAllSerialNumbers as jest.Mock).mockResolvedValue([
       'NB-001', // FABRICADA
       'NB-002', // FABRICADA
       'NB-003', // HW_APROBADO
@@ -227,7 +227,7 @@ describe('ManagerDashboard', () => {
     ]);
     
     // Mock para estados
-    (SupplyChainService.getNetbookReport as jest.Mock)
+    (supplyChainService.getNetbookReport as jest.Mock)
       .mockResolvedValueOnce({ currentState: 0 })
       .mockResolvedValueOnce({ currentState: 0 })
       .mockResolvedValueOnce({ currentState: 1 })
@@ -235,7 +235,7 @@ describe('ManagerDashboard', () => {
       .mockResolvedValueOnce({ currentState: 3 })
       .mockResolvedValueOnce({ currentState: 3 });
     
-    (SupplyChainService.isWalletConnected as jest.Mock).mockReturnValue(true);
+    (supplyChainService.isWalletConnected as jest.Mock).mockReturnValue(true);
     
     // This test will fail due to the ES module issue, so we'll skip it for now
     // render(await ManagerDashboard());

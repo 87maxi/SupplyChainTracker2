@@ -8,23 +8,25 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useWeb3 } from '@/hooks/useWeb3';
-import { useSupplyChainService } from '@/hooks/useSupplyChainService';
+import { useSupplyChainService } from '@/hooks/useRoleCallsManager';
 import { useState } from 'react';
 import { eventBus, EVENTS } from '@/lib/events';
 import { ToastAction } from '@/components/ui/toast';
+import { roleMapper, type RoleName } from '@/lib/roleMapping';
 
 // Definición de los roles disponibles
 const availableRoles = [
   { value: 'FABRICANTE_ROLE', label: 'Fabricante' },
   { value: 'AUDITOR_HW_ROLE', label: 'Auditor de Hardware' },
   { value: 'TECNICO_SW_ROLE', label: 'Técnico de Software' },
-  { value: 'ESCUELA_ROLE', label: 'Escuela' }
+  { value: 'ESCUELA_ROLE', label: 'Escuela' },
+  { value: 'DEFAULT_ADMIN_ROLE', label: 'Administrador' }
 ] as const;
 
 type RoleValue = typeof availableRoles[number]['value'];
 
 export const RoleManagementSection = () => {
-  const { grantRole, getAllRolesSummary } = useSupplyChainService();
+  const { handleGrantRole } = useSupplyChainService();
   const { toast } = useToast();
 
   const [selectedRole, setSelectedRole] = useState<RoleValue>('FABRICANTE_ROLE');
@@ -44,16 +46,17 @@ export const RoleManagementSection = () => {
 
     setLoading(true);
     try {
-      const result = await grantRole(selectedRole, newMemberAddress as `0x${string}`);
+      // Use roleMapper to convert role name to hash
+      const roleHash = await roleMapper.getRoleHash(selectedRole);
+      const result = await handleGrantRole(newMemberAddress as `0x${string}`, selectedRole as RoleName);
+      
       if (result.success) {
         toast({
           title: "Éxito",
-          description: `Rol otorgado correctamente.`,
+          description: `Rol otorgado correctamente al usuario ${newMemberAddress}.`,
           action: result.hash ? <ToastAction altText="Ver transacción" onClick={() => window.open(`https://sepolia.etherscan.io/tx/${result.hash}`, '_blank')}>Ver TX</ToastAction> : undefined
         });
         setNewMemberAddress('');
-        // Refresh and notify
-        await getAllRolesSummary(); // Refresh cache
         eventBus.emit(EVENTS.ROLE_UPDATED);
       }
     } catch (error: any) {

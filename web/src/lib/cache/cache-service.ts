@@ -28,6 +28,43 @@ export class CacheService {
     }
   }
 
+  // Alias methods for backward compatibility with imported function names
+  static getCache<T>(key: string): T | null {
+    return this.get<T>(key);
+  }
+
+  static setCache<T>(key: string, data: T, ttl?: number): void {
+    this.set<T>(key, data, ttl);
+  }
+
+  static isCacheStale(key: string): boolean {
+    if (typeof window === 'undefined') return true;
+    try {
+      const itemStr = localStorage.getItem(this.PREFIX + key);
+      if (!itemStr) return true;
+      const item = JSON.parse(itemStr);
+      return Date.now() > item.expiry;
+    } catch (error) {
+      console.warn('Cache staleness check failed:', error);
+      return true;
+    }
+  }
+
+  // Revalidation tracking using a simple Set for in-memory tracking
+  private static revalidatingKeys = new Set<string>();
+
+  static isRevalidating(key: string): boolean {
+    return this.revalidatingKeys.has(key);
+  }
+
+  static startRevalidation(key: string): void {
+    this.revalidatingKeys.add(key);
+  }
+
+  static completeRevalidation(key: string): void {
+    this.revalidatingKeys.delete(key);
+  }
+
   /**
    * Recupera un valor de la caché si aún es válido
    * @param key Clave del valor a recuperar

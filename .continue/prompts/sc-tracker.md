@@ -55,8 +55,9 @@ Estas funciones avanzan el estado de la netbook y registran datos clave. Cada un
 
 Funciones de consulta pública, sin restricciones de acceso:
 
-- **`getNetbookReport(serial)`**: Devuelve la estructura completa de la netbook, incluyendo todos los datos registrados en cada etapa. Es la base del reporte final de trazabilidad.
-- **`getNetbookState(serial)`**: Devuelve únicamente el estado actual de la netbook, útil para validaciones rápidas o interfaces de usuario.
+- **los valores de data se hace la trazabilidad por el hash de la transaccion**
+- **`getData(hash)`**: Devuelve la estructura completa de la netbook, incluyendo todos los datos registrados en cada etapa. Es la base del reporte final de trazabilidad.
+- **`getDataState(hash)`**: Devuelve únicamente el estado actual de la netbook, útil para validaciones rápidas o interfaces de usuario.
 
 ## Consideraciones de Seguridad y Privacidad
 
@@ -69,7 +70,7 @@ Funciones de consulta pública, sin restricciones de acceso:
 
 # Entidades de Datos Clave y Roles
 
-## Estructura `Netbook`
+## Estructura `data`, estos datos se guardan en formato json sobre la blockchain 
 
 ### A. Datos de Origen (registrados por FABRICANTE)
 - **serialNumber**: Identificador único de la unidad.
@@ -91,13 +92,13 @@ Funciones de consulta pública, sin restricciones de acceso:
 - **studentIdHash**: Hash del identificador del estudiante (protege PII).
 - **distributionTimestamp**: Marca de tiempo de la asignación final.
 
-> Privacidad: Los identificadores personales (alumno, escuela) se almacenan en `bytes` (hashes criptográficos), evitando la exposición de información sensible en la blockchain pública.
 
-## Roles Definidos
+## Roles Definidos,
+### Relacionado a la wallet, la cuenta administrador es la primera cuenta de anvil
 
 | Rol                     | Función Principal                                                                 |
 |--------------------------|-----------------------------------------------------------------------------------|
-| `DEFAULT_ADMIN_ROLE`     | Gobernanza: asigna o revoca roles a direcciones.                                  |
+| `DEFAULT_ADMIN_ROLE`     | Gobernanza: asigna o revoca roles a direcciones.                                 |
 | `FABRICANTE_ROLE`        | Registra nuevas netbooks y lotes en el sistema.                                   |
 | `AUDITOR_HW_ROLE`        | Verifica e informa sobre la integridad física del hardware.                       |
 | `TECNICO_SW_ROLE`        | Instala, prueba y valida el software en la netbook.                               |

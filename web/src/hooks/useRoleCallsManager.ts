@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useWeb3 } from '@/hooks/useWeb3';
-// Removed getAllRolesSummary as it's not currently exported
+import { getAllRolesSummary } from '@/services/SupplyChainService';
 import { getCache, setCache, isCacheStale, clearCache, clearAllCache } from '@/lib/utils/cache';
 
 interface RoleMembers {
@@ -73,17 +73,20 @@ const processBatch = async () => {
   // Only make one call to get all roles summary if needed
   let summary: RolesSummary | null = null;
   try {
-    // Create a mock summary since getAllRolesSummary is not available
-    summary = {};
+    // Use the actual getAllRolesSummary function
+    summary = await getAllRolesSummary();
     
     // Cache each role's members with longer TTL
     if (summary) {
       Object.entries(summary).forEach(([roleName, roleData]) => {
         setCache(`role_members_${roleName}`, roleData.members, BATCH_CONFIG.CACHE_TTL);
       });
+    } else {
+      console.warn('getAllRolesSummary returned null, using empty summary');
+      summary = {};
     }
   } catch (error) {
-          console.error('Error fetching roles summary:', error);
+    console.error('Error fetching roles summary:', error);
     // Reject all requests that couldn't be fulfilled from cache
     // For now, return empty array for all roles
     requests.forEach(request => {
