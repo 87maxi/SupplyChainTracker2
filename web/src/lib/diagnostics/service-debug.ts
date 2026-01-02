@@ -36,18 +36,19 @@ function logAudit(message: string, service?: string, method?: string, error?: an
   console.log(`[AUDIT] ${message}`, service ? `(${service})` : '', method ? `-> ${method}` : '', error ? `: ${error}` : '');
 }
 
-// Inicialización principal del sistema de diagnóstico
-function initializeDiagnostics() {
-  logAudit('Iniciando sistema de diagnóstico');
-  
-  try {
-    // Verificar registro de contratos
-    logAudit('Verificando registro de contratos');
+// Retry mechanism for contract registry check
+function checkRegistration(retries = 5, delay = 1000) {
+  const check = () => {
+    if (retries <= 0) {
+      logAudit('❌ SupplyChainTracker no está registrado en contractRegistry después de varios intentos');
+      return;
+    }
     
-    // Verificar si SupplyChainTracker está registrado
     const hasSupplyChain = contractRegistry.has('SupplyChainTracker');
     if (!hasSupplyChain) {
-      logAudit('❌ SupplyChainTracker no está registrado en contractRegistry');
+      retries--;
+      logAudit(`Intento ${6-retries}/5: SupplyChainTracker aún no registrado. Reintentando en ${delay}ms...`);
+      setTimeout(check, delay);
     } else {
       logAudit('✅ SupplyChainTracker está registrado en contractRegistry');
       
@@ -57,6 +58,21 @@ function initializeDiagnostics() {
         logAudit(`✅ Versión: ${config.version}`, 'ContractRegistry');
       }
     }
+  };
+  
+  setTimeout(check, delay);
+}
+
+// Inicialización principal del sistema de diagnóstico
+function initializeDiagnostics() {
+  logAudit('Iniciando sistema de diagnóstico');
+  
+  try {
+    // Verificar registro de contratos
+    logAudit('Verificando registro de contratos');
+    
+    // Iniciar verificación con reintento
+    checkRegistration();
     
     logAudit('✅ Sistema de diagnóstico inicializado correctamente');
   } catch (error) {

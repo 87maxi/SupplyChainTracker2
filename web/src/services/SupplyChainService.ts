@@ -372,13 +372,20 @@ export class SupplyChainService extends BaseContractService {
       // En lugar de consultar al contrato, usamos las constantes predefinidas
       const roleTypeUpper = roleType.toUpperCase();
       
-      // Mapeo de nombres de roles comunes a sus hashes
+      // Mapeo de nombres de roles comunes a sus hashes, incluyendo variantes con y sin _ROLE
       const roleMap: Record<string, `0x${string}`> = {
+        // Formas completas con _ROLE
+        'FABRICANTE_ROLE': '0xdf8b4c520affe6d5bd668f8a16ff439b2b3fe20527c8a5d5d7cd0f17c3aa9c5d',
+        'AUDITOR_HW_ROLE': '0xed8e002819d8cf1a851ca1db7d19c6848d2559e61bf51cf90a464bd116556c00',
+        'TECNICO_SW_ROLE': '0x2ed8949af5557e2edaec784b826d9da85a22565588342ae7b736d3e8ebd76bfe',
+        'ESCUELA_ROLE': '0x88a49b04486bc479c925034ad3947fb7a1dc63c11a4fc29c186b7efde141b141',
+        'ADMIN': '0x0000000000000000000000000000000000000000000000000000000000000000',
+        
+        // Formas abreviadas sin _ROLE (para compatibilidad)
         'FABRICANTE': '0xdf8b4c520affe6d5bd668f8a16ff439b2b3fe20527c8a5d5d7cd0f17c3aa9c5d',
         'AUDITOR_HW': '0xed8e002819d8cf1a851ca1db7d19c6848d2559e61bf51cf90a464bd116556c00',
         'TECNICO_SW': '0x2ed8949af5557e2edaec784b826d9da85a22565588342ae7b736d3e8ebd76bfe',
-        'ESCUELA': '0x88a49b04486bc479c925034ad3947fb7a1dc63c11a4fc29c186b7efde141b141',
-        'ADMIN': '0x0000000000000000000000000000000000000000000000000000000000000000'
+        'ESCUELA': '0x88a49b04486bc479c925034ad3947fb7a1dc63c11a4fc29c186b7efde141b141'
       };
       
       const hash = roleMap[roleTypeUpper];
