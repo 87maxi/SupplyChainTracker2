@@ -1,0 +1,76 @@
+@startuml
+!theme plain
+
+' =============================================
+' FINAL ARCHITECTURE: SUPPLY CHAIN TRACKER
+' Blockchain-Native, No MongoDB
+' =============================================
+
+left to right direction
+
+' --- CLIENT SIDE (Web) ---
+package "Web Frontend (Next.js)" {
+  [User Interface (React)] as UI
+  [Wagmi Wallet Connector] as Wagmi
+  [useRoleRequests Hook] as RoleRequests
+  [useSupplyChainService Hook] as SupplyChainHook
+  [roleMapper Utility] as RoleMapper
+  [getRoleHashes Utility] as RoleHashes
+  [localStorage] as LocalStorage
+}
+
+' --- BLOCKCHAIN LAYER ---
+package "EVM Blockchain (Anvil)" {
+  [SupplyChainTracker.sol Contract] as Contract
+  [AccessControl (Role Management)] as AccessControl
+  [Netbook State Machine] as StateMachine
+}
+
+' --- EXTERNAL SERVICES ---
+package "External" {
+  [Etherscan / Block Explorer] as Explorer
+}
+
+' --- INTERACTIONS ---
+UI --> Wagmi : Connect Wallet
+Wagmi --> Contract : Call grantRole(), revokeRole()
+Wagmi --> Contract : Call getRoleMembers(), hasRole()
+Wagmi --> Contract : Call registerNetbooks(), auditHardware(), validateSoftware()
+
+RoleRequests --> RoleMapper : Normalize role names
+RoleMapper --> RoleHashes : Get role hash
+RoleHashes --> Contract : getRoleByName()
+RoleHashes --> Contract : hasRole()
+
+RoleRequests --> LocalStorage : Save pending requests
+RoleRequests --> UI : Update UI with local state
+
+SupplyChainHook --> Contract : Read all netbook states
+SupplyChainHook --> Contract : Read role counts
+
+Contract --> AccessControl : Enforce role permissions
+Contract --> StateMachine : Update netbook state transitions
+
+Contract --> Explorer : Emit events (RoleGranted, RoleRevoked, NetbookRegistered)
+
+' --- DATA FLOW ---
+note right of LocalStorage
+  Stores only UI state:
+  - Pending role requests
+  - Optimistic approvals
+  - No sensitive or on-chain data
+end note
+
+note right of Contract
+  Single source of truth:
+  - All roles, members, netbook states
+  - Immutable transaction history
+  - Zero external databases
+end note
+
+note right of Explorer
+  Public verification of all transactions
+  No private data stored
+end note
+
+@enduml

@@ -132,7 +132,7 @@ class RoleMapper {
     console.log(`[roleMapper] Attempting to get hash for role: "${name}"`);
     const fullRoleName = this.normalizeRoleName(name);
 
-    // Fallback to roleHashes if contract call fails or is unnecessary
+    // Get role hashes from contract
     const roleHashes = await getRoleHashes();
     const key = this.nameToKey[fullRoleName];
 
@@ -145,7 +145,7 @@ class RoleMapper {
     }
 
     console.error(`[roleMapper] Failed to get hash for role: ${name} (full: ${fullRoleName})`);
-    return '0x0000000000000000000000000000000000000000000000000000000000000000' as `0x${string}`;
+    throw new Error(`Failed to get role hash for role: ${name}. Role must be defined in the SupplyChainTracker contract.`);
   }
 }
 

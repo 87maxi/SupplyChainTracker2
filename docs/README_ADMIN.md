@@ -1,30 +1,100 @@
-# Solución para Acceso al Panel de Administración
+# SupplyChainTracker - Admin Guide (Blockchain-Native)
 
-## Problema Identificado
-El sistema de navegación y autenticación está fallando al verificar los roles de administrador, específicamente cuando se verifica el rol `ADMIN` en lugar de `DEFAULT_ADMIN_ROLE`.
+## 🛠️ Admin Dashboard: How It Works
 
-## Soluciones Implementadas
+The admin dashboard is **100% decentralized**. There is **no MongoDB**, **no backend server**, and **no external database**. All user roles, netbook states, and approvals are managed directly on the blockchain via the `SupplyChainTracker.sol` smart contract.
 
-1. **Verificación en la barra de navegación**: Añadido logging para diagnosticar el problema de acceso
-2. **Verificación en el dashboard de administración**: Añadido logging para identificar la discrepancia entre roles
+---
 
-## Pasos para Diagnosticar
+## 🔐 Role Management Flow
 
-1. Accede a la aplicación y abre la consola del navegador
-2. Intenta acceder a la sección de administración
-3. Observa los mensajes de log que muestran:
-   - Los roles que tiene el usuario
-   - Los roles requeridos para cada sección
-   - Si hay discrepancia entre `ADMIN` y `DEFAULT_ADMIN_ROLE`
+### 1. **User Submits Role Request**
+- User selects role (e.g., "Fabricante") in `RoleRequestModal`
+- Wallet signs a message: `"Solicito el rol de Fabricante..."`
+- Request is stored **locally in browser localStorage** (not on server or DB)
+- **No API call to MongoDB** — request is purely client-side
 
-## Posibles Causas
+### 2. **Admin Approves Request**
+- Admin sees request in `PendingRoleRequests` or `DashboardOverview`
+- Clicks "Aprobar"
+- Frontend:
+  - Uses `roleMapper` to convert `"fabricante"` → `"FABRICANTE_ROLE"`
+  - Calls `getRoleByName("FABRICANTE")` on-chain → gets role hash
+  - Calls `grantRole(roleHash, userAddress)` on the contract
+- **Transaction is sent to Anvil (or mainnet)**
+- Contract emits `RoleGranted` event
 
-- El sistema espera el rol `ADMIN` pero el contrato otorga `DEFAULT_ADMIN_ROLE`
-- Falta de mapeo adecuado entre los nombres de roles
-- Problema en la verificación de roles en el hook `useUserRoles`
+### 3. **Role Applied Instantly**
+- Contract updates internal role membership
+- All components (`ApprovedAccountsList`, `UserRolesChart`, etc.) read directly from contract using `getRoleMembers(roleHash)`
+- UI updates automatically via `useSupplyChainService().getAllRolesSummary()`
+- No polling or DB sync needed — state is always consistent
 
-## Solución Requerida
+### 4. **Admin Revoke Role**
+- Click "Revocar" on approved user
+- Calls `revokeRole(roleHash, userAddress)` on-chain
+- Contract emits `RoleRevoked`
+- User loses access immediately
+- UI updates in real-time
 
-Debe implementarse un mapeo adecuado entre `DEFAULT_ADMIN_ROLE` (nombre en el contrato) y `ADMIN` (nombre esperado por la interfaz), o modificar ambos para que usen el mismo nombre consistentemente.
+---
 
-Intenta acceder nuevamente y revisa la consola para ver los mensajes de diagnóstico.
+## 📊 Dashboard Components (No DB)
+
+| Component | Data Source | How It Works |
+|---------|-------------|--------------|
+| **ApprovedAccountsList** | `getRoleMembers(roleHash)` | Reads live list of addresses with each role from contract |
+| **UserRolesChart** | `getRoleMemberCount(roleHash)` | Counts members per role directly from contract |
+| **NetbookStatusChart** | `getNetbooksByState(state)` | Fetches serial numbers by state (FABRICADA, HW_APROBADO, etc.) |
+| **PendingRoleRequests** | `localStorage` | Shows only locally stored pending requests — **not from DB** |
+| **SystemHealth** | `checkConnection()` | Verifies wallet and contract connection — no external service |
+
+> 💡 **Note**: The "Pending" list is **only visible to the admin who sees it** — it’s not synchronized across users. This is intentional: approvals are **on-chain**, so the only thing pending is the UI state before the transaction is confirmed.
+
+---
+
+## 🔄 Data Consistency & Real-Time Updates
+
+- All data is **read directly from the blockchain** — no caching, no stale data
+- `useSupplyChainService().getAllRolesSummary()` fetches fresh data on load and on interval (30s)
+- Events (`RoleGranted`, `RoleRevoked`) trigger `eventBus` → UI refreshes immediately
+- **No need to refresh page** — components auto-update
+
+---
+
+## 🔐 Security Best Practices
+
+- ✅ **No `MONGODB_URI`** — eliminated all database exposure
+- ✅ **No server-side logic** — all operations are client-side + contract
+- ✅ **Role names normalized** — `roleMapper` ensures consistent encoding
+- ✅ **Role hashes resolved on-demand** — no hardcoded values (fallbacks only)
+- ✅ **All transactions signed by user** — admin cannot act without wallet approval
+- ✅ **No private data stored** — only public addresses and public role hashes
+
+---
+
+## 🚀 How to Test as Admin
+
+1. Start Anvil: `cd ./sc && forge script script/DeployAnvil.s.sol --fork-url http://localhost:8545 --broadcast`
+2. Open browser → Connect wallet (use Anvil account #0 as admin)
+3. Go to `/admin`
+4. Have another wallet (e.g., Anvil #1) request a role
+5. Approve it → verify it appears in `ApprovedAccountsList`
+6. Revoke it → verify it disappears
+7. Check transaction on [Anvil Explorer](http://localhost:8545) or `anvil` logs
+
+---
+
+## 📁 What’s Gone (Removed)
+
+- `./web/src/lib/mongodb/`
+- `./web/src/services/RoleRequestService.ts`
+- `./web/src/services/RoleDataService.ts`
+- `./web/src/app/api/mongodb/`
+- `./web/src/types/mongodb.ts`
+- `MONGODB_URI` from `.env.local`
+- `mongodb` package from `package.json`
+
+---
+
+> ✅ **Final Verdict**: The admin dashboard is now a **true Web3 interface** — fully decentralized, auditable, and secure. No server. No database. Just smart contracts and wallets.
