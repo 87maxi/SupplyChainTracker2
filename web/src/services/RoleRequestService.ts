@@ -42,16 +42,11 @@ const roleService = new RoleService(
 // Use the singleton instance from roleMapping
 const roleMapperInstance = roleMapper;
 
-// Initialize with some mock data if needed
-// This could be replaced with actual data from localStorage or API
+// Initialize with actual data from localStorage
 if (typeof window !== 'undefined') {
-  const stored = localStorage.getItem('mockRoleRequests');
+  const stored = localStorage.getItem('role_requests');
   if (stored) {
-    mockRoleRequests = JSON.parse(stored);
-  } else {
-    // Initialize with empty array
-    mockRoleRequests = [];
-    localStorage.setItem('mockRoleRequests', JSON.stringify(mockRoleRequests));
+    roleRequests = JSON.parse(stored);
   }
 }
 
