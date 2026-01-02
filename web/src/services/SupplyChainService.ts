@@ -31,9 +31,8 @@ export interface Netbook {
  */
 export class SupplyChainService extends BaseContractService {
   static instance: SupplyChainService | null = null;
-  static supplyChainService = SupplyChainService.getInstance();
   // Servicio singleton
-  static instance: SupplyChainService | null = null;
+  static supplyChainService = SupplyChainService.getInstance();
   
   // Obtener instancia singleton
   static getInstance(): SupplyChainService {
@@ -49,6 +48,68 @@ export class SupplyChainService extends BaseContractService {
       SupplyChainTrackerABI,
       'supply-chain'
     );
+  }
+  
+  // Implementación de métodos abstractos
+  protected async readContract({ address, abi, functionName, args }: {
+    address: `0x${string}`;
+    abi: any;
+    functionName: string;
+    args: any[];
+  }) {
+    const { publicClient } = await import('@/lib/blockchain/client');
+    try {
+      return await publicClient.readContract({
+        address,
+        abi,
+        functionName,
+        args
+      });
+    } catch (error) {
+      throw new Error(`Error en readContract: ${error}`);
+    }
+  }
+  
+  protected async writeContract({ address, abi, functionName, args }: {
+    address: `0x${string}`;
+    abi: any;
+    functionName: string;
+    args: any[];
+  }) {
+    const { getWalletClient } = await import('@/lib/blockchain/client');
+    try {
+      const walletClient = await getWalletClient();
+      const hash = await walletClient.writeContract({
+        address,
+        abi,
+        functionName,
+        args
+      });
+      return hash;
+    } catch (error) {
+      throw new Error(`Error en writeContract: ${error}`);
+    }
+  }
+  
+  protected async waitForTransactionReceipt({ hash, timeout }: {
+    hash: `0x${string}`;
+    timeout: number;
+  }) {
+    const { publicClient } = await import('@/lib/blockchain/client');
+    try {
+      return await publicClient.waitForTransactionReceipt({
+        hash,
+        timeout
+      });
+    } catch (error) {
+      throw new Error(`Error en waitForTransactionReceipt: ${error}`);
+    }
+  }
+  
+  protected async getAddress(): Promise<string> {
+    // En desarrollo, podríamos usar una cuenta predeterminada
+    // En producción, esto vendría de la wallet conectada
+    return '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'; // Cuenta 0 de Anvil
   }
 
   // Operaciones de netbooks
@@ -236,20 +297,24 @@ export class SupplyChainService extends BaseContractService {
   // Operaciones de lectura
   
   /**
-   * Obtiene el estado actual de una netbook
-   * @param serial Número de serie
-   * @returns Estado de la netbook
+   * Verifica si una cuenta tiene un rol específico
+   * @param roleHash Hash del rol
+   * @param userAddress Dirección del usuario
+   * @returns True si la cuenta tiene el rol
    */
-  getNetbookState = async (serial: string): Promise<string> => {
-    return await this.readCacheable(`getNetbookState:${serial}`, () => 
-      this.read('getNetbookState', [serial])
-    );
+  hasRole = async (roleHash: `0x${string}`, userAddress: `0x${string}`): Promise<boolean> => {
+    try {
+      return await this.read<boolean>('hasRole', [roleHash, userAddress]);
+    } catch (error) {
+      console.error('Error checking role:', error);
+      return false;
+    }
   };
 
   /**
-   * Obtiene el reporte completo de una netbook
+   * Obtiene el estado actual de una netbook
    * @param serial Número de serie
-   * @returns Reporte de la netbook
+        * @returns Estado de la netbook
    */
   getNetbookReport = async (serial: string): Promise<Netbook> => {
     return await this.readCacheable(`getNetbookReport:${serial}`, () => 

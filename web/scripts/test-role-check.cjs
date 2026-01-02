@@ -7,7 +7,7 @@ async function testHasRole() {
     transport: http('http://localhost:8545')
   });
 
-  const contractAddress = '0x0165878A594ca255338adfa4d48449f69242Eb8F';
+  const contractAddress = process.env.NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS || '0x5FC8d32690cc91D4c39d9d3abcBD16989F875707';
   
   // ABI simplificado solo con la función hasRole
   const abi = [

@@ -33,6 +33,68 @@ export class RoleService extends BaseContractService {
       'role'
     );
   }
+  
+  // Implementación de métodos abstractos
+  protected async readContract({ address, abi, functionName, args }: {
+    address: `0x${string}`;
+    abi: any;
+    functionName: string;
+    args: any[];
+  }) {
+    const { publicClient } = await import('@/lib/blockchain/client');
+    try {
+      return await publicClient.readContract({
+        address,
+        abi,
+        functionName,
+        args
+      });
+    } catch (error) {
+      throw new Error(`Error en readContract: ${error}`);
+    }
+  }
+  
+  protected async writeContract({ address, abi, functionName, args }: {
+    address: `0x${string}`;
+    abi: any;
+    functionName: string;
+    args: any[];
+  }) {
+    const { getWalletClient } = await import('@/lib/blockchain/client');
+    try {
+      const walletClient = await getWalletClient();
+      const hash = await walletClient.writeContract({
+        address,
+        abi,
+        functionName,
+        args
+      });
+      return hash;
+    } catch (error) {
+      throw new Error(`Error en writeContract: ${error}`);
+    }
+  }
+  
+  protected async waitForTransactionReceipt({ hash, timeout }: {
+    hash: `0x${string}`;
+    timeout: number;
+  }) {
+    const { publicClient } = await import('@/lib/blockchain/client');
+    try {
+      return await publicClient.waitForTransactionReceipt({
+        hash,
+        timeout
+      });
+    } catch (error) {
+      throw new Error(`Error en waitForTransactionReceipt: ${error}`);
+    }
+  }
+  
+  protected async getAddress(): Promise<string> {
+    // En desarrollo, podríamos usar una cuenta predeterminada
+    // En producción, esto vendría de la wallet conectada
+    return '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'; // Cuenta 0 de Anvil
+  }
 
   /**
    * Verifica si una dirección tiene un rol específico
