@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@components/ui/card';
 import { Input } from '@components/ui/input';
@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@hooks/use-toast';
 import { useRoleCallsManager } from '@/hooks/useRoleCallsManager';
 import { useRoleData } from '@/hooks/useRoleData';
+import { ROLE_HASHES } from '@/lib/constants/roles';
 
 interface Role {
   name: string;
@@ -72,8 +73,12 @@ export function RoleManager() {
     try {
       setLoading(true);
       
-      // Convertir nombre del rol a hash según el contrato
-      const roleHash = getRoleHash(selectedRole);
+      // Convertir nombre del rol a hash
+      const roleHash = roleHashMap[selectedRole];
+      
+      if (!roleHash) {
+        throw new Error('Rol no válido');
+      }
       
       const result = await grantRole(roleHash, address);
       
@@ -104,17 +109,13 @@ export function RoleManager() {
     }
   };
 
-  // Función para obtener el hash del rol según el contrato
-  const getRoleHash = (roleName: string): string => {
-    const roleHashes: { [key: string]: string } = {
-      fabricante: '0x69c9d0bc9936ff6c338514a41e3d5a3756816c733d2870f51f9b137bb0564731',
-      auditor_hw: '0x9eeccda90686352275253677a7776d52e3cf85c28aa4ed8caa295b9db24ebca1',
-      tecnico_sw: '0x0b00940495168a7f52e9e4ca224ed388143fdb5ee0015bc394ac5e269374ddf1',
-      escuela: '0xd08ea8e84b5076e430882068b0966c64e3d2876063d1f53a9b071247cbe5e785',
-      admin: '0x0000000000000000000000000000000000000000000000000000000000000000'
-    };
-    
-    return roleHashes[roleName as keyof typeof roleHashes] || '';
+  // Mapeo de nombres de roles a hashes
+  const roleHashMap: Record<string, string> = {
+    fabricante: ROLE_HASHES.FABRICANTE,
+    auditor_hw: ROLE_HASHES.AUDITOR_HW,
+    tecnico_sw: ROLE_HASHES.TECNICO_SW,
+    escuela: ROLE_HASHES.ESCUELA,
+    admin: ROLE_HASHES.ADMIN
   };
 
   if (!canGrantRoles) {

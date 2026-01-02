@@ -11,6 +11,10 @@ export class AppError extends Error {
   ) {
     super(message);
     this.name = 'AppError';
+    // Mantener la pila de llamadas para errores
+    if (originalError instanceof Error) {
+      this.stack = originalError.stack;
+    }
   }
 }
 
@@ -58,8 +62,16 @@ export class ErrorHandler {
     }
     
     // Error genérico
+    if (error instanceof AppError) {
+      return error;
+    }
+    
+    const errorMessage = error?.message && typeof error.message === 'string' 
+      ? error.message 
+      : 'Ocurrió un error desconocido';
+    
     return new AppError(
-      typeof error?.message === 'string' ? error.message : 'Ocurrió un error desconocido', 
+      errorMessage, 
       'UNKNOWN_ERROR', 
       error
     );

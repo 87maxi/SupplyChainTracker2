@@ -50,12 +50,17 @@ export class SupplyChainService extends BaseContractService {
     );
   }
   
-  // Implementación de métodos abstractos
-  protected async readContract({ address, abi, functionName, args }: {
-    address: `0x${string}`;
-    abi: any;
-    functionName: string;
-    args: any[];
+  // Reemplazo de métodos abstractos de BaseContractService
+  protected async readContract({ 
+    address, 
+    abi, 
+    functionName, 
+    args 
+  }: { 
+    address: `0x${string}`; 
+    abi: any; 
+    functionName: string; 
+    args: any[]; 
   }) {
     const { publicClient } = await import('@/lib/blockchain/client');
     try {
@@ -66,15 +71,21 @@ export class SupplyChainService extends BaseContractService {
         args
       });
     } catch (error) {
-      throw new Error(`Error en readContract: ${error}`);
+      console.error('Error en readContract:', error);
+      throw error;
     }
   }
   
-  protected async writeContract({ address, abi, functionName, args }: {
-    address: `0x${string}`;
-    abi: any;
-    functionName: string;
-    args: any[];
+  protected async writeContract({ 
+    address, 
+    abi, 
+    functionName, 
+    args 
+  }: { 
+    address: `0x${string}`; 
+    abi: any; 
+    functionName: string; 
+    args: any[]; 
   }) {
     const { getWalletClient } = await import('@/lib/blockchain/client');
     try {
@@ -87,13 +98,17 @@ export class SupplyChainService extends BaseContractService {
       });
       return hash;
     } catch (error) {
-      throw new Error(`Error en writeContract: ${error}`);
+      console.error('Error en writeContract:', error);
+      throw error;
     }
   }
   
-  protected async waitForTransactionReceipt({ hash, timeout }: {
-    hash: `0x${string}`;
-    timeout: number;
+  protected async waitForTransactionReceipt({ 
+    hash, 
+    timeout 
+  }: { 
+    hash: `0x${string}`; 
+    timeout: number; 
   }) {
     const { publicClient } = await import('@/lib/blockchain/client');
     try {
@@ -102,7 +117,8 @@ export class SupplyChainService extends BaseContractService {
         timeout
       });
     } catch (error) {
-      throw new Error(`Error en waitForTransactionReceipt: ${error}`);
+      console.error('Error en waitForTransactionReceipt:', error);
+      throw error;
     }
   }
   
@@ -121,9 +137,9 @@ export class SupplyChainService extends BaseContractService {
    * @param specs Especificaciones del modelo
    * @returns Resultado de la transacción
    */
-  registerNetbooks = async (serials: string[], batches: string[], specs: string[]): Promise<TransactionResult> => {
+  registerNetbooks = async (serials: string[], batches: string[], specs: string[], metadata: string[]): Promise<TransactionResult> => {
     try {
-      const { hash } = await this.write('registerNetbooks', [serials, batches, specs]);
+      const { hash } = await this.write('registerNetbooks', [serials, batches, specs, metadata]);
       
       // Esperar confirmación
       const receipt = await this.waitForTransaction(hash);
@@ -151,9 +167,9 @@ export class SupplyChainService extends BaseContractService {
    * @param reportHash Hash del informe
    * @returns Resultado de la transacción
    */
-  auditHardware = async (serial: string, passed: boolean, reportHash: string): Promise<TransactionResult> => {
+  auditHardware = async (serial: string, passed: boolean, reportHash: string, metadata: string): Promise<TransactionResult> => {
     try {
-      const { hash } = await this.write('auditHardware', [serial, passed, reportHash]);
+      const { hash } = await this.write('auditHardware', [serial, passed, reportHash, metadata]);
       
       // Esperar confirmación
       const receipt = await this.waitForTransaction(hash);
@@ -181,9 +197,9 @@ export class SupplyChainService extends BaseContractService {
    * @param passed Si pasó la validación
    * @returns Resultado de la transacción
    */
-  validateSoftware = async (serial: string, osVersion: string, passed: boolean): Promise<TransactionResult> => {
+  validateSoftware = async (serial: string, osVersion: string, passed: boolean, metadata: string): Promise<TransactionResult> => {
     try {
-      const { hash } = await this.write('validateSoftware', [serial, osVersion, passed]);
+      const { hash } = await this.write('validateSoftware', [serial, osVersion, passed, metadata]);
       
       // Esperar confirmación
       const receipt = await this.waitForTransaction(hash);
@@ -211,9 +227,9 @@ export class SupplyChainService extends BaseContractService {
    * @param studentHash Hash del estudiante
    * @returns Resultado de la transacción
    */
-  assignToStudent = async (serial: string, schoolHash: string, studentHash: string): Promise<TransactionResult> => {
+  assignToStudent = async (serial: string, schoolHash: string, studentHash: string, metadata: string): Promise<TransactionResult> => {
     try {
-      const { hash } = await this.write('assignToStudent', [serial, schoolHash, studentHash]);
+      const { hash } = await this.write('assignToStudent', [serial, schoolHash, studentHash, metadata]);
       
       // Esperar confirmación
       const receipt = await this.waitForTransaction(hash);
@@ -320,5 +336,88 @@ export class SupplyChainService extends BaseContractService {
     return await this.readCacheable(`getNetbookReport:${serial}`, () => 
       this.read('getNetbookReport', [serial])
     );
+  };
+
+  /**
+   * Obtiene el hash del rol por nombre
+   * @param roleType Tipo de rol
+   * @returns Hash del rol
+   */
+  getRoleByName = async (roleType: string): Promise<`0x${string}`> => {
+    try {
+      // En lugar de consultar al contrato, usamos las constantes predefinidas
+      const roleTypeUpper = roleType.toUpperCase();
+      
+      // Mapeo de nombres de roles comunes a sus hashes
+      const roleMap: Record<string, `0x${string}`> = {
+        'FABRICANTE': '0xdf8b4c520affe6d5bd668f8a16ff439b2b3fe20527c8a5d5d7cd0f17c3aa9c5d',
+        'AUDITOR_HW': '0xed8e002819d8cf1a851ca1db7d19c6848d2559e61bf51cf90a464bd116556c00',
+        'TECNICO_SW': '0x2ed8949af5557e2edaec784b826d9da85a22565588342ae7b736d3e8ebd76bfe',
+        'ESCUELA': '0x88a49b04486bc479c925034ad3947fb7a1dc63c11a4fc29c186b7efde141b141',
+        'ADMIN': '0x0000000000000000000000000000000000000000000000000000000000000000'
+      };
+      
+      const hash = roleMap[roleTypeUpper];
+      if (!hash) {
+        throw new Error(`Role type not found: ${roleType}`);
+      }
+      
+      return hash;
+    } catch (error) {
+      console.error('Error getting role by name:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * Verifica si una cuenta tiene un rol específico por nombre
+   * @param roleName Nombre del rol
+   * @param userAddress Dirección del usuario
+   * @returns True si la cuenta tiene el rol
+   */
+  hasRoleByName = async (roleName: string, userAddress: `0x${string}`): Promise<boolean> => {
+    try {
+      const roleHash = await this.getRoleByName(roleName);
+      return await this.hasRole(roleHash, userAddress);
+    } catch (error) {
+      console.error('Error checking role by name:', error);
+      return false;
+    }
+  };
+
+  /**
+   * Otorga un rol a una dirección por nombre
+   * @param roleName Nombre del rol
+   * @param userAddress Dirección del usuario
+   * @returns Resultado de la transacción
+   */
+  grantRoleByName = async (roleName: string, userAddress: `0x${string}`): Promise<TransactionResult> => {
+    try {
+      const roleHash = await this.getRoleByName(roleName);
+      return await this.grantRole(roleHash, userAddress);
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Error desconocido'
+      };
+    }
+  };
+
+  /**
+   * Revoca un rol de una dirección por nombre
+   * @param roleName Nombre del rol
+   * @param userAddress Dirección del usuario
+   * @returns Resultado de la transacción
+   */
+  revokeRoleByName = async (roleName: string, userAddress: `0x${string}`): Promise<TransactionResult> => {
+    try {
+      const roleHash = await this.getRoleByName(roleName);
+      return await this.revokeRole(roleHash, userAddress);
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Error desconocido'
+      };
+    }
   }
 }

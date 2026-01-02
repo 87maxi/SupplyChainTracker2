@@ -1,21 +1,5 @@
-// Fallback role hashes in case contract calls fail
-export const fallbackHashes = {
-  FABRICANTE: "0xdf8b4c520affe6d5bd668f8a16ff439b2b3fe20527c8a5d5d7cd0f17c3aa9c5d",
-  AUDITOR_HW: "0xed8e002819d8cf1a851ca1db7d19c6848d2559e61bf51cf90a464bd116556c00",
-  TECNICO_SW: "0x2ed8949af5557e2edaec784b826d9da85a22565588342ae7b736d3e8ebd76bfe",
-  ESCUELA: "0x88a49b04486bc479c925034ad3947fb7a1dc63c11a4fc29c186b7efde141b141",
-  ADMIN: "0x0000000000000000000000000000000000000000000000000000000000000000"
-};
-
-import { readContract } from '@wagmi/core';
-import { config } from './wagmi/config';
-import { NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS } from './env';
-import { getRoleByName } from './contracts/SupplyChainContract';
-
-const contractAddress = NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS as `0x${string}`;
-
-// Import the ABI directly to avoid JSON import issues
-import SupplyChainTrackerABI from '@/lib/contracts/abi/SupplyChainTracker.json';
+// Importar los hashes de roles directamente de las constantes
+import { ROLE_HASHES } from '@/lib/constants/roles';
 
 // Get a map of role names to their hashes from the contract
 // Updated RoleMap to include full role names as keys
@@ -33,85 +17,33 @@ export const getRoleHashes = async (): Promise<RoleMap> => {
   if (cachedRoleHashes) return cachedRoleHashes;
 
   try {
-    console.log('[roleUtils] Fetching role hashes from contract...');
-    console.log('[roleUtils] Wagmi Config State:', {
-      chainId: config.state.chainId,
-      connections: Array.from(config.state.connections.keys()),
-      currentConnection: config.state.current
-    });
-
-    const trackerAddress = String(NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS || '');
-    console.log(`[roleUtils] Using contract address: "${trackerAddress}"`);
-
-    if (!trackerAddress || !trackerAddress.startsWith('0x')) {
-      console.warn('[roleUtils] Invalid contract address, using fallback hashes');
-      return fallbackHashes;
-    }
-
-    // Skip string-based hasRole and use bytes32-based hasRole with DEFAULT_ADMIN_ROLE = 0x00..00
-    try {
-      console.log('[roleUtils] Checking DEFAULT_ADMIN_ROLE using AccessControl.hasRole with bytes32(0)');
-      const defaultAdminRole = '0x0000000000000000000000000000000000000000000000000000000000000000';
-      const deployerAddress = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266';
-      
-      const hasAdminRole = await readContract(config, {
-        address: contractAddress,
-        abi: SupplyChainTrackerABI,
-        functionName: 'hasRole',
-        args: [defaultAdminRole as `0x${string}`, deployerAddress]
-      });
-      
-      if (hasAdminRole) {
-        console.log('[roleUtils] First Anvil account has DEFAULT_ADMIN_ROLE');
-      } else {
-        console.log('[roleUtils] First Anvil account does NOT have DEFAULT_ADMIN_ROLE');
-      }
-    } catch (error) {
-      console.error('[roleUtils] Error checking DEFAULT_ADMIN_ROLE:', error);
-    }
-
-    // Continue with other roles...
+    console.log('[roleUtils] Fetching role hashes from constants...');
     
+    // Los hashes de roles son constantes y no dependen de la dirección del contrato
+
+    // Crear el objeto result con los hashes de roles directamente de las constantes
     const result: RoleMap = {
-      FABRICANTE: fallbackHashes.FABRICANTE,
-      AUDITOR_HW: fallbackHashes.AUDITOR_HW,
-      TECNICO_SW: fallbackHashes.TECNICO_SW,
-      ESCUELA: fallbackHashes.ESCUELA,
-      ADMIN: fallbackHashes.ADMIN,
+      FABRICANTE: ROLE_HASHES.FABRICANTE,
+      AUDITOR_HW: ROLE_HASHES.AUDITOR_HW,
+      TECNICO_SW: ROLE_HASHES.TECNICO_SW,
+      ESCUELA: ROLE_HASHES.ESCUELA,
+      ADMIN: ROLE_HASHES.ADMIN,
     };
-    
-    // Get role hashes from contract using getRoleByName
-    const roleMapping: Record<string, { contractName: string; key: 'FABRICANTE' | 'AUDITOR_HW' | 'TECNICO_SW' | 'ESCUELA' | 'ADMIN' }> = {
-      FABRICANTE: { contractName: 'FABRICANTE', key: 'FABRICANTE' },
-      AUDITOR_HW: { contractName: 'AUDITOR_HW', key: 'AUDITOR_HW' },
-      TECNICO_SW: { contractName: 'TECNICO_SW', key: 'TECNICO_SW' },
-      ESCUELA: { contractName: 'ESCUELA', key: 'ESCUELA' },
-      ADMIN: { contractName: 'ADMIN', key: 'ADMIN' }
-    };
-    
-    for (const [roleName, mapping] of Object.entries(roleMapping)) {
-      const contractName = mapping.contractName;
-      const roleKey = mapping.key;
-      try {
-        console.log(`[roleUtils] Attempting to get role hash for ${roleName} with contract name: ${contractName}`);
-        const roleHash = await getRoleByName(contractName);
-        if (roleHash) {
-          result[roleKey] = roleHash as `0x${string}`;
-          console.log(`[roleUtils] Successfully got role hash for ${roleName}: ${roleHash}`);
-        }
-      } catch (error) {
-        console.error(`[roleUtils] Error getting role hash for ${roleName}:`, error);
-        throw new Error(`Failed to get role hash for ${roleName} from contract: ${error}`);
-      }
-    }
     
     console.log('Role hashes retrieved:', result);
     cachedRoleHashes = result;
     return result;
   } catch (error) {
-    console.error('Unexpected error getting role hashes:', error);
-    // Reset cached hash to force retry on next attempt
-    cachedRoleHashes = null;
-    throw new Error(`Failed to get role hashes from contract: ${error}`);
+    console.error('Unexpected error in getRoleHashes:', error);
+    // Este caso no debería ocurrir ya que no estamos haciendo llamadas al contrato
+    // Pero por seguridad, retornamos los hashes de las constantes
+    cachedRoleHashes = {
+      FABRICANTE: ROLE_HASHES.FABRICANTE,
+      AUDITOR_HW: ROLE_HASHES.AUDITOR_HW,
+      TECNICO_SW: ROLE_HASHES.TECNICO_SW,
+      ESCUELA: ROLE_HASHES.ESCUELA,
+      ADMIN: ROLE_HASHES.ADMIN,
+    };
+    return cachedRoleHashes;
   }
 };
