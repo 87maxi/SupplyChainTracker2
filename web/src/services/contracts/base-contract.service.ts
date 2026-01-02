@@ -170,7 +170,7 @@ export class BaseContractService {
   }
   
   // Wagmi hook wrappers - these will be overridden by specific service implementations
-  protected readContract = async ({
+  protected async readContract({
     address,
     abi,
     functionName,
@@ -180,11 +180,11 @@ export class BaseContractService {
     abi: any;
     functionName: string;
     args: any[];
-  }) => {
+  }) {
     throw new Error('readContract must be implemented by specific service');
   }
   
-  protected writeContract = async ({
+  protected async writeContract({
     address,
     abi,
     functionName,
@@ -194,21 +194,21 @@ export class BaseContractService {
     abi: any;
     functionName: string;
     args: any[];
-  }) => {
+  }) {
     throw new Error('writeContract must be implemented by specific service');
   }
   
-  protected waitForTransactionReceipt = async ({
+  protected async waitForTransactionReceipt({
     hash,
     timeout
   }: {
     hash: `0x${string}`;
     timeout: number;
-  }) => {
+  }) {
     throw new Error('waitForTransactionReceipt must be implemented by specific service');
   }
   
-  protected getAddress = async (): Promise<string> => {
+  protected async getAddress(): Promise<string> {
     throw new Error('getAddress must be implemented by specific service');
   }
   

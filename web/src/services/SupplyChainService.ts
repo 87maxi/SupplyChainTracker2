@@ -34,15 +34,17 @@ export interface Netbook {
  */
 export class SupplyChainService extends BaseContractService {
   static instance: SupplyChainService | null = null;
-  // Servicio singleton
-  static supplyChainService = SupplyChainService.getInstance();
-  
   // Obtener instancia singleton
   static getInstance(): SupplyChainService {
     if (!SupplyChainService.instance) {
       SupplyChainService.instance = new SupplyChainService();
     }
     return SupplyChainService.instance;
+  }
+  
+  // Servicio singleton - now using a getter to ensure proper initialization
+  static get supplyChainService(): SupplyChainService {
+    return SupplyChainService.getInstance();
   }
   
   constructor() {
@@ -70,16 +72,16 @@ export class SupplyChainService extends BaseContractService {
   }
   
   // Reemplazo de métodos abstractos de BaseContractService
-  protected async readContract({ 
-    address, 
-    abi, 
-    functionName, 
-    args 
-  }: { 
-    address: `0x${string}`; 
-    abi: any; 
-    functionName: string; 
-    args: any[]; 
+  protected async readContract({
+    address,
+    abi,
+    functionName,
+    args
+  }: {
+    address: `0x${string}`;
+    abi: any;
+    functionName: string;
+    args: any[];
   }) {
     const { publicClient } = await import('@/lib/blockchain/client');
     try {
@@ -95,16 +97,16 @@ export class SupplyChainService extends BaseContractService {
     }
   }
   
-  protected async writeContract({ 
-    address, 
-    abi, 
-    functionName, 
-    args 
-  }: { 
-    address: `0x${string}`; 
-    abi: any; 
-    functionName: string; 
-    args: any[]; 
+  protected async writeContract({
+    address,
+    abi,
+    functionName,
+    args
+  }: {
+    address: `0x${string}`;
+    abi: any;
+    functionName: string;
+    args: any[];
   }) {
     const { getWalletClient } = await import('@/lib/blockchain/client');
     try {
@@ -122,12 +124,12 @@ export class SupplyChainService extends BaseContractService {
     }
   }
   
-  protected async waitForTransactionReceipt({ 
-    hash, 
-    timeout 
-  }: { 
-    hash: `0x${string}`; 
-    timeout: number; 
+  protected async waitForTransactionReceipt({
+    hash,
+    timeout
+  }: {
+    hash: `0x${string}`;
+    timeout: number;
   }) {
     const { publicClient } = await import('@/lib/blockchain/client');
     try {

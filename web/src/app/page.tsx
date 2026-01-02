@@ -32,13 +32,19 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="relative isolate overflow-hidden">
-      {/* Background Glows */}
-      <div className="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80">
-        <div className="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-[#0ea5e9] to-[#8b5cf6] opacity-20 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]"></div>
+    <div className="relative isolate overflow-hidden min-h-screen">
+      {/* Background Glows - Full screen coverage */}
+      <div className="fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute inset-x-0 -top-40 transform-gpu overflow-hidden blur-3xl sm:-top-80">
+          <div className="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-[#0ea5e9] to-[#8b5cf6] opacity-20 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]"></div>
+        </div>
+        
+        <div className="absolute inset-x-0 top-[calc(100%-13rem)] transform-gpu overflow-hidden blur-3xl sm:top-[calc(100%-30rem)]">
+          <div className="relative left-[calc(50%+3rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 bg-gradient-to-tr from-[#8b5cf6] to-[#0ea5e9] opacity-20 sm:left-[calc(50%+36rem)] sm:w-[72.1875rem]"></div>
+        </div>
       </div>
 
-      <div className="container mx-auto px-4 py-24 sm:py-32">
+      <div className="container mx-auto px-4 py-24 sm:py-32 relative z-10">
         <div className="flex flex-col items-center text-center space-y-10">
           {/* Hero Section */}
           <div className="space-y-6 max-w-4xl animate-float">
@@ -110,10 +116,6 @@ export default function Home() {
             />
           </div>
         </div>
-      </div>
-
-      <div className="absolute inset-x-0 top-[calc(100%-13rem)] -z-10 transform-gpu overflow-hidden blur-3xl sm:top-[calc(100%-30rem)]">
-        <div className="relative left-[calc(50%+3rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 bg-gradient-to-tr from-[#8b5cf6] to-[#0ea5e9] opacity-20 sm:left-[calc(50%+36rem)] sm:w-[72.1875rem]"></div>
       </div>
     </div>
   );

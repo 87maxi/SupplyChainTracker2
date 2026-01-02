@@ -77,73 +77,79 @@ export default function TransfersPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-12">
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <p>Cargando transferencias...</p>
-          </CardContent>
-        </Card>
+      <div className="container mx-auto px-4 py-12 relative">
+        <div className="absolute inset-0 bg-gradient-overlay opacity-30 pointer-events-none"></div>
+        <div className="relative z-10">
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12">
+              <p>Cargando transferencias...</p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-12">
-      <h1 className="text-3xl font-bold mb-8">Transferencias Pendientes</h1>
+    <div className="container mx-auto px-4 py-12 relative">
+      <div className="absolute inset-0 bg-gradient-overlay opacity-30 pointer-events-none"></div>
+      <div className="relative z-10">
+        <h1 className="text-3xl font-bold mb-8">Transferencias Pendientes</h1>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Transferencias de Netbooks</CardTitle>
-          <CardDescription>Lista de transferencias de netbooks entre entidades</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {error && <div className="text-red-500 p-4 rounded-md bg-red-50 mb-4">{error}</div>}
+        <Card>
+          <CardHeader>
+            <CardTitle>Transferencias de Netbooks</CardTitle>
+            <CardDescription>Lista de transferencias de netbooks entre entidades</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {error && <div className="text-red-500 p-4 rounded-md bg-red-50 mb-4">{error}</div>}
 
-          {transfers.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Número de Serie</TableHead>
-                  <TableHead>De</TableHead>
-                  <TableHead>A</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {transfers.map((transfer, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="font-mono">{transfer.serial}</TableCell>
-                    <TableCell>{transfer.from}</TableCell>
-                    <TableCell>{transfer.to}</TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 rounded text-xs ${transfer.status === 'Completado' ? 'bg-green-100 text-green-800' :
-                          transfer.status === 'Pendiente' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-gray-100 text-gray-800'
-                        }`}>
-                        {transfer.status}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <Button variant="outline" size="sm" onClick={() => {
-                        // In a real implementation, this would open a modal to approve/reject
-                        // For now, we'll redirect to the token details page
-                        window.location.href = `/tokens/${transfer.serial}`;
-                      }}>
-                        Ver
-                      </Button>
-                    </TableCell>
+            {transfers.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Número de Serie</TableHead>
+                    <TableHead>De</TableHead>
+                    <TableHead>A</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead>Acciones</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              No hay transferencias pendientes.
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                </TableHeader>
+                <TableBody>
+                  {transfers.map((transfer, index) => (
+                    <TableRow key={index}>
+                      <TableCell className="font-mono">{transfer.serial}</TableCell>
+                      <TableCell>{transfer.from}</TableCell>
+                      <TableCell>{transfer.to}</TableCell>
+                      <TableCell>
+                        <span className={`px-2 py-1 rounded text-xs ${transfer.status === 'Completado' ? 'bg-green-100 text-green-800' :
+                            transfer.status === 'Pendiente' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-gray-100 text-gray-800'
+                          }`}>
+                          {transfer.status}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Button variant="outline" size="sm" onClick={() => {
+                          // In a real implementation, this would open a modal to approve/reject
+                          // For now, we'll redirect to the token details page
+                          window.location.href = `/tokens/${transfer.serial}`;
+                        }}>
+                          Ver
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                No hay transferencias pendientes.
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

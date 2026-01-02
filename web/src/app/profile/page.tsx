@@ -142,18 +142,23 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-12">
-        <div className="flex flex-col items-center justify-center py-24 space-y-4">
-          <Loader2 className="h-12 w-12 text-primary animate-spin" />
-          <p className="text-lg text-muted-foreground animate-pulse">Cargando información del perfil...</p>
+      <div className="container mx-auto px-4 py-12 relative">
+        <div className="absolute inset-0 bg-gradient-overlay opacity-30 pointer-events-none"></div>
+        <div className="relative z-10">
+          <div className="flex flex-col items-center justify-center py-24 space-y-4">
+            <Loader2 className="h-12 w-12 text-primary animate-spin" />
+            <p className="text-lg text-muted-foreground animate-pulse">Cargando información del perfil...</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-12">
-      <h1 className="text-3xl font-bold mb-8">Mi Perfil</h1>
+    <div className="container mx-auto px-4 py-12 relative">
+      <div className="absolute inset-0 bg-gradient-overlay opacity-30 pointer-events-none"></div>
+      <div className="relative z-10">
+        <h1 className="text-3xl font-bold mb-8">Mi Perfil</h1>
 
       <Card>
         <CardHeader>

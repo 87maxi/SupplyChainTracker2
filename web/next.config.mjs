@@ -6,17 +6,10 @@ const nextConfig = {
     removeConsole: process.env.NODE_ENV === 'production',
   },
   
-  // Configure Turbopack
+  // Turbopack configuration
   turbopack: {
-    // Resolve workspace root issues
+    // Set the root directory for Turbopack
     root: process.cwd(),
-  },
-  
-  // Fix BigInt literals not available when targeting lower than ES2020
-  webpack: (config, { isServer }) => {
-    config.resolve.fallback = { ...config.resolve.fallback, crypto: false };
-    
-    return config;
   },
   
   // Configure TypeScript compiler options

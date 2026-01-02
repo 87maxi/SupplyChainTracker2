@@ -99,99 +99,105 @@ export default function TokensPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-12">
-        <h1 className="text-3xl font-bold mb-8">Gestión de Netbooks</h1>
-        
-        <div className="flex justify-between items-center mb-6">
-          <div className="h-4 w-32 bg-muted rounded animate-pulse"></div>
-          <div className="h-10 w-40 bg-muted rounded animate-pulse"></div>
+      <div className="container mx-auto px-4 py-12 relative">
+        <div className="absolute inset-0 bg-gradient-overlay opacity-30 pointer-events-none"></div>
+        <div className="relative z-10">
+          <h1 className="text-3xl font-bold mb-8">Gestión de Netbooks</h1>
+          
+          <div className="flex justify-between items-center mb-6">
+            <div className="h-4 w-32 bg-muted rounded animate-pulse"></div>
+            <div className="h-10 w-40 bg-muted rounded animate-pulse"></div>
+          </div>
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="flex items-center justify-between py-3 border-b">
+                    <div className="h-4 w-24 bg-muted rounded animate-pulse"></div>
+                    <div className="h-6 w-20 bg-muted rounded animate-pulse"></div>
+                    <div className="h-4 w-16 bg-muted rounded animate-pulse"></div>
+                    <div className="h-8 w-16 bg-muted rounded animate-pulse"></div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
-        
-        <Card>
-          <CardContent className="p-6">
-            <div className="space-y-4">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="flex items-center justify-between py-3 border-b">
-                  <div className="h-4 w-24 bg-muted rounded animate-pulse"></div>
-                  <div className="h-6 w-20 bg-muted rounded animate-pulse"></div>
-                  <div className="h-4 w-16 bg-muted rounded animate-pulse"></div>
-                  <div className="h-8 w-16 bg-muted rounded animate-pulse"></div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-12">
-      <h1 className="text-3xl font-bold mb-8">Gestión de Netbooks</h1>
-      
-      <div className="flex justify-between items-center mb-6">
-        <p className="text-muted-foreground">Total: {netbooks.length} netbooks registrados</p>
-        <Button asChild>
-          <Link href="/tokens/create">Registrar Nuevos Netbooks</Link>
-        </Button>
-      </div>
-      
-      <Card>
-        <CardContent>
-          {error && <div className="text-red-500 p-4 rounded-md bg-red-50 mb-4">{error}</div>}
-          
-          {netbooks.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Número de Serie</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead>Propietario</TableHead>
-                  <TableHead>Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {netbooks.map((netbook, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="font-mono">{netbook.serialNumber}</TableCell>
-                    <TableCell>
-                      <span className={`px-2 py-1 rounded text-xs ${stateColors[netbook.currentState]}`}>
-                        {stateLabels[netbook.currentState]}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      {netbook.hwAuditor !== '0x0000000000000000000000000000000000000000' ? 'HW Audited' : 'Pending'}
-                    </TableCell>
-                    <TableCell>
-                      <Button variant="outline" size="sm" onClick={() => {
-                        window.location.href = `/tokens/${netbook.serialNumber}`;
-                      }}>
-                        Ver
-                      </Button>
-                    </TableCell>
+    <div className="container mx-auto px-4 py-12 relative">
+      <div className="absolute inset-0 bg-gradient-overlay opacity-30 pointer-events-none"></div>
+      <div className="relative z-10">
+        <h1 className="text-3xl font-bold mb-8">Gestión de Netbooks</h1>
+        
+        <div className="flex justify-between items-center mb-6">
+          <p className="text-muted-foreground">Total: {netbooks.length} netbooks registrados</p>
+          <Button asChild>
+            <Link href="/tokens/create">Registrar Nuevos Netbooks</Link>
+          </Button>
+        </div>
+        
+        <Card>
+          <CardContent>
+            {error && <div className="text-red-500 p-4 rounded-md bg-red-50 mb-4">{error}</div>}
+            
+            {netbooks.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Número de Serie</TableHead>
+                    <TableHead>Estado</TableHead>
+                    <TableHead>Propietario</TableHead>
+                    <TableHead>Acciones</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="text-center py-12">
-              <Laptop className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">
-                No hay netbooks registrados
-              </h3>
-              <p className="text-muted-foreground mb-6">
-                Comienza registrando el primer netbook del sistema
-              </p>
-              <Button asChild>
-                <Link href="/tokens/create" className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  Registrar Primer Netbook
-                </Link>
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                </TableHeader>
+                <TableBody>
+                  {netbooks.map((netbook, index) => (
+                    <TableRow key={index}>
+                      <TableCell className="font-mono">{netbook.serialNumber}</TableCell>
+                      <TableCell>
+                        <span className={`px-2 py-1 rounded text-xs ${stateColors[netbook.currentState]}`}>
+                          {stateLabels[netbook.currentState]}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        {netbook.hwAuditor !== '0x0000000000000000000000000000000000000000' ? 'HW Audited' : 'Pending'}
+                      </TableCell>
+                      <TableCell>
+                        <Button variant="outline" size="sm" onClick={() => {
+                          window.location.href = `/tokens/${netbook.serialNumber}`;
+                        }}>
+                          Ver
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="text-center py-12">
+                <Laptop className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium text-foreground mb-2">
+                  No hay netbooks registrados
+                </h3>
+                <p className="text-muted-foreground mb-6">
+                  Comienza registrando el primer netbook del sistema
+                </p>
+                <Button asChild>
+                  <Link href="/tokens/create" className="gap-2">
+                    <Plus className="h-4 w-4" />
+                    Registrar Primer Netbook
+                  </Link>
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

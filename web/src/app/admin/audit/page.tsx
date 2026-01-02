@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getEventService } from '@/lib/services/event-service';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useWeb3 } from '@/hooks/useWeb3';
 
 const ITEMS_PER_PAGE = 10;
 

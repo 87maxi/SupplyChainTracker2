@@ -253,13 +253,14 @@ export default function ManagerDashboard() {
 
 
   return (
-    <div className="container mx-auto px-4 py-12 space-y-12">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+    <div className="container mx-auto px-4 py-12 space-y-12 relative">
+      <div className="absolute inset-0 bg-gradient-overlay opacity-30 pointer-events-none"></div>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
         <div>
           <h1 className="text-4xl font-bold tracking-tight mb-2">Resumen General</h1>
           <p className="text-muted-foreground">Estado actual de la cadena de suministro de netbooks.</p>
         </div>
-        <div className="flex items-center gap-3 bg-white/5 p-2 rounded-xl border border-white/10">
+        <div className="flex items-center gap-3 bg-gradient-subtle p-2 rounded-xl border border-white/10 shadow-lg">
           <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
           <span className="text-sm font-medium">Sistema en línea</span>
         </div>

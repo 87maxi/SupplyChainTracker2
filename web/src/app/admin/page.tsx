@@ -77,73 +77,76 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="mb-8 text-center">
-        <h1 className="text-4xl font-bold">Admin Dashboard</h1>
-        <p className="mt-2 text-lg text-muted-foreground">
-          Manage your organization's access control and system configuration
-        </p>
-      </div>
+    <div className="container mx-auto py-8 relative">
+      <div className="absolute inset-0 bg-gradient-overlay opacity-30 pointer-events-none"></div>
+      <div className="relative z-10">
+        <div className="mb-8 text-center">
+          <h1 className="text-4xl font-bold">Admin Dashboard</h1>
+          <p className="mt-2 text-lg text-muted-foreground">
+            Manage your organization's access control and system configuration
+          </p>
+        </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {adminActions.map((action) => {
-          const Icon = action.icon;
-          return (
-            <Link key={action.title} href={action.link}>
-              <Card className="h-full transition-all hover:shadow-lg">
-                <CardHeader>
-                  <div className="flex items-center space-x-4">
-                    <div className={`rounded-lg p-3 text-white ${action.color}`}>
-                      <Icon className="h-6 w-6" />
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {adminActions.map((action) => {
+            const Icon = action.icon;
+            return (
+              <Link key={action.title} href={action.link}>
+                <Card className="h-full transition-all hover:shadow-lg">
+                  <CardHeader>
+                    <div className="flex items-center space-x-4">
+                      <div className={`rounded-lg p-3 text-white ${action.color}`}>
+                        <Icon className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <CardTitle>{action.title}</CardTitle>
+                        <CardDescription className="mt-1">
+                          {action.description}
+                        </CardDescription>
+                      </div>
                     </div>
-                    <div>
-                      <CardTitle>{action.title}</CardTitle>
-                      <CardDescription className="mt-1">
-                        {action.description}
-                      </CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardFooter>
-                  <Button variant="outline" className="w-full">
-                    Manage
-                  </Button>
-                </CardFooter>
-              </Card>
-            </Link>
-          );
-        })}
-      </div>
+                  </CardHeader>
+                  <CardFooter>
+                    <Button variant="outline" className="w-full">
+                      Manage
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </Link>
+            );
+          })}
+        </div>
 
-      <div className="mt-12">
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>
-              Perform common administrative tasks with a single click
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Button className="h-16 text-lg">
-                <Users className="mr-2 h-5 w-5" />
-                Manage Users
-              </Button>
-              <Button className="h-16 text-lg">
-                <Shield className="mr-2 h-5 w-5" />
-                Review Roles
-              </Button>
-              <Button className="h-16 text-lg">
-                <Settings className="mr-2 h-5 w-5" />
-                System Settings
-              </Button>
-              <Button className="h-16 text-lg">
-                <LayoutDashboard className="mr-2 h-5 w-5" />
-                View Analytics
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="mt-12">
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+              <CardDescription>
+                Perform common administrative tasks with a single click
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Button className="h-16 text-lg">
+                  <Users className="mr-2 h-5 w-5" />
+                  Manage Users
+                </Button>
+                <Button className="h-16 text-lg">
+                  <Shield className="mr-2 h-5 w-5" />
+                  Review Roles
+                </Button>
+                <Button className="h-16 text-lg">
+                  <Settings className="mr-2 h-5 w-5" />
+                  System Settings
+                </Button>
+                <Button className="h-16 text-lg">
+                  <LayoutDashboard className="mr-2 h-5 w-5" />
+                  View Analytics
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

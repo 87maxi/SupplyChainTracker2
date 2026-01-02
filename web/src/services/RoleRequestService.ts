@@ -32,7 +32,7 @@ if (typeof window !== 'undefined') {
 }
 
 // Use the actual SupplyChainService for contract interactions
-const supplyChainService = new SupplyChainService();
+const supplyChainService = SupplyChainService.getInstance();
 
 export const RoleRequestService = {
   /**
