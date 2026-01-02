@@ -1,12 +1,14 @@
 // web/src/hooks/use-contracts/use-supply-chain.hook.ts
 
 import { useCallback, useState } from 'react';
-import { supplyChainService } from '@/services/SupplyChainService';
+import { SupplyChainService } from '@/services/SupplyChainService';
+const supplyChainService = SupplyChainService.supplyChainService;
 import { useToast } from '@/hooks/use-toast';
 import { ActivityLogger } from '@/lib/activity-logger';
 
 // Use singleton instance from services
-import { supplyChainService } from '@/services/SupplyChainService';
+import { SupplyChainService } from '@/services/SupplyChainService';
+const supplyChainService = SupplyChainService.supplyChainService;
 
 /**
  * Hook personalizado para interactuar con el contrato SupplyChainTracker

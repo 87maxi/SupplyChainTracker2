@@ -228,68 +228,104 @@ export function HardwareAuditForm({
                     </div>
 
                     <div className="space-y-2 md:col-span-2">
-                      <Label>Componentes Verificados</Label>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <Label htmlFor="components">Componentes</Label>
+                      <div className="space-y-3">
                         <div className="flex items-center space-x-2">
                           <Checkbox id="cpu" />
-                          <Label htmlFor="cpu">CPU</Label>
+                          <label
+                            htmlFor="cpu"
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            CPU
+                          </label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Checkbox id="ram" />
-                          <Label htmlFor="ram">RAM</Label>
+                          <label
+                            htmlFor="ram"
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            RAM
+                          </label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Checkbox id="storage" />
-                          <Label htmlFor="storage">Almacenamiento</Label>
+                          <label
+                            htmlFor="storage"
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            Almacenamiento
+                          </label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Checkbox id="display" />
-                          <Label htmlFor="display">Display</Label>
+                          <label
+                            htmlFor="display"
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            Pantalla
+                          </label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Checkbox id="keyboard" />
-                          <Label htmlFor="keyboard">Teclado</Label>
+                          <label
+                            htmlFor="keyboard"
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            Teclado
+                          </label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Checkbox id="ports" />
-                          <Label htmlFor="ports">Puertos</Label>
+                          <label
+                            htmlFor="ports"
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            Puertos
+                          </label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Checkbox id="battery" />
-                          <Label htmlFor="battery">Batería</Label>
+                          <label
+                            htmlFor="battery"
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            Batería
+                          </label>
                         </div>
                       </div>
                     </div>
 
-                    <div className="space-y-2 md:col-span-2">
+                    <div className="space-y-2">
                       <Label htmlFor="observations">Observaciones</Label>
                       <Textarea
                         id="observations"
-                        placeholder="Detalles de la auditoría, problemas encontrados, recomendaciones..."
-                        className="min-h-32"
+                        placeholder="Observaciones adicionales sobre la auditoría..."
+                        className="h-20"
                       />
                     </div>
                   </form>
                 </CardContent>
               </Card>
+
+              <div className="flex items-center space-x-2 mt-4">
+                <Checkbox
+                  id="passed"
+                  checked={passed}
+                  onCheckedChange={(checked: boolean) => setPassed(checked)}
+                />
+                <label
+                  htmlFor="passed"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Auditoría Aprobada
+                </label>
+              </div>
+
+              <Button type="button" onClick={handleAudit} className="mt-4" disabled={loading || !auditData}>
+                {loading ? "Registrando..." : "Registrar Auditoría"}
+              </Button>
             </div>
-            <DialogFooter className="sm:justify-end">
-                                <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => onOpenChange(false)}
-                    disabled={loading}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    type="submit"
-                    form="auditForm" 
-                    disabled={loading}
-                  >
-                    {loading ? 'Registrando...' : 'Registrar Auditoría'}
-                  </Button>
-            </DialogFooter>
           </div>
         </div>
       </DialogContent>

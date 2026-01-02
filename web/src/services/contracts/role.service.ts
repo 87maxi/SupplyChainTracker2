@@ -4,8 +4,8 @@ import { BaseContractService } from './base-contract.service';
 import SupplyChainTrackerABI from '@/lib/contracts/abi/SupplyChainTracker.json';
 import { NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS } from '@/lib/env';
 import { CacheService } from '@/lib/cache/cache-service';
-import { ContractRoles } from '@/types/contract';
-import { getRoleHashes } from '@/lib/roleUtils';
+import { ContractRoles, ContractRoleName } from '@/types/contract';
+import { getRoleHashes, fallbackHashes } from '@/lib/roleUtils';
 import { Address } from 'viem';
 
 // Tipos de retorno
@@ -40,27 +40,23 @@ export class RoleService extends BaseContractService {
    * @param userAddress Dirección del usuario
    * @returns True si tiene el rol, false en caso contrario
    */
-  hasRole = async (roleName: ContractRoles, userAddress: Address): Promise<boolean> => {
+  hasRole = async (roleName: ContractRoles | `0x${string}`, userAddress: Address): Promise<boolean> => {
     try {
       // Obtener hash del rol
       const roleHashes = await getRoleHashes();
       
-      // Mapeo de nombres de roles ContractRoles a las claves esperadas por getRoleByName
-      // Remueve '_ROLE' del nombre para que coincida con lo esperado por getRoleByName
-      const roleKeyMap: Record<ContractRoles, keyof typeof roleHashes> = {
-        'DEFAULT_ADMIN_ROLE': 'ADMIN',
-        'FABRICANTE_ROLE': 'FABRICANTE',
-        'AUDITOR_HW_ROLE': 'AUDITOR_HW',
-        'TECNICO_SW_ROLE': 'TECNICO_SW',
-        'ESCUELA_ROLE': 'ESCUELA'
-      };
-      
-      // Verificar que roleName sea válido
-      if (!roleKeyMap[roleName]) {
-        throw new Error(`Nombre de rol inválido: ${roleName}`);
+      // Si roleName es un hash de 66 caracteres (0x + 64 hex), usarlo directamente
+      if (typeof roleName === 'string' && roleName.length === 66 && roleName.startsWith('0x')) {
+        const result = await this.read<boolean>('hasRole', [roleName as `0x${string}`, userAddress]);
+        console.log('[RoleService] Verificación de rol por hash:', { roleName, userAddress, result });
+        return result;
       }
       
-      const roleKey = roleKeyMap[roleName];
+      // Convertir ContractRoles a ContractRoleName eliminando '_ROLE' del final
+      const roleKey = (roleName as ContractRoles).replace('_ROLE', '') as ContractRoleName;
+      if (!roleHashes[roleKey]) {
+        throw new Error(`Nombre de rol inválido o no encontrado: ${roleName}. Conversión a clave: ${roleKey}`);
+      }
       const roleHash = roleHashes[roleKey];
       if (!roleHash) {
         throw new Error(`Rol ${roleName} no encontrado: ${roleKey}. Hash no definido.`);
@@ -86,27 +82,34 @@ export class RoleService extends BaseContractService {
    * @param userAddress Dirección del usuario
    * @returns Resultado de la transacción
    */
-  grantRole = async (roleName: ContractRoles, userAddress: Address): Promise<TransactionResult> => {
+  grantRole = async (roleName: ContractRoles | `0x${string}`, userAddress: Address): Promise<TransactionResult> => {
     try {
+      // Si roleName es un hash de 66 caracteres (0x + 64 hex), usarlo directamente
+      if (typeof roleName === 'string' && roleName.length === 66 && roleName.startsWith('0x')) {
+        // Realizar transacción
+        const { hash } = await this.write('grantRole', [roleName as `0x${string}`, userAddress]);
+        
+        // Esperar confirmación
+        const receipt = await this.waitForTransaction(hash);
+        
+        // Invalidar caché
+        this.invalidateCache(`hasRole:${userAddress}`);
+        this.invalidateCache(`getAllMembers`);
+        
+        return {
+          success: true,
+          hash
+        };
+      }
+      
       // Obtener hash del rol
       const roleHashes = await getRoleHashes();
       
-      // Mapeo de nombres de roles ContractRoles a las claves esperadas por getRoleByName
-      // Remueve '_ROLE' del nombre para que coincida con lo esperado por getRoleByName
-      const roleKeyMap: Record<ContractRoles, keyof typeof roleHashes> = {
-        'DEFAULT_ADMIN_ROLE': 'ADMIN',
-        'FABRICANTE_ROLE': 'FABRICANTE',
-        'AUDITOR_HW_ROLE': 'AUDITOR_HW',
-        'TECNICO_SW_ROLE': 'TECNICO_SW',
-        'ESCUELA_ROLE': 'ESCUELA'
-      };
-      
-      // Verificar que roleName sea válido
-      if (!roleKeyMap[roleName]) {
-        return { success: false, error: `Nombre de rol inválido: ${roleName}` };
+      // Convertir ContractRoles a ContractRoleName eliminando '_ROLE' del final
+      const roleKey = (roleName as ContractRoles).replace('_ROLE', '') as ContractRoleName;
+      if (!roleHashes[roleKey]) {
+        return { success: false, error: `Nombre de rol inválido o no encontrado: ${roleName}. Conversión a clave: ${roleKey}` };
       }
-      
-      const roleKey = roleKeyMap[roleName];
       const roleHash = roleHashes[roleKey];
       
       if (!roleHash) {
@@ -141,27 +144,34 @@ export class RoleService extends BaseContractService {
    * @param userAddress Dirección del usuario
    * @returns Resultado de la transacción
    */
-  revokeRole = async (roleName: ContractRoles, userAddress: Address): Promise<TransactionResult> => {
+  revokeRole = async (roleName: ContractRoles | `0x${string}`, userAddress: Address): Promise<TransactionResult> => {
     try {
+      // Si roleName es un hash de 66 caracteres (0x + 64 hex), usarlo directamente
+      if (typeof roleName === 'string' && roleName.length === 66 && roleName.startsWith('0x')) {
+        // Realizar transacción
+        const { hash } = await this.write('revokeRole', [roleName as `0x${string}`, userAddress]);
+        
+        // Esperar confirmación
+        const receipt = await this.waitForTransaction(hash);
+        
+        // Invalidar caché
+        this.invalidateCache(`hasRole:${userAddress}`);
+        this.invalidateCache(`getAllMembers`);
+        
+        return {
+          success: true,
+          hash
+        };
+      }
+      
       // Obtener hash del rol
       const roleHashes = await getRoleHashes();
       
-      // Mapeo de nombres de roles ContractRoles a las claves esperadas por getRoleByName
-      // Remueve '_ROLE' del nombre para que coincida con lo esperado por getRoleByName
-      const roleKeyMap: Record<ContractRoles, keyof typeof roleHashes> = {
-        'DEFAULT_ADMIN_ROLE': 'ADMIN',
-        'FABRICANTE_ROLE': 'FABRICANTE',
-        'AUDITOR_HW_ROLE': 'AUDITOR_HW',
-        'TECNICO_SW_ROLE': 'TECNICO_SW',
-        'ESCUELA_ROLE': 'ESCUELA'
-      };
-      
-      // Verificar que roleName sea válido
-      if (!roleKeyMap[roleName]) {
-        return { success: false, error: `Nombre de rol inválido: ${roleName}` };
+      // Convertir ContractRoles a ContractRoleName eliminando '_ROLE' del final
+      const roleKey = (roleName as ContractRoles).replace('_ROLE', '') as ContractRoleName;
+      if (!roleHashes[roleKey]) {
+        return { success: false, error: `Nombre de rol inválido o no encontrado: ${roleName}. Conversión a clave: ${roleKey}` };
       }
-      
-      const roleKey = roleKeyMap[roleName];
       const roleHash = roleHashes[roleKey];
       if (!roleHash) {
         return { success: false, error: `Hash no encontrado para el rol: ${roleName}` };
@@ -194,8 +204,23 @@ export class RoleService extends BaseContractService {
    * @param roleName Nombre del rol
    * @returns Miembros del rol
    */
-  getRoleMembers = async (roleName: ContractRoles): Promise<RoleMembersResult> => {
+  getRoleMembers = async (roleName: ContractRoles | `0x${string}`): Promise<RoleMembersResult> => {
     try {
+      // Si roleName es un hash de 66 caracteres (0x + 64 hex), usarlo directamente
+      if (typeof roleName === 'string' && roleName.length === 66 && roleName.startsWith('0x')) {
+        // Leer del contrato
+        const members = await this.read<string[]>('getAllMembers', [roleName as `0x${string}`]);
+        
+        // Preparar resultado
+        const result: RoleMembersResult = {
+          role: 'DEFAULT_ADMIN_ROLE', // Default role when using hash directly
+          members,
+          count: members.length
+        };
+        
+        return result;
+      }
+      
       // Intentar obtener de caché primero
       const cacheKey = `getRoleMembers:${roleName}`;
       const cached = CacheService.get(cacheKey);
@@ -206,22 +231,11 @@ export class RoleService extends BaseContractService {
       // Obtener hash del rol
       const roleHashes = await getRoleHashes();
       
-      // Mapeo de nombres de roles ContractRoles a las claves esperadas por getRoleByName
-      // Remueve '_ROLE' del nombre para que coincida con lo esperado por getRoleByName
-      const roleKeyMap: Record<ContractRoles, keyof typeof roleHashes> = {
-        'DEFAULT_ADMIN_ROLE': 'ADMIN',
-        'FABRICANTE_ROLE': 'FABRICANTE',
-        'AUDITOR_HW_ROLE': 'AUDITOR_HW',
-        'TECNICO_SW_ROLE': 'TECNICO_SW',
-        'ESCUELA_ROLE': 'ESCUELA'
-      };
-      
-      // Verificar que roleName sea válido
-      if (!roleKeyMap[roleName]) {
-        throw new Error(`Nombre de rol inválido: ${roleName}`);
+      // Convertir ContractRoles a ContractRoleName eliminando '_ROLE' del final
+      const roleKey = (roleName as ContractRoles).replace('_ROLE', '') as ContractRoleName;
+      if (!roleHashes[roleKey]) {
+        throw new Error(`Nombre de rol inválido o no encontrado: ${roleName}. Conversión a clave: ${roleKey}`);
       }
-      
-      const roleKey = roleKeyMap[roleName];
       const roleHash = roleHashes[roleKey];
       if (!roleHash) {
         throw new Error(`Rol ${roleName} no encontrado: ${roleKey}. Hash no definido.`);

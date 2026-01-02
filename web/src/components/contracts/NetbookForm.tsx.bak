@@ -82,6 +82,8 @@ export function NetbookForm({ isOpen, onOpenChange, onComplete }: NetbookFormPro
     }
   };
 
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
@@ -104,31 +106,13 @@ export function NetbookForm({ isOpen, onOpenChange, onComplete }: NetbookFormPro
               placeholder="NB-001"
             />
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="batch" className="text-right">
-              Lote
-            </Label>
-            <Input
-              id="batch"
-              value={batch}
-              onChange={(e) => setBatch(e.target.value)}
-              className="col-span-3"
-              placeholder="L-2025-01"
-            />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="specs" className="text-right">
-              Especificaciones
-            </Label>
-            <Textarea
-              id="specs"
-              value={specs}
-              onChange={(e) => setSpecs(e.target.value)}
-              className="col-span-3"
-              placeholder="Procesador Intel Celeron N4020, 4GB RAM, 64GB SSD..."
-            />
-          </div>
         </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// Arreglar formularios faltantes y roles...
         <DialogFooter>
           <Button type="button" onClick={handleRegister} disabled={loading}>
             {loading ? 'Registrando...' : 'Registrar'}

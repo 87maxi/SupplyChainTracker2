@@ -136,7 +136,7 @@ export function StudentAssignmentForm({ isOpen, onOpenChange, onComplete, initia
           </div>
         </div>
         <DialogFooter>
-          <Button type="submit" onClick={handleAssign} disabled={loading}>
+          <Button type="button" onClick={handleAssign} disabled={loading}>
             {loading ? 'Asignando...' : 'Asignar'}
           </Button>
         </DialogFooter>

@@ -10,6 +10,6 @@ export interface Netbook {
   swValidationPassed: boolean;
   destinationSchoolHash: string;
   studentIdHash: string;
-  distributionTimestamp: bigint;
-  currentState: number;
+  distributionTimestamp: string;
+  currentState: string;
 }

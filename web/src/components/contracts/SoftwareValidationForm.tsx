@@ -138,7 +138,7 @@ export function SoftwareValidationForm({ isOpen, onOpenChange, onComplete, initi
           </div>
         </div>
         <DialogFooter>
-          <Button type="submit" onClick={handleValidate} disabled={loading}>
+          <Button type="button" onClick={handleValidate} disabled={loading}>
             {loading ? 'Registrando...' : 'Registrar Validación'}
           </Button>
         </DialogFooter>

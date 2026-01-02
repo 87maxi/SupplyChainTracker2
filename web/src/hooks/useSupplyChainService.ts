@@ -5,7 +5,8 @@ import { Address } from 'viem';
 import { ContractRoles, ContractRoleName } from '@/types/contract';
 import { AllRolesSummary } from '@/types/supply-chain-types';
 import { roleMapper } from '@/lib/roleMapping';
-import { supplyChainService } from '@/services/SupplyChainService';
+import { SupplyChainService } from '@/services/SupplyChainService';
+const supplyChainService = SupplyChainService.supplyChainService;
 
 
 export const useSupplyChainService = () => {

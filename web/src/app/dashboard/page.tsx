@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useEffect, useState, useCallback } from 'react'; // Asegurar useCallback para funciones
 import { RoleActions } from './components/RoleActions';
+import { PendingRoleApprovals } from './components/role-approval/PendingRoleApprovals';
 
 import {
   Package,
@@ -265,6 +266,10 @@ export default function ManagerDashboard() {
       </div>
 
       <RoleActions />
+
+      {(isHardwareAuditor || isSoftwareTechnician || isSchool || isAdmin) && (
+        <PendingRoleApprovals />
+      )}
 
       {isLoading ? (
         <div className="flex flex-col items-center justify-center py-24 space-y-4">

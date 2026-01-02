@@ -1,3 +1,12 @@
+// Fallback role hashes in case contract calls fail
+export const fallbackHashes = {
+  FABRICANTE: "0xdf8b4c520affe6d5bd668f8a16ff439b2b3fe20527c8a5d5d7cd0f17c3aa9c5d",
+  AUDITOR_HW: "0xed8e002819d8cf1a851ca1db7d19c6848d2559e61bf51cf90a464bd116556c00",
+  TECNICO_SW: "0x2ed8949af5557e2edaec784b826d9da85a22565588342ae7b736d3e8ebd76bfe",
+  ESCUELA: "0x88a49b04486bc479c925034ad3947fb7a1dc63c11a4fc29c186b7efde141b141",
+  ADMIN: "0x0000000000000000000000000000000000000000000000000000000000000000"
+};
+
 import { readContract } from '@wagmi/core';
 import { config } from './wagmi/config';
 import { NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS } from './env';
@@ -23,7 +32,7 @@ let cachedRoleHashes: RoleMap | null = null;
 export const getRoleHashes = async (): Promise<RoleMap> => {
   if (cachedRoleHashes) return cachedRoleHashes;
 
-      try {
+  try {
     console.log('[roleUtils] Fetching role hashes from contract...');
     console.log('[roleUtils] Wagmi Config State:', {
       chainId: config.state.chainId,

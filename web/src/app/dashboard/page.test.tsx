@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import ManagerDashboard from '@/app/dashboard/page';
-import { supplyChainService } from '@/services/SupplyChainService';
+import { SupplyChainService } from '@/services/SupplyChainService';
+const supplyChainService = SupplyChainService.supplyChainService;
 
 // Tipos para los mocks
 import { type Mock } from 'jest-mock';

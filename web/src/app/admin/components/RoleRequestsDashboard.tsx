@@ -10,7 +10,7 @@ import { getRoleMembers, getRoleMemberCount, getNetbooksByState, revalidateAll }
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TransactionConfirmation } from '@/components/contracts/TransactionConfirmation';
-import { truncateAddress } from '@/lib/utils';
+import { truncateAddress , cn } from '@/lib/utils';
 import { getRoleHashes } from '@/lib/roleUtils';
 import { useRoleRequests } from '@/hooks/useRoleRequests';
 
@@ -34,7 +34,6 @@ interface UserRoleData {
   id?: string;
 }
 
-import { cn } from '@/lib/utils';
 
 // Summary Card Component
 function SummaryCard({ title, count, description, icon: Icon, color }: { title: string, count: number, description: string, icon: any, color: string }) {
@@ -164,6 +163,33 @@ export default function RoleRequestsDashboard({ stats: initialStats }: RoleReque
     }
   };
 
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        await Promise.all([
+          fetchDashboardData(true),
+          fetchUserRoles()
+        ]);
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los datos del dashboard",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, [
+    address,
+    isConnected,
+    initialStats
+  ]);
+
   const fetchDashboardData = async (silent = false) => {
     if (!isConnected || !address) return;
 
@@ -193,8 +219,130 @@ export default function RoleRequestsDashboard({ stats: initialStats }: RoleReque
         totalFabricadas: fabricadas.length,
         totalHwAprobadas: hwAprobadas.length,
         totalSwValidadas: swValidadas.length,
-        totalDistribuidas: distribuidas.length
+                  totalDistribuidas: distribuidas.length
       });
-
+      console.error('Error fetching dashboard data:', error);
       if (!silent) {
         toast({
+          title: "Error",
+          description: "No se pudieron obtener los datos del dashboard",
+          variant: "destructive"
+        });
+      }
+    } finally {
+      if (!silent) {
+        toast({
+          title: "Datos actualizados",
+          description: "Dashboard actualizado correctamente"
+        });
+      }
+    }
+    return {
+      stats,
+      userRoles
+    };
+  };
+
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        await Promise.all([
+          fetchDashboardData(true),
+          fetchUserRoles()
+        ]);
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los datos del dashboard",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, [
+    address,
+    isConnected,
+    initialStats
+  ]);
+
+  const fetchStats = async (): Promise<DashboardStats> => {
+    try {
+      const roleHashes = await getRoleHashes();
+
+      const [
+        fabricanteCount,
+        auditorHwCount,
+        tecnicoSwCount,
+        escuelaCount,
+        fabricadas,
+        hwAprobadas,
+        swValidadas,
+        distribuidas
+      ] = await Promise.all([
+        getRoleMemberCount(roleHashes.FABRICANTE).catch(() => 0),
+        getRoleMemberCount(roleHashes.AUDITOR_HW).catch(() => 0),
+        getRoleMemberCount(roleHashes.TECNICO_SW).catch(() => 0),
+        getRoleMemberCount(roleHashes.ESCUELA).catch(() => 0),
+        getNetbooksByState(State.FABRICADA).catch(() => []),
+        getNetbooksByState(State.HW_APROBADO).catch(() => []),
+        getNetbooksByState(State.SW_VALIDADO).catch(() => []),
+        getNetbooksByState(State.DISTRIBUIDA).catch(() => [])
+      ]);
+
+      return {
+        fabricanteCount,
+        auditorHwCount,
+        tecnicoSwCount,
+        escuelaCount,
+        totalFabricadas: fabricadas.length,
+        totalHwAprobadas: hwAprobadas.length,
+        totalSwValidadas: swValidadas.length,
+        totalDistribuidas: distribuidas.length
+      };
+    } catch (error) {
+      console.error('Error fetching stats:', error);
+      return {
+        fabricanteCount: 0,
+        auditorHwCount: 0,
+        tecnicoSwCount: 0,
+        escuelaCount: 0,
+        totalFabricadas: 0,
+        totalHwAprobadas: 0,
+        totalSwValidadas: 0,
+        totalDistribuidas: 0
+      };
+    }
+  };
+
+  return {
+    stats,
+    userRoles,
+    isLoading,
+    refresh: async () => {
+      setIsLoading(true);
+      try {
+        const newStats = await fetchStats();
+        setStats(newStats);
+        await fetchUserRoles();
+        toast({
+          title: "Datos actualizados",
+          description: "Dashboard actualizado correctamente"
+        });
+      } catch (error) {
+        console.error('Error refreshing dashboard:', error);
+        toast({
+          title: "Error",
+          description: "No se pudieron actualizar los datos",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+}

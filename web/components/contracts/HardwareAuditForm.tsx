@@ -193,7 +193,7 @@ export function HardwareAuditForm({
                   {errors.notes.message}
                 </p>
               )}
-            </div>
+                        </div>
           </div>
           
           <DialogFooter>
@@ -209,3 +209,26 @@ export function HardwareAuditForm({
               type="submit" 
               disabled={!isValid || isSubmitting}
               className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {submitStatus === 'success' ? 'Éxito' : 'Procesando...'}
+                </>
+              ) : (
+                <>
+                  {submitStatus === 'success' ? (
+                    <>
+                      <Check className="mr-2 h-4 w-4" />
+                      Completado
+                    </>
+                  ) : 'Auditar Hardware'}
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
