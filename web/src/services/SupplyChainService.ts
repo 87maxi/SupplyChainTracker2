@@ -1,6 +1,9 @@
+"use client";
+
 import { BaseContractService } from './contracts/base-contract.service';
 import SupplyChainTrackerABI from '@/lib/contracts/abi/SupplyChainTracker.json';
 import { NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS } from '@/lib/env';
+import { contractRegistry, ContractConfig } from './contract-registry.service';
 
 // Tipos de retorno
 interface TransactionResult {
@@ -43,11 +46,27 @@ export class SupplyChainService extends BaseContractService {
   }
   
   constructor() {
+    // Validar que la dirección del contrato esté disponible
+    if (!NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS) {
+      console.error('❌ NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS no está configurado');
+      throw new Error('La dirección del contrato no está configurada. Verifique el archivo .env.local');
+    }
+
     super(
       NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS as `0x${string}`,
       SupplyChainTrackerABI,
       'supply-chain'
     );
+
+    console.log('✅ SupplyChainService inicializado con dirección:', this.contractAddress);
+    
+    // Registrar este contrato en el registro
+    const config: ContractConfig = {
+      address: this.contractAddress,
+      abi: this.abi,
+      version: '1.0.0'
+    };
+    contractRegistry.register('SupplyChainTracker', this, config);
   }
   
   // Reemplazo de métodos abstractos de BaseContractService

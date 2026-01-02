@@ -2,7 +2,7 @@
 pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
-import "../src/SupplyChainTracker.sol";
+import "../../src/SupplyChainTracker.sol";
 
 contract FunctionalTest is Test {
     SupplyChainTracker public tracker;
@@ -143,4 +143,4 @@ contract FunctionalTest is Test {
         assertEq(tracker.getTokenMetadata(tokenId), ASSIGNMENT_METADATA);
     }
 
-    function test_0
+}

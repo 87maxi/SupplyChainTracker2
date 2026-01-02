@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { eventBus, EVENTS } from '@/lib/events';
-import { useSupplyChainService } from '@/hooks/useSupplyChainService';
+import { useSupplyChainContract } from '@/hooks/useContract';
 import { useState, useEffect } from 'react';
 import { roleMapper } from '@/lib/roleMapping';
 import { ContractRoleName } from '@/types/contract';
@@ -27,7 +27,7 @@ const QUERY_KEYS = {
 
 export function useRoleRequests() {
   const { toast } = useToast();
-  const supplyChainService = useSupplyChainService();
+  const supplyChainService = useSupplyChainContract();
   const queryClient = useQueryClient();
 
   // Local state for pending requests using localStorage as persistence

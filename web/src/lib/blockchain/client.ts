@@ -5,7 +5,7 @@ import { createPublicClient, createWalletClient, http, type PublicClient, type W
 import { localhost } from 'viem/chains';
 
 // Configuración para desarrollo local con Anvil
-const ANVIL_RPC_URL = 'http://localhost:8545';
+const ANVIL_RPC_URL = process.env.NEXT_PUBLIC_ANVIL_RPC_URL || 'http://localhost:8545';
 
 /**
  * Cliente público para operaciones de lectura

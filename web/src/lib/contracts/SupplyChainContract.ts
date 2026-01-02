@@ -44,7 +44,8 @@ export async function getNetbookState(serial: string): Promise<number> {
 }
 
 // Función para obtener el reporte de una netbook
-import type { Netbook } from '@/types/supply-chain-types';
+import type { Netbook } from '@/types/supply-chain-types'; // Tipo para el reporte de netbook
+import type { Address } from 'viem';
 
 export async function getNetbookReport(serial: string): Promise<Netbook> {
   try {
@@ -149,8 +150,24 @@ export async function assignToStudent(
   }
 }
 
+// Función para obtener netbooks en un estado específico
+export async function getNetbooksByState(state: number): Promise<string[]> {
+  try {
+    const result = await readContract(config, {
+      address: contractAddress,
+      abi,
+      functionName: 'getNetbooksByState',
+      args: [state]
+    });
+    return result as string[];
+  } catch (error) {
+    console.error('Error al obtener netbooks en estado:', error);
+    throw error;
+  }
+}
+
 // Función para obtener miembros de un rol
-export async function getAllMembers(roleHash: string): Promise<string[]> {
+export async function getAllMembers(roleHash: `0x${string}`): Promise<string[]> {
   try {
     const result = await readContract(config, {
       address: contractAddress,
@@ -166,7 +183,7 @@ export async function getAllMembers(roleHash: string): Promise<string[]> {
 }
 
 // Función para obtener conteo de miembros de un rol
-export async function getRoleMemberCount(roleHash: string): Promise<number> {
+export async function getRoleMemberCount(roleHash: `0x${string}`): Promise<number> {
   try {
     const result = await readContract(config, {
       address: contractAddress,
@@ -182,7 +199,7 @@ export async function getRoleMemberCount(roleHash: string): Promise<number> {
 }
 
 // Función para verificar si una cuenta tiene un rol
-export async function hasRole(roleHash: string, address: string): Promise<boolean> {
+export async function hasRole(roleHash: `0x${string}`, address: Address): Promise<boolean> {
   try {
     const result = await readContract(config, {
       address: contractAddress,

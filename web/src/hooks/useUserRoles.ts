@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useWeb3 } from '@/hooks/useWeb3';
-import { useSupplyChainService } from '@/hooks/useSupplyChainService';
+import { useSupplyChainContract } from '@/hooks/useContract';
 import { readContract } from '@wagmi/core';
 import { config } from '@/lib/wagmi/config';
 import SupplyChainTrackerABI from '@/lib/contracts/abi/SupplyChainTracker.json';
@@ -26,7 +26,30 @@ import { CacheService } from '@/lib/cache/cache-service';
 
 export const useUserRoles = (): UseUserRoles => {
   const { address, isConnected } = useWeb3();
-  const { hasRoleByHash } = useSupplyChainService();
+  const supplyChainService = useSupplyChainContract();
+  const { hasRoleByHash } = supplyChainService || { hasRoleByHash: () => Promise.resolve(false) }; // Añadido para evitar errores
+  
+  // Fallback para verificar roles si hasRoleByHash no está disponible
+  const checkRoleFallback = async (roleHash: `0x${string}`, userAddress: `0x${string}`): Promise<boolean> => {
+    try {
+      if (supplyChainService?.hasRole) {
+        return await supplyChainService.hasRole(roleHash, userAddress);
+      }
+      
+      // Si no tenemos acceso al contrato, intentar con wagmi directamente como último recurso
+      const result = await readContract(config, {
+        address: NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS as `0x${string}`,
+        abi: SupplyChainTrackerABI,
+        functionName: 'hasRole',
+        args: [roleHash, userAddress]
+      });
+      return result as boolean;
+    } catch (error) {
+      console.error('Error checking role with fallback:', error);
+      return false;
+    }
+  };
+  
   const cacheKey = `user_roles_${address || 'unknown'}`;
   const [userRoles, setUserRoles] = useState<UseUserRoles>({    isAdmin: false,
     isManufacturer: false,
@@ -78,12 +101,12 @@ export const useUserRoles = (): UseUserRoles => {
 
       // Check roles using role hashes directly for better reliability
       const [isAdmin, isManufacturer, isHardwareAuditor, isSoftwareTechnician, isSchool] = await Promise.all([
-        // Use constant for DEFAULT_ADMIN_ROLE as per OpenZeppelin AccessControl standard
-        hasRoleByHash(defaultAdminRoleStr, address as `0x${string}`),
-        hasRoleByHash(fabricanteRoleStr, address as `0x${string}`),
-        hasRoleByHash(auditorHwRoleStr, address as `0x${string}`),
-        hasRoleByHash(tecnicoSwRoleStr, address as `0x${string}`),
-        hasRoleByHash(escuelaRoleStr, address as `0x${string}`)
+        // Use fallback para verificar roles si hasRoleByHash no está disponible
+        hasRoleByHash?.(defaultAdminRoleStr, address as `0x${string}`) ?? checkRoleFallback(defaultAdminRoleStr, address as `0x${string}`),
+        hasRoleByHash?.(fabricanteRoleStr, address as `0x${string}`) ?? checkRoleFallback(fabricanteRoleStr, address as `0x${string}`),
+        hasRoleByHash?.(auditorHwRoleStr, address as `0x${string}`) ?? checkRoleFallback(auditorHwRoleStr, address as `0x${string}`),
+        hasRoleByHash?.(tecnicoSwRoleStr, address as `0x${string}`) ?? checkRoleFallback(tecnicoSwRoleStr, address as `0x${string}`),
+        hasRoleByHash?.(escuelaRoleStr, address as `0x${string}`) ?? checkRoleFallback(escuelaRoleStr, address as `0x${string}`)
       ]);
 
       console.log('Role check results:', {

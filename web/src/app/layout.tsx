@@ -1,35 +1,41 @@
-import './globals.css';
-import '@rainbow-me/rainbowkit/styles.css';
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+
 import { Web3Providers } from '@/components/Web3Providers';
 import { Header } from '@/components/layout/Header';
-import { Toaster } from '@/components/ui/toaster';
-import { NotificationContainer } from '@/components/ui/NotificationContainer';
-import { RequireWallet } from '@/components/auth/RequireWallet';
+import { Navigation } from '@/components/layout/Navigation';
+import DiagnosticRunner from '@/components/diagnostics/DiagnosticRunner';
+import DebugComponent from '@/components/diagnostics/DebugComponent';
 
-export const metadata = {
-  title: 'SupplyChainTracker - Gestión de Trazabilidad de Netbooks',
-  description: 'Sistema de trazabilidad para el ciclo de vida de netbooks educativas',
+const inter = Inter({ subsets: ["latin"] });
+
+export const metadata: Metadata = {
+  title: "Supply Chain Tracker",
+  description: "Plataforma para rastrear la cadena de suministro de netbooks",
 };
 
-type RootLayoutProps = {
+// Importar el módulo de diagnóstico
+import '@/lib/diagnostics/service-debug';
+
+export default function RootLayout({
+  children,
+}: Readonly<{
   children: React.ReactNode;
-};
-
-export default function RootLayout({ children }: RootLayoutProps) {
+}>) {
   return (
-    <html lang="es" className="dark">
-      <body className="antialiased">
+    <html lang="es">
+      <body className={inter.className}>
         <Web3Providers>
-          <div className="flex flex-col min-h-screen">
+          <div className="min-h-screen bg-background">
             <Header />
-            <main className="flex-1">
-              <RequireWallet>
-                {children}
-              </RequireWallet>
-            </main>
-            <Toaster />
-            <NotificationContainer />
+            <div className="container mx-auto px-4 py-8">
+              {children}
+            </div>
+            <Navigation />
           </div>
+          <DiagnosticRunner />
+          <DebugComponent />
         </Web3Providers>
       </body>
     </html>

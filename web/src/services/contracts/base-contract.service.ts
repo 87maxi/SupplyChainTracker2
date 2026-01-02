@@ -1,3 +1,5 @@
+"use client";
+
 // web/src/services/contracts/base-contract.service.ts
 // Base contract service for blockchain interactions
 
