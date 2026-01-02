@@ -5,7 +5,7 @@
 
 import { SupplyChainService } from './SupplyChainService';
 import { RoleService } from './contracts/role.service';
-import { RoleMapper } from '@/lib/roleMapping';
+import { roleMapper } from '@/lib/roleMapping';
 import { toast } from '@/hooks/use-toast';
 
 // Import the contract constants and ABI
@@ -40,7 +40,8 @@ const roleService = new RoleService(
 );
 
 // Use the role mapper for consistent role name handling
-const roleMapper = new RoleMapper();
+// Use the singleton instance from roleMapping
+const roleMapperInstance = roleMapper;
 
 // Initialize with some mock data if needed
 // This could be replaced with actual data from localStorage or API
@@ -110,9 +111,11 @@ export const RoleRequestService = {
     if (status === 'approved') {
       // Use the role service to grant the actual role
       try {
+        // Use the role mapper to get role hash
+        const roleHash = await roleMapperInstance.getRoleHash(request.role);
+        
         // Grant role through the contract
-        // RoleService handles the role name to hash conversion internally
-        const result = await roleService.grantRoleByName(request.role, request.userAddress as `0x${string}`);
+        const result = await roleService.grantRole(roleHash as unknown as Role, request.userAddress as `0x${string}`);
         
         if (result.success && result.txHash) {
           // Update request with transaction hash
