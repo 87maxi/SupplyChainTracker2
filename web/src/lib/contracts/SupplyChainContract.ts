@@ -4,12 +4,14 @@ import { formatEther } from 'viem';
 import { RoleMap } from '@/lib/roleUtils';
 import { validateAndNormalizeAddress } from '@/lib/env';
 
-// Importar el ABI y la dirección del contrato
+// Importar el ABi y la dirección del contrato
 import SupplyChainTrackerABI from '@/lib/contracts/abi/SupplyChainTracker.json';
 import { NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS } from '@/lib/env';
 
 const contractAddress = NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS as `0x${string}`;
-const abi = SupplyChainTrackerABI;
+
+// Aseguramos que el ABI esté en formato de array
+const abi = Array.isArray(SupplyChainTrackerABI) ? SupplyChainTrackerABI : Object.values(SupplyChainTrackerABI).flat();
 
 // Función para obtener todos los números de serie
 export async function getAllSerialNumbers(): Promise<string[]> {

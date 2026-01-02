@@ -1,58 +1,61 @@
-# Solución para Solicitudes de Rol en Blockchain
+# Solución para la Gestión de Solicitudes de Rol
 
-## Problema Identificado
+## Problema
+Se identificaron múltiples problemas al gestionar solicitudes de roles desde la interfaz web hasta la blockchain:
 
-El problema principal era que las solicitudes de rol desde la interfaz de inicio no realizaban transacciones en la blockchain. Esto se debía a:
-
-1. El servicio `RoleRequestService` estaba implementado como un mock que solo guardaba datos en localStorage
-2. El hook `useRoleRequests` usaba un servicio de contrato interno que no estaba correctamente integrado con el servicio de solicitudes
-3. Falta de conexión directa entre la aprobación de solicitudes y la ejecución de transacciones en la blockchain
+1. **Error en RoleService**: Uso incorrecto de React hooks en una clase de servicio
+2. **Variables indefinidas**: Referencia a `mockRoleRequests` que no existe
+3. **Error de ABI**: El error "abi.filter is not a function" indica que el ABI no está en formato de array cuando se intenta filtrarlo
 
 ## Solución Implementada
 
-### 1. Refactorización del Servicio de Solicitudes de Rol
+### 1. Corrección del error de ABI en SupplyChainContract
 
-Se ha corregido el archivo `web/src/services/RoleRequestService.ts` para que:
+El problema principal era que el ABI JSON de Solidity puede ser un objeto o un array dependiendo de cómo se exporte. Nuestra función `readContract` espera un array pero recibía un objeto, causando el error `abi.filter is not a function`.
 
-- Deje de ser un mock y maneje el flujo completo de solicitudes de rol
-- Interactúe directamente con la blockchain a través del contrato inteligente
-- Use el `RoleService` real para ejecutar transacciones de `grantRole`
-- Actualice correctamente los estados y almacene los hashes de transacciones
+**Cambio implementado en `SupplyChainContract.ts`:**
+```typescript
+// Antes
+const abi = SupplyChainTrackerABI;
 
-### 2. Integración del Hook de Solicitudes de Rol
+// Después
+const abi = Array.isArray(SupplyChainTrackerABI) ? SupplyChainTrackerABI : Object.values(SupplyChainTrackerABI).flat();
+```
 
-Se ha actualizado el hook `useRoleRequests` para que:
+Esta solución convierte cualquier formato de ABI (objeto o array) en un array plano antes de pasarlo a las funciones de contrato.
 
-- Importe y use el `RoleRequestService` actualizado
-- Reemplace la lógica de transacción directa con llamadas al servicio de solicitudes
-- Mantenga la gestión de estados y notificaciones
-- Agregue manejo adecuado de errores y conexión de wallet
+### 2. Corrección del RoleService
 
-### 3. Flujo de Trabajo Corregido
+El `RoleService` estaba intentando usar React hooks como `useRoleData` dentro de una clase de servicio, lo cual no es válido ya que los hooks solo pueden usarse en componentes funcionales o custom hooks.
 
-1. El usuario solicita un rol desde la interfaz
-2. La solicitud se guarda en localStorage con estado 'pending'
-3. Un administrador aprueba la solicitud
-4. El método `approveMutation` en `useRoleRequests` se activa
-5. Se valida la conexión con la wallet
-6. Se llama a `RoleRequestService.updateRoleRequestStatus('approved')`
-7. El servicio de solicitudes ejecuta `grantRole` en el contrato inteligente
-8. La transacción se procesa en la blockchain
-9. El hash de la transacción se almacena y el estado se actualiza
 
-## Componentes Afectados
+**Solución:**
+- Eliminamos todos los hooks del `RoleService`
+- Mantenimos únicamente la lógica de negocio relacionada con el contrato
+- Las dependencias de hooks deben manejarse en los componentes o custom hooks que consumen el servicio
 
-- `web/src/services/RoleRequestService.ts`
-- `web/src/hooks/useRoleRequests.ts`
-- `web/src/components/contracts/RoleRequestModal.tsx`
-- `web/src/app/admin/users/page.tsx`
+### 3. Corrección de variables indefinidas
+
+Se removieron referencias a `mockRoleRequests` que no estaban definidas en el código fuente, ya que no existía la variable.
+
+
+## Impacto
+
+Esta solución debería:
+1. Resolver el error crítico `abi.filter is not a function` que impedía la comunicación con el contrato
+2. Corregir problemas de arquitectura al eliminar el uso incorrecto de React hooks en servicios
+3. Eliminar referencias a variables inexistentes que causaban errores
 
 ## Próximos Pasos
 
-1. Probar la solución con solicitudes de rol reales
-2. Verificar que las notificaciones y estados se actualicen correctamente
-3. Asegurar que el cache se invalida adecuadamente después de las transacciones
-4. Documentar el flujo completo para futuras referencias
+1. Verificar que todas las funciones del contrato funcionen correctamente después del cambio del ABI
+2. Implementar pruebas unitarias para validar el manejo de diferentes formatos de ABI
+3. Revisar otras instancias donde se importe el ABI del contrato para asegurar consistencia
+4. Documentar el formato esperado del ABI en el código fuente
+
+## Contribución
+
+Este commit es una compresión de todas las correcciones necesarias para resolver los problemas de gestión de roles en la interfaz.
 
 Generated with [Continue](https://continue.dev)
 
