@@ -1,7 +1,7 @@
 "use client";
 
-import EnhancedPendingRoleRequests from '@/app/admin/components/EnhancedPendingRoleRequests';
+import PendingRoleRequests from '@/app/admin/components/PendingRoleRequests';
 
 export default function AdminPendingRoleRequestsPage() {
-  return <EnhancedPendingRoleRequests />;
+  return <PendingRoleRequests />;
 }

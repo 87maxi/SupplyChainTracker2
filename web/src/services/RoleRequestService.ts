@@ -1,22 +1,33 @@
 // web/src/services/RoleRequestService.ts
-// Mock implementation of the old RoleRequestService API
-// This file provides backward compatibility for components that still import from '@/services/RoleRequestService'
-// All functionality is now handled by the smart contract and contract service
+// Service implementation for role requests
+// This file handles the complete flow of role requests from UI to blockchain
+// Uses the SupplyChainService for direct contract interaction
 
 import { SupplyChainService } from './SupplyChainService';
+import { RoleRequestService as ActualRoleRequestService } from './contracts/role.service';
+import { RoleMapper } from '@/lib/roleMapping';
+import { toast } from '@/hooks/use-toast';
 
 // Mock data structure for role requests (would come from database in original implementation)
-interface RoleRequest {
+export interface RoleRequest {
   id: string;
   userAddress: string;
   role: string;
   signature: string;
   status: 'pending' | 'approved' | 'rejected';
   createdAt: string;
+  transactionHash?: string;
 }
 
 // Mock role requests for backward compatibility
-let mockRoleRequests: RoleRequest[] = [];
+// Use an in-memory store for requests
+let roleRequests: RoleRequest[] = [];
+
+// Create an instance of the actual role service
+const roleService = new ActualRoleRequestService();
+
+// Use the role mapper for consistent role name handling
+const roleMapper = new RoleMapper();
 
 // Initialize with some mock data if needed
 // This could be replaced with actual data from localStorage or API
@@ -37,7 +48,8 @@ const supplyChainService = SupplyChainService.getInstance();
 export const RoleRequestService = {
   /**
    * Create a new role request
-   * In the new system, this would be replaced by a direct contract call or form submission
+   * @param request Role request details
+   * @returns Promise that resolves when the request is created
    */
   async createRequest(request: {
     userAddress: string;
@@ -53,54 +65,86 @@ export const RoleRequestService = {
       createdAt: new Date().toISOString()
     };
     
-    mockRoleRequests.push(newRequest);
-    localStorage.setItem('mockRoleRequests', JSON.stringify(mockRoleRequests));
-    
-    // In a real implementation, we would integrate with the actual role request process
-    // This might involve calling a smart contract function or API endpoint
+    roleRequests.push(newRequest);
+    localStorage.setItem('role_requests', JSON.stringify(roleRequests));
   },
   
   /**
    * Get all role requests
-   * In the new system, this could be replaced by a contract query or database call
+   * @returns All role requests
    */
   async getRoleRequests(): Promise<RoleRequest[]> {
     // Refresh from storage
-    const stored = localStorage.getItem('mockRoleRequests');
+    const stored = localStorage.getItem('role_requests');
     if (stored) {
-      mockRoleRequests = JSON.parse(stored);
+      roleRequests = JSON.parse(stored);
     }
-    return [...mockRoleRequests];
+    return [...roleRequests];
   },
   
   /**
    * Update status of a role request
-   * In the new system, this would trigger a smart contract call to grant the role
+   * @param id Request ID
+   * @param status New status
+   * @returns Promise that resolves when the status is updated
    */
   async updateRoleRequestStatus(id: string, status: 'approved' | 'rejected'): Promise<void> {
-    const request = mockRoleRequests.find(r => r.id === id);
+    const request = roleRequests.find(r => r.id === id);
     if (!request) {
       throw new Error('Role request not found');
     }
     
-    request.status = status;
-    
-    // If approved, attempt to grant the role via contract
     if (status === 'approved') {
-      // This would be replaced by actual contract interaction
-      // await supplyChainService.grantRole(request.role, request.userAddress);
-      console.log(`Role ${request.role} granted to ${request.userAddress}`);
+      // Use the role service to grant the actual role
+      try {
+        // Map role name to hash using role mapper
+        const roleHash = await roleMapper.getRoleHash(request.role);
+        
+        // Grant role through the contract
+        const result = await roleService.grantRoleByName(request.role, request.userAddress as `0x${string}`);
+        
+        if (result.success && result.txHash) {
+          // Update request with transaction hash
+          request.transactionHash = result.txHash;
+          
+          toast({
+            title: 'Rol Otorgado',
+            description: `El rol ${request.role} ha sido otorgado exitosamente.`,
+            variant: 'default'
+          });
+        } else {
+          toast({
+            title: 'Error',
+            description: result.message || 'No se pudo otorgar el rol',
+            variant: 'destructive'
+          });
+          return; // Don't update status if grant failed
+        }
+      } catch (error) {
+        console.error('Error granting role:', error);
+        toast({
+          title: 'Error',
+          description: error instanceof Error ? error.message : 'Error al otorgar el rol',
+          variant: 'destructive'
+        });
+        return; // Don't update status if grant failed
+      }
     }
     
-    localStorage.setItem('mockRoleRequests', JSON.stringify(mockRoleRequests));
+    request.status = status;
+    request.updatedAt = new Date().toISOString();
+    
+    localStorage.setItem('role_requests', JSON.stringify(roleRequests));
   },
   
   /**
    * Delete a role request
+   * @param id Request ID to delete
+   * @returns Promise that resolves when the request is deleted
    */
   async deleteRoleRequest(id: string): Promise<void> {
-    mockRoleRequests = mockRoleRequests.filter(r => r.id !== id);
-    localStorage.setItem('mockRoleRequests', JSON.stringify(mockRoleRequests));
+    roleRequests = roleRequests.filter(r => r.id !== id);
+    localStorage.setItem('role_requests', JSON.stringify(roleRequests));
   }
 };
 

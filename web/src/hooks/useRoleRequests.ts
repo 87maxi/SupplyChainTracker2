@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 import { roleMapper } from '@/lib/roleMapping';
 import { ContractRoleName } from '@/types/contract';
 import { getRoleHashes } from '@/lib/roleUtils';
+import { RoleRequestService } from '@/services/RoleRequestService';
 
 // Types for role requests
 export interface RoleRequest {
@@ -91,49 +92,26 @@ export function useRoleRequests() {
       // Update status to processing
       updateRequestStatus(requestId, 'processing');
 
-      // Get role hashes
-      const roleHashes = await getRoleHashes();
-      
-      // Map role name to hash
-      const roleKeyMap: Record<string, keyof typeof roleHashes> = {
-        'FABRICANTE_ROLE': 'FABRICANTE',
-        'AUDITOR_HW_ROLE': 'AUDITOR_HW',
-        'TECNICO_SW_ROLE': 'TECNICO_SW',
-        'ESCUELA_ROLE': 'ESCUELA',
-        'DEFAULT_ADMIN_ROLE': 'ADMIN'
-      };
-      
-      const roleKey = roleKeyMap[role];
-      if (!roleKey) {
-        throw new Error(`Rol desconocido: ${role}`);
+      // Check if we have a connection to the blockchain
+      if (!window.ethereum) {
+        throw new Error('No se encontró una wallet conectada. Por favor conecta MetaMask u otra wallet compatible.');
       }
       
-      const roleHash = roleHashes[roleKey];
-      if (!roleHash) {
-        throw new Error(`Hash no encontrado para el rol: ${role}`);
+      try {
+        // Request account access if needed
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+      } catch (error) {
+        throw new Error('El usuario rechazó la conexión con la wallet.');
+      }
+
+      // Use the actual RoleRequestService to handle the blockchain interaction
+      try {
+        await RoleRequestService.updateRoleRequestStatus(requestId, 'approved');
+      } catch (error) {
+        console.error('[useRoleRequests] Failed to update role request status:', error);
+        throw error;
       }
       
-      // Check blockchain connection first
-      const isConnected = await supplyChainService.checkConnection?.();
-      if (!isConnected) {
-        throw new Error('No hay conexión con la blockchain. Verifica que Anvil esté ejecutándose.');
-      }
-
-      // Blockchain Transaction - use grantRoleByHash since we have the role hash
-      const result = await supplyChainService.grantRoleByHash(roleHash, userAddress as `0x${string}`);
-      if (!result.success || !result.hash) {
-        throw new Error(result.error || 'Transaction failed');
-      }
-      
-      const hash = result.hash;
-      console.log('[useRoleRequests] Transaction submitted:', hash);
-
-      // Update request with transaction hash
-      updateRequestStatus(requestId, 'processing', hash);
-
-      // Wait for transaction confirmation is now handled by SupplyChainService
-      // with improved timeout handling and retries
-
       toast({
         title: 'Confirmado en Blockchain',
         description: 'La asignación de rol ha sido confirmada.',
