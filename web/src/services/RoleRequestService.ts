@@ -6,7 +6,6 @@
 import { SupplyChainService } from './SupplyChainService';
 import { RoleService } from './contracts/role.service';
 import { roleMapper } from '@/lib/roleMapping';
-import { toast } from '@/hooks/use-toast';
 
 // Import the contract constants and ABI
 import { ROLE_HASHES } from '@/lib/constants/roles';
@@ -121,26 +120,14 @@ export const RoleRequestService = {
           // Update request with transaction hash
           request.transactionHash = result.txHash;
           
-          toast({
-            title: 'Rol Otorgado',
-            description: `El rol ${request.role} ha sido otorgado exitosamente.`,
-            variant: 'default'
-          });
+          console.log(`Rol ${request.role} otorgado exitosamente a ${request.userAddress}. Tx hash: ${result.txHash}`);
         } else {
-          toast({
-            title: 'Error',
-            description: result.message || 'No se pudo otorgar el rol',
-            variant: 'destructive'
-          });
+          console.error('Error otorgando rol:', result.message || 'No se pudo otorgar el rol');
           return; // Don't update status if grant failed
         }
       } catch (error) {
         console.error('Error granting role:', error);
-        toast({
-          title: 'Error',
-          description: error instanceof Error ? error.message : 'Error al otorgar el rol',
-          variant: 'destructive'
-        });
+        console.error('Error otorgando rol:', error instanceof Error ? error.message : 'Error al otorgar el rol');
         return; // Don't update status if grant failed
       }
     }
