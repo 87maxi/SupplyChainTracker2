@@ -326,3 +326,4 @@ export class RoleService extends BaseContractService {
   }
 
   // Métodos adicionales específicos del servicio de roles
+}

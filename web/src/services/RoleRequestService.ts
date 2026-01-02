@@ -4,9 +4,17 @@
 // Uses the SupplyChainService for direct contract interaction
 
 import { SupplyChainService } from './SupplyChainService';
-import { RoleRequestService as ActualRoleRequestService } from './contracts/role.service';
+import { RoleService } from './contracts/role.service';
 import { RoleMapper } from '@/lib/roleMapping';
 import { toast } from '@/hooks/use-toast';
+
+// Import the contract constants and ABI
+import { ROLE_HASHES } from '@/lib/constants/roles';
+import SupplyChainTrackerABI from '@/lib/contracts/abi/SupplyChainTracker.json';
+
+// Import config and env variables
+import { config } from '@/lib/wagmi/config';
+import { NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS } from '@/lib/env';
 
 // Mock data structure for role requests (would come from database in original implementation)
 export interface RoleRequest {
@@ -23,8 +31,13 @@ export interface RoleRequest {
 // Use an in-memory store for requests
 let roleRequests: RoleRequest[] = [];
 
-// Create an instance of the actual role service
-const roleService = new ActualRoleRequestService();
+// Create an instance of the RoleService
+// We need to create it with the proper contract address and ABI
+const roleService = new RoleService(
+  NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS as `0x${string}`,
+  SupplyChainTrackerABI,
+  config
+);
 
 // Use the role mapper for consistent role name handling
 const roleMapper = new RoleMapper();
@@ -97,10 +110,8 @@ export const RoleRequestService = {
     if (status === 'approved') {
       // Use the role service to grant the actual role
       try {
-        // Map role name to hash using role mapper
-        const roleHash = await roleMapper.getRoleHash(request.role);
-        
         // Grant role through the contract
+        // RoleService handles the role name to hash conversion internally
         const result = await roleService.grantRoleByName(request.role, request.userAddress as `0x${string}`);
         
         if (result.success && result.txHash) {
