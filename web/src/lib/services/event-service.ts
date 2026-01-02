@@ -1,7 +1,7 @@
 import { AuditLog } from '@/types/audit';
 import { publicClient } from '@/lib/blockchain/client';
 import { NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS } from '@/lib/env';
-import SupplyChainTrackerABI from '@/lib/contracts/abi/SupplyChainTracker.json';
+import { SupplyChainTrackerABI } from '@/lib/contracts/abi';
 
 // Servicio para gestionar eventos y logs de auditoría desde la blockchain
 export const getEventService = async () => {
@@ -9,7 +9,9 @@ export const getEventService = async () => {
     getAuditLogs: async (): Promise<AuditLog[]> => {
       try {
         // Filter only events from the ABI
-        const eventAbis = SupplyChainTrackerABI.filter((item: any) => item.type === 'event');
+        // Convert the JSON ABI to array format if it's an object
+        const abiArray = Array.isArray(SupplyChainTrackerABI) ? SupplyChainTrackerABI : Object.values(SupplyChainTrackerABI).flat();
+        const eventAbis = abiArray.filter((item: any) => item.type === 'event');
         
         // Fetch events from the blockchain
         const logs = await publicClient.getLogs({
