@@ -77,7 +77,7 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div className="container mx-auto py-8 relative">
+    <div className="container mx-auto py-8 relative min-h-screen">
       <div className="absolute inset-0 bg-gradient-overlay opacity-30 pointer-events-none"></div>
       <div className="relative z-10">
         <div className="mb-8 text-center">

@@ -21,44 +21,15 @@ export function useNetbookStats() {
         setIsLoading(true);
         setError(null);
         
-        const response = await fetch('/api/fetch-netbooks');
-        
-        if (!response.ok) {
-          throw new Error(`Error ${response.status}: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        
-        if (!data.success) {
-          throw new Error(data.error || 'Failed to fetch netbook stats');
-        }
-        
-        // Process the data to get counts by status
-        const statusCounts: Partial<NetbookStats> = {
-          total: data.pagination.totalCount,
+        // En la nueva arquitectura blockchain-native, no usamos MongoDB
+        // Simulamos datos de estadísticas de netbooks
+        const statusCounts = {
+          total: 0,
           production: 0,
           distribution: 0,
           retail: 0,
           sold: 0
         };
-        
-        // Count statuses
-        data.data.forEach((netbook) => {
-          switch (netbook.status) {
-            case 'production':
-              statusCounts.production = (statusCounts.production || 0) + 1;
-              break;
-            case 'distribution':
-              statusCounts.distribution = (statusCounts.distribution || 0) + 1;
-              break;
-            case 'retail':
-              statusCounts.retail = (statusCounts.retail || 0) + 1;
-              break;
-            case 'sold':
-              statusCounts.sold = (statusCounts.sold || 0) + 1;
-              break;
-          }
-        });
         
         setStats(statusCounts as NetbookStats);
       } catch (err) {

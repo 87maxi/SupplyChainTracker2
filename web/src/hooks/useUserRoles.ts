@@ -27,9 +27,9 @@ import { CacheService } from '@/lib/cache/cache-service';
 export const useUserRoles = (): UseUserRoles => {
   const { address, isConnected } = useWeb3();
   const supplyChainService = useSupplyChainContract();
-  const { hasRoleByHash } = supplyChainService || { hasRoleByHash: () => Promise.resolve(false) }; // Añadido para evitar errores
+  const hasRole = supplyChainService?.hasRole || (() => Promise.resolve(false)); // Añadido para evitar errores
   
-  // Fallback para verificar roles si hasRoleByHash no está disponible
+  // Fallback para verificar roles si hasRole no está disponible
   const checkRoleFallback = async (roleHash: `0x${string}`, userAddress: `0x${string}`): Promise<boolean> => {
     try {
       if (supplyChainService?.hasRole) {
@@ -51,13 +51,23 @@ export const useUserRoles = (): UseUserRoles => {
   };
   
   const cacheKey = `user_roles_${address || 'unknown'}`;
-  const [userRoles, setUserRoles] = useState<UseUserRoles>({    isAdmin: false,
+  const [userRoles, setUserRoles] = useState<UseUserRoles>({
+    isAdmin: false,
     isManufacturer: false,
     isHardwareAuditor: false,
     isSoftwareTechnician: false,
     isSchool: false,
     isLoading: true,
-    hasRole: () => false,
+    hasRole: (roleName: ContractRoles) => {
+      switch (roleName) {
+        case 'DEFAULT_ADMIN_ROLE': return false;
+        case 'FABRICANTE_ROLE': return false;
+        case 'AUDITOR_HW_ROLE': return false;
+        case 'TECNICO_SW_ROLE': return false;
+        case 'ESCUELA_ROLE': return false;
+        default: return false;
+      }
+    },
     activeRoleNames: [],
     refreshRoles: () => {}
   });
@@ -74,7 +84,7 @@ export const useUserRoles = (): UseUserRoles => {
 
     // Check cache first
     const cachedRoles = CacheService.get<UseUserRoles>(cacheKey);
-    if (cachedRoles && !isCacheStale(cacheKey)) {
+    if (cachedRoles && !CacheService.isCacheStale(cacheKey)) {
       setUserRoles(cachedRoles);
       return;
     }
@@ -101,12 +111,12 @@ export const useUserRoles = (): UseUserRoles => {
 
       // Check roles using role hashes directly for better reliability
       const [isAdmin, isManufacturer, isHardwareAuditor, isSoftwareTechnician, isSchool] = await Promise.all([
-        // Use fallback para verificar roles si hasRoleByHash no está disponible
-        hasRoleByHash?.(defaultAdminRoleStr, address as `0x${string}`) ?? checkRoleFallback(defaultAdminRoleStr, address as `0x${string}`),
-        hasRoleByHash?.(fabricanteRoleStr, address as `0x${string}`) ?? checkRoleFallback(fabricanteRoleStr, address as `0x${string}`),
-        hasRoleByHash?.(auditorHwRoleStr, address as `0x${string}`) ?? checkRoleFallback(auditorHwRoleStr, address as `0x${string}`),
-        hasRoleByHash?.(tecnicoSwRoleStr, address as `0x${string}`) ?? checkRoleFallback(tecnicoSwRoleStr, address as `0x${string}`),
-        hasRoleByHash?.(escuelaRoleStr, address as `0x${string}`) ?? checkRoleFallback(escuelaRoleStr, address as `0x${string}`)
+        // Use fallback para verificar roles si hasRole no está disponible
+        hasRole(defaultAdminRoleStr, address as `0x${string}`) ?? checkRoleFallback(defaultAdminRoleStr, address as `0x${string}`),
+        hasRole(fabricanteRoleStr, address as `0x${string}`) ?? checkRoleFallback(fabricanteRoleStr, address as `0x${string}`),
+        hasRole(auditorHwRoleStr, address as `0x${string}`) ?? checkRoleFallback(auditorHwRoleStr, address as `0x${string}`),
+        hasRole(tecnicoSwRoleStr, address as `0x${string}`) ?? checkRoleFallback(tecnicoSwRoleStr, address as `0x${string}`),
+        hasRole(escuelaRoleStr, address as `0x${string}`) ?? checkRoleFallback(escuelaRoleStr, address as `0x${string}`)
       ]);
 
       console.log('Role check results:', {
@@ -126,9 +136,6 @@ export const useUserRoles = (): UseUserRoles => {
       if (isSoftwareTechnician) activeRoleNames.push('TECNICO_SW_ROLE');
       if (isSchool) activeRoleNames.push('ESCUELA_ROLE');
 
-          // Cache the result with 30 second TTL and stale-while-revalidate
-      CacheService.set(cacheKey, newRoles, 30000);
-      
       const newRoles: UseUserRoles = {
         isAdmin,
         isManufacturer,
@@ -150,7 +157,8 @@ export const useUserRoles = (): UseUserRoles => {
         refreshRoles: checkRoles
       };
 
-
+          // Cache the result with 30 second TTL and stale-while-revalidate
+      CacheService.set(cacheKey, newRoles, 30000);
       
       // Always update state
       setUserRoles(newRoles);
@@ -168,13 +176,9 @@ export const useUserRoles = (): UseUserRoles => {
 
       
       // If we have stale data and we're revalidating, keep showing it
-      if (userRoles.isLoading && getCache(cacheKey)) {
-        setUserRoles(prev => ({ ...prev, isLoading: false }));
-      } else {
-        setUserRoles(prev => ({ ...prev, isLoading: false }));
-      }
+      setUserRoles(prev => ({ ...prev, isLoading: false }));
     }
-  }, [address, isConnected, cacheKey, hasRoleByHash]);
+  }, [address, isConnected, cacheKey, hasRole]);
 
   // Inicializa la verificación de roles al conectar o cambiar de dirección
   useEffect(() => {
@@ -186,27 +190,47 @@ export const useUserRoles = (): UseUserRoles => {
 
   // Escucha los cambios de rol para actualizar automáticamente
   useEffect(() => {
-    const { eventBus, EVENTS } = require('@/lib/events');
-    const unsubscribe = eventBus.on(EVENTS.ROLE_UPDATED, () => {
-      console.log('[useUserRoles] Role update detected, refreshing roles...');
-      checkRoles();
+    let unsubscribe: (() => void) | undefined;
+    
+    import('@/lib/events').then(({ eventBus, EVENTS }) => {
+      unsubscribe = eventBus.on(EVENTS.ROLE_UPDATED, () => {
+        console.log('[useUserRoles] Role update detected, refreshing roles...');
+        checkRoles();
+      });
+    }).catch(error => {
+      console.error('Failed to import events module:', error);
     });
-    return () => unsubscribe();
-  }, []); // No depende de checkRoles para evitar ciclos
+    
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, [checkRoles]); // Add checkRoles as dependency
 
-  // Effect to update refreshRoles
+  // Effect to update refreshRoles and hasRole function
   useEffect(() => {
     setUserRoles(prev => {
-      // Only update refreshRoles if it's different
+      // Only update if functions are different
       if (prev.refreshRoles !== checkRoles) {
-        return { ...prev, refreshRoles: checkRoles };
+        return { 
+          ...prev, 
+          refreshRoles: checkRoles,
+          hasRole: (roleName: ContractRoles) => {
+            switch (roleName) {
+              case 'DEFAULT_ADMIN_ROLE': return prev.isAdmin;
+              case 'FABRICANTE_ROLE': return prev.isManufacturer;
+              case 'AUDITOR_HW_ROLE': return prev.isHardwareAuditor;
+              case 'TECNICO_SW_ROLE': return prev.isSoftwareTechnician;
+              case 'ESCUELA_ROLE': return prev.isSchool;
+              default: return false;
+            }
+          }
+        };
       }
       return prev;
     });
   }, [checkRoles]);
 
-  return {
-    ...userRoles,
-    refreshRoles: checkRoles
-  };
+  return userRoles;
 };

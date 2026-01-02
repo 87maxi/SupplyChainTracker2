@@ -37,6 +37,7 @@ import { getRoleRequests, updateRoleRequestStatus, deleteRoleRequest } from '@/s
 import { RoleRequest } from '@/types/role-request';
 import { useRoleRequests } from '@/hooks/useRoleRequests';
 import * as SupplyChainContract from '@/lib/contracts/SupplyChainContract';
+import { eventBus, EVENTS } from '@/lib/events';
 
 // Cache configuration
 const CACHE_CONFIG = {
@@ -428,8 +429,8 @@ export default function PendingRoleRequests({ stats: initialStats }: { stats?: D
 
   // Main dashboard content
   return (
-    <div className="space-y-10">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+    <div className="space-y-10 min-h-screen w-full">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 w-full">
         <div className="space-y-1">
           <h2 className="text-4xl font-bold tracking-tight">Panel de Administración</h2>
           <p className="text-muted-foreground text-lg">Gestión global de la red de suministro y permisos de usuario.</p>

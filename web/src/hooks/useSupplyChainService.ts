@@ -1,7 +1,7 @@
 // web/src/hooks/useSupplyChainService.ts
 import { useCallback } from 'react';
 import { useAccount } from 'wagmi';
-import { Address } from 'viem';
+import { Address, formatEther } from 'viem';
 import { ContractRoles, ContractRoleName } from '@/types/contract';
 import { AllRolesSummary } from '@/types/supply-chain-types';
 import { roleMapper } from '@/lib/roleMapping';
@@ -15,7 +15,7 @@ export const useSupplyChainService = () => {
   // Get all serial numbers
   const getAllSerialNumbers = useCallback(async () => {
     try {
-      return await supplyChainService.getAllSerialNumbers();
+      return await supplyChainService.read<string[]>('getAllSerialNumbers', []);
     } catch (error) {
       console.error('Error in getAllSerialNumbers:', error);
       return [];
@@ -73,7 +73,7 @@ export const useSupplyChainService = () => {
   const getRoleMembers = useCallback(async (role: ContractRoleName | ContractRoles) => {
     try {
       const roleHash = await getRoleHashForName(role);
-      const members = await supplyChainService.getRoleMembers(roleHash);
+      const members = await supplyChainService.read<string[]>('getAllMembers', [roleHash]);
       const roleName = typeof role === 'string' && role.endsWith('_ROLE') ? role : `${role}_ROLE`;
       return { 
         role: roleName as ContractRoles, 
@@ -124,7 +124,8 @@ export const useSupplyChainService = () => {
       const roleResults = await Promise.all(
         roleEntries.map(async ([key, hash]) => {
           try {
-            const members = await supplyChainService.getRoleMembers(hash);
+            // Usar el método correcto del contrato para obtener miembros
+            const members = await supplyChainService.read<string[]>('getAllMembers', [hash]);
             // Convert member addresses to checksummed format
             const checksummedMembers = members.map(address => {
               try {
@@ -273,7 +274,10 @@ export const useSupplyChainService = () => {
   // Balance operations
   const getAccountBalance = useCallback(async (userAddress: Address): Promise<string> => {
     try {
-      return await supplyChainService.getAccountBalance(userAddress);
+      // Use wagmi to get balance directly from blockchain
+      const { publicClient } = await import('@/lib/blockchain/client');
+      const balance = await publicClient.getBalance({ address: userAddress });
+      return formatEther(balance);
     } catch (error) {
       console.error('Error in getAccountBalance:', error);
       return '0';

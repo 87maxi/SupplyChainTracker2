@@ -32,30 +32,10 @@ export const useProcessedUserAndNetbookData = (): ProcessedData => {
       setIsLoading(true);
       setError(null);
 
-      // Obtener datos de usuarios y netbooks
-      const [usersResponse, netbooksResponse] = await Promise.all([
-        fetch('/api/fetch-users?limit=1000'), // Aumentar límite para obtener todos
-        fetch('/api/fetch-netbooks?limit=1000')
-      ]);
-
-      if (!usersResponse.ok) {
-        throw new Error(`Error ${usersResponse.status}: ${usersResponse.statusText}`);
-      }
-
-      if (!netbooksResponse.ok) {
-        throw new Error(`Error ${netbooksResponse.status}: ${netbooksResponse.statusText}`);
-      }
-
-      const usersData = await usersResponse.json();
-      const netbooksData = await netbooksResponse.json();
-
-      if (!usersData.success) {
-        throw new Error(usersData.error || 'Failed to fetch users');
-      }
-
-      if (!netbooksData.success) {
-        throw new Error(netbooksData.error || 'Failed to fetch netbooks');
-      }
+      // En la nueva arquitectura blockchain-native, no usamos MongoDB
+      // Simulamos datos vacíos para mantener la compatibilidad
+      const usersData = { success: true, data: [] };
+      const netbooksData = { success: true, data: [] };
 
       // Procesar netbooks para mapear al tipo Netbook esperado
       const processedNetbooks: Netbook[] = netbooksData.data.map((netbook) => {
