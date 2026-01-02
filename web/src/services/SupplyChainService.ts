@@ -47,20 +47,23 @@ export class SupplyChainService extends BaseContractService {
     return SupplyChainService.getInstance();
   }
   
-  constructor() {
+    constructor() {
     // Validar que la dirección del contrato esté disponible
     if (!NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS) {
       console.error('❌ NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS no está configurado');
       throw new Error('La dirección del contrato no está configurada. Verifique el archivo .env.local');
     }
 
+    // Aseguramos que el ABI esté en formato de array
+    const abi = Array.isArray(SupplyChainTrackerABI) ? SupplyChainTrackerABI : Object.values(SupplyChainTrackerABI).flat();
+    
     super(
       NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS as `0x${string}`,
-      SupplyChainTrackerABI,
+      abi,
       'supply-chain'
     );
 
-    console.log('✅ SupplyChainService inicializado con dirección:', this.contractAddress);
+    console.log('✅ SupplyChainService inicializado con dirección:', this.contractAddress);    
     
     // Registrar este contrato en el registro
     const config: ContractConfig = {
