@@ -39,32 +39,7 @@ import { useUserStats } from '@/hooks/useUserStats';
 import { useNetbookStats } from '@/hooks/useNetbookStats';
 import { useProcessedUserAndNetbookData } from '@/hooks/useProcessedUserAndNetbookData';
 
-// Reusable Status Badge Component
-function StatusBadge({ status }: { status: NetbookState }) {
-  const getStatusConfig = (status: NetbookState) => {
-    switch (status) {
-      case 'FABRICADA':
-        return { variant: 'secondary' as const, icon: Package };
-      case 'HW_APROBADO':
-        return { variant: 'outline-glow' as const, icon: ShieldCheck };
-      case 'SW_VALIDADO':
-        return { variant: 'success' as const, icon: Monitor };
-      case 'DISTRIBUIDA':
-        return { variant: 'gradient' as any, icon: Truck };
-      default:
-        return { variant: 'outline' as const, icon: Package };
-    }
-  };
-
-  const { variant, icon: Icon } = getStatusConfig(status);
-
-  return (
-    <Badge variant={variant} className="gap-1.5 px-3 py-1">
-      <Icon className="h-3.5 w-3.5" />
-      {status.replace(/_/g, ' ')}
-    </Badge>
-  );
-}
+import { TrackingCard } from './components/TrackingCard';
 
 // Summary Card Component
 function SummaryCard({ title, count, description, icon: Icon, color }: { title: string, count: number, description: string, icon: any, color: string }) {
@@ -79,58 +54,6 @@ function SummaryCard({ title, count, description, icon: Icon, color }: { title: 
       <CardContent>
         <div className="text-4xl font-bold mb-1">{count}</div>
         <p className="text-xs text-muted-foreground leading-relaxed">{description}</p>
-      </CardContent>
-    </Card>
-  );
-}
-
-// Tracking Card Component
-function TrackingCard({ netbook, onAction }: { netbook: Netbook, onAction?: (action: string, serial: string) => void }) {
-  const { isHardwareAuditor, isSoftwareTechnician, isSchool, isAdmin } = useUserRoles();
-  
-  // Ensure netbook is defined
-  if (!netbook) return null;
-
-  return (
-    <Card className="hover:bg-white/5 transition-colors border-white/5">
-      <CardContent className="p-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground font-mono">S/N:</span>
-              <span className="font-bold tracking-tight">{netbook.serialNumber}</span>
-            </div>
-            <div className="text-xs text-muted-foreground">
-              {netbook.currentState === 'FABRICADA' ? (
-                <>Fecha de registro: {netbook.distributionTimestamp ? new Date(Number(netbook.distributionTimestamp) * 1000).toLocaleDateString() : 'N/A'}</>
-              ) : (
-                <>Última actualización: {Number.isFinite(netbook.distributionTimestamp) ? new Date(Number(netbook.distributionTimestamp) * 1000).toLocaleDateString() : 'N/A'}</>
-              )}
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <StatusBadge status={netbook.currentState as NetbookState} />
-            {onAction && (
-              <div className="flex gap-2">
-                              {(netbook.currentState === 'FABRICADA') && (isHardwareAuditor || isAdmin) && (
-                <Button size="sm" variant="outline" className="h-8 text-xs border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10" onClick={() => onAction('audit', netbook.serialNumber)}>
-                  Auditar
-                </Button>
-              )}
-              {(netbook.currentState === 'HW_APROBADO') && (isSoftwareTechnician || isAdmin) && (
-                <Button size="sm" variant="outline" className="h-8 text-xs border-purple-500/50 text-purple-400 hover:bg-purple-500/10" onClick={() => onAction('validate', netbook.serialNumber)}>
-                  Validar
-                </Button>
-              )}
-              {(netbook.currentState === 'SW_VALIDADO') && (isSchool || isAdmin) && (
-                <Button size="sm" variant="outline" className="h-8 text-xs border-amber-500/50 text-amber-400 hover:bg-amber-500/10" onClick={() => onAction('assign', netbook.serialNumber)}>
-                  Asignar
-                </Button>
-              )}
-              </div>
-            )}
-          </div>
-        </div>
       </CardContent>
     </Card>
   );
@@ -164,18 +87,18 @@ export default function ManagerDashboard() {
   // Obtener estadísticas desde MongoDB usando los nuevos endpoints
   const { stats: userStatsData, isLoading: usersLoading } = useUserStats();
   const { stats: netbookStatsData, isLoading: netbooksLoading } = useNetbookStats();
-  
+
   // Obtener datos procesados combinados de usuarios y netbooks
   const { users, netbooks: netbooksTable, isLoading: dataLoading, refetch: fetchDashboardData } = useProcessedUserAndNetbookData();
-  
+
   // Combinar estados de carga
   const isLoading = usersLoading || netbooksLoading || dataLoading;
-  
+
   // Funciones para manejar filtros
   const handleUserFilterChange = (filter: { key: string; value: string }) => {
     console.log('User filter changed:', filter);
   };
-  
+
   const handleNetbookFilterChange = (filter: { key: string; value: string }) => {
     console.log('Netbook filter changed:', filter);
   };
@@ -186,7 +109,7 @@ export default function ManagerDashboard() {
   // Utilizar los datos cargados desde MongoDB
   // const [netbooks, setNetbooks] = useState<Netbook[]>([]);
   // const [loading, setLoading] = useState(true);
-  
+
   // Utilizar datos de estadísticas desde MongoDB en lugar del conteo directo
   const summary = {
     FABRICADA: netbookStatsData?.production || 0,
@@ -198,7 +121,7 @@ export default function ManagerDashboard() {
   // Utilizar usuarios y netbooks ya definidos anteriormente
   // const { users } = useFetchUsers();
   // const { netbooks } = useProcessedUserAndNetbookData();
-  
+
   // Filtrar tareas pendientes basado en roles
   const pendingTasks = netbooksTable.filter((n: Netbook) => {
     if (!n) return false;
@@ -223,7 +146,7 @@ export default function ManagerDashboard() {
   const handleAction = useCallback((action: string, serial: string) => {
     console.log('Handling action:', { action, serial });
     setSelectedSerial(serial);
-    
+
     switch (action) {
       case 'audit':
         setShowAuditForm(true);
@@ -288,83 +211,100 @@ export default function ManagerDashboard() {
           </div>
 
           {/* Pending Tasks Section */}
-          {pendingTasks.length > 0 && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-                  <ShieldCheck className="h-6 w-6 text-emerald-400" />
-                  Tareas Pendientes
-                </h2>
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+                <ShieldCheck className="h-6 w-6 text-emerald-400" />
+                Tareas Pendientes
+              </h2>
+              {pendingTasks.length > 0 && (
                 <Badge variant="success" className="px-3">
                   {pendingTasks.length} Acciones requeridas
                 </Badge>
-              </div>
+              )}
+            </div>
+
+            {pendingTasks.length > 0 ? (
               <div className="grid gap-4">
                 {pendingTasks.map((netbook) => (
                   <TrackingCard key={netbook.serialNumber} netbook={netbook} onAction={handleAction} />
                 ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <Card className="border-dashed border-white/10 bg-white/5">
+                <CardContent className="flex flex-col items-center justify-center py-12 text-center space-y-4">
+                  <div className="p-4 rounded-full bg-emerald-500/10 text-emerald-500">
+                    <ShieldCheck className="h-8 w-8" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="font-semibold text-lg">¡Todo al día!</h3>
+                    <p className="text-muted-foreground max-w-sm mx-auto">
+                      No tienes tareas pendientes asignadas a tu rol en este momento.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
 
           {/* Tracking List */}
           {/* Renderizar las tablas con filtros */}
           <div className="grid gap-8 md:grid-cols-2">
-            <UserDataTable 
-              data={users} 
-              onFilterChange={handleUserFilterChange} 
+            <UserDataTable
+              data={users}
+              onFilterChange={handleUserFilterChange}
             />
-            <NetbookDataTable 
-              data={netbooksForTable} 
-              onFilterChange={handleNetbookFilterChange} 
+            <NetbookDataTable
+              data={netbooksForTable}
+              onFilterChange={handleNetbookFilterChange}
             />
           </div>
         </>
       )}
 
-        {/* Forms - Conditional rendering to ensure proper state management */}
-  {showAuditForm && (
-    <HardwareAuditForm
-      isOpen={showAuditForm}
-      onOpenChange={setShowAuditForm}
-      onComplete={() => {
-        console.log('Audit form completed, refetching data');
-        fetchDashboardData();
-        // Reset form state
-        setSelectedSerial('');
-        setShowAuditForm(false);
-      }}
-      initialSerial={selectedSerial}
-    />
-  )}
-  {showValidationForm && (
-    <SoftwareValidationForm
-      isOpen={showValidationForm}
-      onOpenChange={setShowValidationForm}
-      onComplete={() => {
-        console.log('Validation form completed, refetching data');
-        fetchDashboardData();
-        // Reset form state
-        setSelectedSerial('');
-        setShowValidationForm(false);
-      }}
-      initialSerial={selectedSerial}
-    />
-  )}
-  {showAssignmentForm && (
-    <StudentAssignmentForm
-      isOpen={showAssignmentForm}
-      onOpenChange={setShowAssignmentForm}
-      onComplete={() => {
-        console.log('Assignment form completed, refetching data');
-        fetchDashboardData();
-        // Reset form state
-        setSelectedSerial('');
-        setShowAssignmentForm(false);
-      }}
-      initialSerial={selectedSerial}
-    />
-  )}
+      {/* Forms - Conditional rendering to ensure proper state management */}
+      {showAuditForm && (
+        <HardwareAuditForm
+          isOpen={showAuditForm}
+          onOpenChange={setShowAuditForm}
+          onComplete={() => {
+            console.log('Audit form completed, refetching data');
+            fetchDashboardData();
+            // Reset form state
+            setSelectedSerial('');
+            setShowAuditForm(false);
+          }}
+          initialSerial={selectedSerial}
+        />
+      )}
+      {showValidationForm && (
+        <SoftwareValidationForm
+          isOpen={showValidationForm}
+          onOpenChange={setShowValidationForm}
+          onComplete={() => {
+            console.log('Validation form completed, refetching data');
+            fetchDashboardData();
+            // Reset form state
+            setSelectedSerial('');
+            setShowValidationForm(false);
+          }}
+          initialSerial={selectedSerial}
+        />
+      )}
+      {showAssignmentForm && (
+        <StudentAssignmentForm
+          isOpen={showAssignmentForm}
+          onOpenChange={setShowAssignmentForm}
+          onComplete={() => {
+            console.log('Assignment form completed, refetching data');
+            fetchDashboardData();
+            // Reset form state
+            setSelectedSerial('');
+            setShowAssignmentForm(false);
+          }}
+          initialSerial={selectedSerial}
+        />
+      )}
     </div>
   );
 }

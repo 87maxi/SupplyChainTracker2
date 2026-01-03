@@ -31,7 +31,7 @@ export const useSupplyChainService = () => {
       const roleBase = role.replace('_ROLE', '') as ContractRoleName;
       return await roleMapper.getRoleHash(roleBase);
     }
-    
+
     // Si es un nombre de rol básico (FABRICANTE)
     return await roleMapper.getRoleHash(role);
   }, []);
@@ -75,10 +75,10 @@ export const useSupplyChainService = () => {
       const roleHash = await getRoleHashForName(role);
       const members = await supplyChainService.read<string[]>('getAllMembers', [roleHash]);
       const roleName = typeof role === 'string' && role.endsWith('_ROLE') ? role : `${role}_ROLE`;
-      return { 
-        role: roleName as ContractRoles, 
-        members, 
-        count: members.length 
+      return {
+        role: roleName as ContractRoles,
+        members,
+        count: members.length
       };
     } catch (error) {
       console.error('Error in getRoleMembers:', error);
@@ -229,9 +229,9 @@ export const useSupplyChainService = () => {
   }, []);
 
   // Netbook operations
-  const auditHardware = useCallback(async (serial: string, passed: boolean, reportHash: string, userAddress: Address) => {
+  const auditHardware = useCallback(async (serial: string, passed: boolean, reportHash: string, metadata: string) => {
     try {
-      const result = await supplyChainService.auditHardware(serial, passed, reportHash, userAddress);
+      const result = await supplyChainService.auditHardware(serial, passed, reportHash, metadata);
       return result;
     } catch (error) {
       console.error('Error in auditHardware:', error);
@@ -239,9 +239,9 @@ export const useSupplyChainService = () => {
     }
   }, []);
 
-  const registerNetbooks = useCallback(async (serials: string[], batches: string[], specs: string[], userAddress: Address) => {
+  const registerNetbooks = useCallback(async (serials: string[], batches: string[], specs: string[], metadata: string[]) => {
     try {
-      const result = await supplyChainService.registerNetbooks(serials, batches, specs, userAddress);
+      const result = await supplyChainService.registerNetbooks(serials, batches, specs, metadata);
       return result;
     } catch (error) {
       console.error('Error in registerNetbooks:', error);
@@ -250,27 +250,27 @@ export const useSupplyChainService = () => {
   }, []);
 
   // Netbook operations
-  const validateSoftware = useCallback(async (serial: string, osVersion: string, passed: boolean, userAddress: Address) => {
+  const validateSoftware = useCallback(async (serial: string, osVersion: string, passed: boolean, metadata: string) => {
     try {
-      const result = await supplyChainService.validateSoftware(serial, osVersion, passed, userAddress);
+      const result = await supplyChainService.validateSoftware(serial, osVersion, passed, metadata);
       return result;
     } catch (error) {
       console.error('Error in validateSoftware:', error);
       return { success: false, error: (error as Error).message };
     }
   }, []);
-  
+
   // Netbook operations
-  const assignToStudent = useCallback(async (serial: string, schoolHash: string, studentHash: string, userAddress: Address) => {
+  const assignToStudent = useCallback(async (serial: string, schoolHash: string, studentHash: string, metadata: string) => {
     try {
-      const result = await supplyChainService.assignToStudent(serial, schoolHash, studentHash, userAddress);
+      const result = await supplyChainService.assignToStudent(serial, schoolHash, studentHash, metadata);
       return result;
     } catch (error) {
       console.error('Error in assignToStudent:', error);
       return { success: false, error: (error as Error).message };
     }
   }, []);
-  
+
   // Balance operations
   const getAccountBalance = useCallback(async (userAddress: Address): Promise<string> => {
     try {

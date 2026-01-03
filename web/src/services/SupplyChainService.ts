@@ -348,6 +348,69 @@ export class SupplyChainService extends BaseContractService {
   // Operaciones de lectura
 
   /**
+   * Obtiene todos los números de serie registrados
+   * @returns Array de números de serie
+   */
+  getAllSerialNumbers = async (): Promise<string[]> => {
+    return await this.readCacheable('getAllSerialNumbers', () =>
+      this.read<string[]>('getAllSerialNumbers', [])
+    );
+  };
+
+  /**
+   * Obtiene el estado actual de una netbook
+   * @param serial Número de serie
+   * @returns Estado de la netbook
+   */
+  getNetbookState = async (serial: string): Promise<string> => {
+    return await this.readCacheable(`getNetbookState:${serial}`, async () => {
+      // El contrato devuelve un enum (uint8), lo convertimos a string si es necesario
+      // O si el contrato devuelve string, lo usamos directo.
+      // Asumiendo que el frontend espera el string del enum.
+      const stateEnum = await this.read<number>('getNetbookState', [serial]);
+      const states = ['FABRICADA', 'HW_APROBADO', 'SW_VALIDADO', 'DISTRIBUIDA'];
+      return states[stateEnum] || 'UNKNOWN';
+    });
+  };
+
+  /**
+   * Obtiene conteos de miembros por rol
+   * @returns Objeto con conteos
+   */
+  getRoleCounts = async (): Promise<Record<string, number>> => {
+    // Esta función es un helper que agrega datos de varios roles
+    // Podríamos implementarla llamando a getRoleMemberCount para cada rol
+    const roles = ['FABRICANTE_ROLE', 'AUDITOR_HW_ROLE', 'TECNICO_SW_ROLE', 'ESCUELA_ROLE'];
+    const counts: Record<string, number> = {};
+
+    await Promise.all(roles.map(async (role) => {
+      try {
+        const roleHash = await this.getRoleByName(role);
+        const count = await this.read<bigint>('getRoleMemberCount', [roleHash]);
+        counts[role] = Number(count);
+      } catch (e) {
+        counts[role] = 0;
+      }
+    }));
+
+    return counts;
+  };
+
+  /**
+   * Verifica la conexión con la blockchain
+   * @returns True si hay conexión
+   */
+  checkConnection = async (): Promise<boolean> => {
+    try {
+      const { publicClient } = await import('@/lib/blockchain/client');
+      await publicClient.getBlockNumber();
+      return true;
+    } catch (error) {
+      return false;
+    }
+  };
+
+  /**
    * Verifica si una cuenta tiene un rol específico
    * @param roleHash Hash del rol
    * @param userAddress Dirección del usuario

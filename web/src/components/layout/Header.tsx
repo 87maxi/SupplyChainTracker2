@@ -77,21 +77,26 @@ export const Header = () => {
               {/* Badges de roles - Solo en desktop */}
               {!rolesLoading && activeRoleNames.length > 0 && (
                 <div className="hidden lg:flex items-center space-x-2">
-                  {activeRoleNames.slice(0, 2).map((roleName) => (
-                    <Badge
-                      key={roleName}
-                      variant={getRoleBadgeVariant(roleName)}
-                      className="px-2.5 py-1 text-xs gap-1"
-                    >
-                      <User className="h-3 w-3" />
-                      {formatRoleNameForDisplay(roleName)}
-                    </Badge>
-                  ))}
-                  {activeRoleNames.length > 2 && (
-                    <Badge variant="outline" className="px-2 py-1 text-xs">
-                      +{activeRoleNames.length - 2}
-                    </Badge>
-                  )}
+                  {/* Mostrar solo el rol principal según prioridad */}
+                  {(() => {
+                    const primaryRole = activeRoleNames.find(r => r === 'DEFAULT_ADMIN_ROLE') ||
+                      activeRoleNames.find(r => r === 'FABRICANTE_ROLE') ||
+                      activeRoleNames.find(r => r === 'AUDITOR_HW_ROLE') ||
+                      activeRoleNames.find(r => r === 'TECNICO_SW_ROLE') ||
+                      activeRoleNames.find(r => r === 'ESCUELA_ROLE');
+
+                    if (!primaryRole) return null;
+
+                    return (
+                      <Badge
+                        variant={getRoleBadgeVariant(primaryRole)}
+                        className="px-2.5 py-1 text-xs gap-1"
+                      >
+                        <User className="h-3 w-3" />
+                        {formatRoleNameForDisplay(primaryRole)}
+                      </Badge>
+                    );
+                  })()}
                 </div>
               )}
             </>

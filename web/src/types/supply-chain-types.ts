@@ -13,3 +13,10 @@ export interface Netbook {
   distributionTimestamp: string;
   currentState: string;
 }
+
+export interface AllRolesSummary {
+  [key: string]: {
+    count: number;
+    members: string[];
+  };
+}
