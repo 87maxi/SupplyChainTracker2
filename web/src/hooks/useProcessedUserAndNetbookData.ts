@@ -46,22 +46,30 @@ export const useProcessedUserAndNetbookData = (): ProcessedData => {
 
           // Mapeo de estados (enum a string)
           const states = ['FABRICADA', 'HW_APROBADO', 'SW_VALIDADO', 'DISTRIBUIDA'];
-          const currentStateStr = states[Number(report.currentState)] || 'UNKNOWN';
+
+          // Robust mapping: handle both array (positional) and object (named) returns
+          const getVal = (obj: any, key: string, index: number) => {
+            if (Array.isArray(obj)) return obj[index];
+            return obj[key];
+          };
+
+          const currentStateNum = Number(getVal(report, 'currentState', 12));
+          const currentStateStr = states[currentStateNum] || 'UNKNOWN';
 
           // Mapeo al tipo Netbook de la UI
           return {
-            serialNumber: report.serialNumber,
-            batchId: report.batchId,
-            initialModelSpecs: report.initialModelSpecs,
-            hwAuditor: report.hwAuditor,
-            hwIntegrityPassed: report.hwIntegrityPassed,
-            hwReportHash: report.hwReportHash,
-            swTechnician: report.swTechnician,
-            osVersion: report.osVersion,
-            swValidationPassed: report.swValidationPassed,
-            destinationSchoolHash: report.destinationSchoolHash,
-            studentIdHash: report.studentIdHash,
-            distributionTimestamp: report.distributionTimestamp.toString(),
+            serialNumber: getVal(report, 'serialNumber', 0),
+            batchId: getVal(report, 'batchId', 1),
+            initialModelSpecs: getVal(report, 'initialModelSpecs', 2),
+            hwAuditor: getVal(report, 'hwAuditor', 3),
+            hwIntegrityPassed: getVal(report, 'hwIntegrityPassed', 4),
+            hwReportHash: getVal(report, 'hwReportHash', 5),
+            swTechnician: getVal(report, 'swTechnician', 6),
+            osVersion: getVal(report, 'osVersion', 7),
+            swValidationPassed: getVal(report, 'swValidationPassed', 8),
+            destinationSchoolHash: getVal(report, 'destinationSchoolHash', 9),
+            studentIdHash: getVal(report, 'studentIdHash', 10),
+            distributionTimestamp: getVal(report, 'distributionTimestamp', 11).toString(),
             currentState: currentStateStr
           } as Netbook;
         } catch (e) {

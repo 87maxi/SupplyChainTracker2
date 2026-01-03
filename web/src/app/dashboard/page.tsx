@@ -111,11 +111,12 @@ export default function ManagerDashboard() {
   // const [loading, setLoading] = useState(true);
 
   // Utilizar datos de estadísticas desde MongoDB en lugar del conteo directo
+  // Calcular estadísticas reales desde los datos de la blockchain
   const summary = {
-    FABRICADA: netbookStatsData?.production || 0,
-    HW_APROBADO: netbookStatsData?.distribution || 0,
-    SW_VALIDADO: netbookStatsData?.retail || 0,
-    DISTRIBUIDA: netbookStatsData?.sold || 0
+    FABRICADA: netbooksTable.filter(n => n.currentState === 'FABRICADA').length,
+    HW_APROBADO: netbooksTable.filter(n => n.currentState === 'HW_APROBADO').length,
+    SW_VALIDADO: netbooksTable.filter(n => n.currentState === 'SW_VALIDADO').length,
+    DISTRIBUIDA: netbooksTable.filter(n => n.currentState === 'DISTRIBUIDA').length
   };
 
   // Utilizar usuarios y netbooks ya definidos anteriormente
@@ -251,7 +252,7 @@ export default function ManagerDashboard() {
           {/* Renderizar las tablas con filtros */}
           <div className="grid gap-8 md:grid-cols-2">
             <UserDataTable
-              data={users}
+              data={users as any}
               onFilterChange={handleUserFilterChange}
             />
             <NetbookDataTable

@@ -450,14 +450,14 @@ export class SupplyChainService extends BaseContractService {
       const roleMap: Record<string, `0x${string}`> = {
         // Formas completas con _ROLE
         'FABRICANTE_ROLE': '0xbe0c84bfff967b2deb88bd0540d4a796d0ebfdcb72262ced26f1892b419e6457',
-        'AUDITOR_HW_ROLE': '0xce753e7c853089350e34b8434ff812f399831b374f4519b7b881d82a3cf1b057',
+        'AUDITOR_HW_ROLE': '0x49c0376dc7caa3eab0c186e9bc20bf968b0724fea74a37706c35f59bc5d8b15b',
         'TECNICO_SW_ROLE': '0xeeb4ddf6a0e2f06cb86713282a0b88ee789709e92a08b9e9b4ce816bbb13fcaf',
         'ESCUELA_ROLE': '0xa8f5858ea94a9ede7bc5dd04119dcc24b3b02a20be15d673993d8b6c2a901ef9',
         'ADMIN': '0x0000000000000000000000000000000000000000000000000000000000000000',
 
         // Formas abreviadas sin _ROLE (para compatibilidad)
         'FABRICANTE': '0xbe0c84bfff967b2deb88bd0540d4a796d0ebfdcb72262ced26f1892b419e6457',
-        'AUDITOR_HW': '0xce753e7c853089350e34b8434ff812f399831b374f4519b7b881d82a3cf1b057',
+        'AUDITOR_HW': '0x49c0376dc7caa3eab0c186e9bc20bf968b0724fea74a37706c35f59bc5d8b15b',
         'TECNICO_SW': '0xeeb4ddf6a0e2f06cb86713282a0b88ee789709e92a08b9e9b4ce816bbb13fcaf',
         'ESCUELA': '0xa8f5858ea94a9ede7bc5dd04119dcc24b3b02a20be15d673993d8b6c2a901ef9'
       };

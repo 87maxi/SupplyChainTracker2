@@ -1,3 +1,5 @@
+export type NetbookState = 'FABRICADA' | 'HW_APROBADO' | 'SW_VALIDADO' | 'DISTRIBUIDA' | 'UNKNOWN';
+
 export interface Netbook {
   serialNumber: string;
   batchId: string;
