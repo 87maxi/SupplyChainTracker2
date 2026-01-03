@@ -7,8 +7,9 @@ import { ActivityLogger } from '@/lib/activity-logger';
 import { ContractRoles } from '@/types/contract';
 import { Address } from 'viem';
 
-// Instancia única del servicio (singleton)
-const roleService = new RoleService();
+// La instancia se creará con los parámetros necesarios desde el componente que use el hook
+// No podemos crear una instancia singleton aquí porque necesitamos la cuenta del usuario
+let roleService: RoleService | null = null;
 
 /**
  * Hook personalizado para gestionar roles en el contrato inteligente
@@ -17,6 +18,9 @@ const roleService = new RoleService();
 export const useRoleContract = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState<Record<string, boolean>>({});
+  
+  // Obtener el estado de la cuenta del usuario
+  const { address: userAddress, isConnected } = useAccount();
 
   /**
    * Estado de carga para una operación específica
@@ -211,6 +215,18 @@ export const useRoleContract = () => {
     }
   }, [handleError, setLoadingState]);
 
+  // Inicializar el servicio de roles cuando tengamos la dirección
+  useEffect(() => {
+    if (userAddress && isConnected && !roleService) {
+      roleService = new RoleService(
+        NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS as `0x${string}`,
+        SupplyChainTrackerABI,
+        config,
+        userAddress
+      );
+    }
+  }, [userAddress, isConnected]);
+
   return {
     hasRole,
     grantRole,
@@ -222,3 +238,9 @@ export const useRoleContract = () => {
     handleError
   };
 }
+
+// Importaciones adicionales necesarias
+import { useAccount } from 'wagmi';
+import { NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS } from '@/lib/env';
+import SupplyChainTrackerABI from '@/lib/contracts/abi/SupplyChainTracker.json';
+import { config } from '@/lib/wagmi/config';

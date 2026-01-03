@@ -4,18 +4,18 @@ import { z } from 'zod';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Loader2, Check, AlertCircle } from 'lucide-react';
 import { validateSoftware } from '@/lib/contracts/SupplyChainContract';
 import { useProcessedUserAndNetbookData } from '@/hooks/useProcessedUserAndNetbookData';
@@ -24,7 +24,7 @@ import { useProcessedUserAndNetbookData } from '@/hooks/useProcessedUserAndNetbo
 const validationFormSchema = z.object({
   serialNumber: z.string().min(1, 'El número de serie es requerido').max(50, 'El número de serie es demasiado largo'),
   osVersion: z.string().min(1, 'La versión del sistema operativo es requerida').max(50, 'La versión del sistema operativo es demasiado larga'),
-  passed: z.boolean().default(false),
+  passed: z.boolean(),
   notes: z.string().max(1000, 'Las notas no pueden exceder 1000 caracteres').optional()
 });
 
@@ -39,11 +39,11 @@ interface SoftwareValidationFormProps {
   initialSerial?: string;
 }
 
-export function SoftwareValidationForm({ 
-  isOpen, 
-  onOpenChange, 
-  onComplete, 
-  initialSerial 
+export function SoftwareValidationForm({
+  isOpen,
+  onOpenChange,
+  onComplete,
+  initialSerial
 }: SoftwareValidationFormProps) {
   const { toast } = useToast();
   const { refetch: refetchDashboardData } = useProcessedUserAndNetbookData();
@@ -68,30 +68,30 @@ export function SoftwareValidationForm({
   const onSubmit = async (data: ValidationFormValues) => {
     setIsSubmitting(true);
     setSubmitStatus('idle');
-    
+
     try {
       // Llama a la función del contrato para validar el software
       const txHash = await validateSoftware(data.serialNumber, data.osVersion, data.passed);
-      
+
       toast({
         title: 'Éxito',
         description: `Software validado correctamente. Hash de transacción: ${txHash.substring(0, 8)}...${txHash.substring(txHash.length - 8)}`,
-        variant: 'success',
+        variant: 'default',
       });
-      
+
       setSubmitStatus('success');
-      
+
       // Refresca los datos del dashboard
       await refetchDashboardData();
-      
+
       // Llama a la función de completado si está definida
       if (onComplete) {
         onComplete();
       }
-      
+
       // Resetea el formulario
       reset();
-      
+
     } catch (error: any) {
       console.error('Error validating software:', error);
       toast({
@@ -104,7 +104,7 @@ export function SoftwareValidationForm({
       setIsSubmitting(false);
     }
   };
-  
+
   // Resetea el formulario cuando se cierra el diálogo
   const handleOpenChange = (open: boolean) => {
     if (!open) {
@@ -195,21 +195,36 @@ export function SoftwareValidationForm({
               )}
             </div>
           </div>
-          
+
           <DialogFooter>
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               onClick={() => handleOpenChange(false)}
               disabled={isSubmitting}
             >
               Cancelar
             </Button>
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               disabled={!isValid || isSubmitting}
               className="bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600"
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin"
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Validando...
+                </>
+              ) : (
+                <>
+                  <Check className="mr-2 h-4 w-4" />
+                  Validar Software
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

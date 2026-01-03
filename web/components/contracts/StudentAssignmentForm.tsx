@@ -4,18 +4,18 @@ import { z } from 'zod';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Loader2, Check, AlertCircle } from 'lucide-react';
 import { assignToStudent } from '@/lib/contracts/SupplyChainContract';
 import { useProcessedUserAndNetbookData } from '@/hooks/useProcessedUserAndNetbookData';
@@ -39,11 +39,11 @@ interface StudentAssignmentFormProps {
   initialSerial?: string;
 }
 
-export function StudentAssignmentForm({ 
-  isOpen, 
-  onOpenChange, 
-  onComplete, 
-  initialSerial 
+export function StudentAssignmentForm({
+  isOpen,
+  onOpenChange,
+  onComplete,
+  initialSerial
 }: StudentAssignmentFormProps) {
   const { toast } = useToast();
   const { refetch: refetchDashboardData } = useProcessedUserAndNetbookData();
@@ -68,30 +68,30 @@ export function StudentAssignmentForm({
   const onSubmit = async (data: AssignmentFormValues) => {
     setIsSubmitting(true);
     setSubmitStatus('idle');
-    
+
     try {
       // Llama a la función del contrato para asignar la netbook al estudiante
       const txHash = await assignToStudent(data.serialNumber, data.schoolHash, data.studentHash);
-      
+
       toast({
         title: 'Éxito',
         description: `Netbook asignada correctamente al estudiante. Hash de transacción: ${txHash.substring(0, 8)}...${txHash.substring(txHash.length - 8)}`,
-        variant: 'success',
+        variant: 'default',
       });
-      
+
       setSubmitStatus('success');
-      
+
       // Refresca los datos del dashboard
       await refetchDashboardData();
-      
+
       // Llama a la función de completado si está definida
       if (onComplete) {
         onComplete();
       }
-      
+
       // Resetea el formulario
       reset();
-      
+
     } catch (error: any) {
       console.error('Error assigning to student:', error);
       toast({
@@ -104,7 +104,7 @@ export function StudentAssignmentForm({
       setIsSubmitting(false);
     }
   };
-  
+
   // Resetea el formulario cuando se cierra el diálogo
   const handleOpenChange = (open: boolean) => {
     if (!open) {
@@ -195,4 +195,42 @@ export function StudentAssignmentForm({
               />
               {errors.notes && (
                 <p className="text-sm text-red-500 flex items-center gap-1 mt-1">
-                  <
+                  <AlertCircle className="h-3 w-3" />
+                  {errors.notes.message}
+                </p>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handleOpenChange(false)}
+              disabled={isSubmitting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              disabled={!isValid || isSubmitting}
+              className="bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-700 hover:to-indigo-600"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Asignando...
+                </>
+              ) : (
+                <>
+                  <Check className="mr-2 h-4 w-4" />
+                  Asignar a Estudiante
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

@@ -1,8 +1,9 @@
 // web/src/lib/blockchain/client.ts
 // Cliente unificado para conexiones blockchain usando Viem
 
-import { createPublicClient, createWalletClient, http, type PublicClient, type WalletClient } from 'viem';
-import { localhost } from 'viem/chains';
+import { createPublicClient, createWalletClient, http, custom, type PublicClient, type WalletClient, getAddress } from 'viem';
+import { anvil } from 'viem/chains';
+import { walletActions } from 'viem';
 
 // Configuración para desarrollo local con Anvil
 const ANVIL_RPC_URL = process.env.NEXT_PUBLIC_ANVIL_RPC_URL || 'http://localhost:8545';
@@ -12,7 +13,7 @@ const ANVIL_RPC_URL = process.env.NEXT_PUBLIC_ANVIL_RPC_URL || 'http://localhost
  * No requiere conexión de wallet
  */
 export const publicClient: PublicClient = createPublicClient({
-  chain: localhost,
+  chain: anvil,
   transport: http(ANVIL_RPC_URL, {
     timeout: 30000, // 30 segundos timeout para desarrollo
     retryCount: 3,  // Reintentos automáticos
@@ -26,13 +27,35 @@ export const publicClient: PublicClient = createPublicClient({
  * Cliente de wallet para operaciones de escritura
  * Requiere conexión de wallet
  */
-export const getWalletClient = async (): Promise<WalletClient> => {
-  // En desarrollo, usamos el cliente básico
-  // En producción, Wagmi se encargará de la conexión real
+export const getWalletClient = async (account?: `0x${string}`): Promise<WalletClient> => {
+  // En el navegador, preferimos usar window.ethereum si está disponible
+  const isBrowser = typeof window !== 'undefined' && !!window.ethereum;
+  const transport = isBrowser ? custom(window.ethereum) : http(ANVIL_RPC_URL);
+
+  if (account) {
+    try {
+      const normalizedAccount = getAddress(account);
+
+      const client = createWalletClient({
+        chain: anvil,
+        transport,
+        account: normalizedAccount
+      }).extend(walletActions);
+
+      return client;
+    } catch (error) {
+      console.error('Error al crear cliente de wallet con cuenta:', error);
+      return createWalletClient({
+        chain: anvil,
+        transport
+      }).extend(walletActions);
+    }
+  }
+
   return createWalletClient({
-    chain: localhost,
-    transport: http(ANVIL_RPC_URL)
-  });
+    chain: anvil,
+    transport
+  }).extend(walletActions);
 };
 
 /**

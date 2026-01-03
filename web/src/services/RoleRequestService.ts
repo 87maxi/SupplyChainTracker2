@@ -5,7 +5,8 @@
 
 import { SupplyChainService } from './SupplyChainService';
 import { RoleService } from './contracts/role.service';
-import { roleMapper } from '@/lib/roleMapping';
+import { roleMapper, RoleName } from '@/lib/roleMapping';
+import { Role } from './contracts/role.service';
 
 // Import the contract constants and ABI
 import { ROLE_HASHES } from '@/lib/constants/roles';
@@ -13,7 +14,36 @@ import SupplyChainTrackerABI from '@/lib/contracts/abi/SupplyChainTracker.json';
 
 // Import config and env variables
 import { config } from '@/lib/wagmi/config';
-import { NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS } from '@/lib/env';
+import { NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS, validateAddress } from '@/lib/env';
+import { useAccount } from 'wagmi';
+
+/**
+ * Helper function to get the currently connected account from the wallet
+ * @returns The connected account address or null if not connected
+ */
+async function getConnectedAccount(): Promise<`0x${string}` | null> {
+  if (typeof window === 'undefined' || !window.ethereum) {
+    console.error('[RoleRequestService] No ethereum provider found');
+    return null;
+  }
+
+  try {
+    const accounts = await window.ethereum.request({
+      method: 'eth_requestAccounts'
+    }) as string[];
+
+    if (!accounts || accounts.length === 0) {
+      console.error('[RoleRequestService] No accounts found');
+      return null;
+    }
+
+    console.log('[RoleRequestService] Connected account:', accounts[0]);
+    return accounts[0] as `0x${string}`;
+  } catch (error) {
+    console.error('[RoleRequestService] Error getting connected account:', error);
+    return null;
+  }
+}
 
 // Mock data structure for role requests (would come from database in original implementation)
 export interface RoleRequest {
@@ -23,6 +53,7 @@ export interface RoleRequest {
   signature: string;
   status: 'pending' | 'approved' | 'rejected';
   createdAt: string;
+  updatedAt?: string;  // Added to fix TypeScript error
   transactionHash?: string;
 }
 
@@ -35,7 +66,8 @@ let roleRequests: RoleRequest[] = [];
 const roleService = new RoleService(
   NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS as `0x${string}`,
   SupplyChainTrackerABI,
-  config
+  config,
+  undefined  // La cuenta se proporcionará en tiempo de ejecución
 );
 
 // Use the role mapper for consistent role name handling
@@ -72,11 +104,11 @@ export const RoleRequestService = {
       status: 'pending',
       createdAt: new Date().toISOString()
     };
-    
+
     roleRequests.push(newRequest);
     localStorage.setItem('role_requests', JSON.stringify(roleRequests));
   },
-  
+
   /**
    * Get all role requests
    * @returns All role requests
@@ -89,50 +121,119 @@ export const RoleRequestService = {
     }
     return [...roleRequests];
   },
-  
+
   /**
    * Update status of a role request
    * @param id Request ID
    * @param status New status
    * @returns Promise that resolves when the status is updated
    */
-  async updateRoleRequestStatus(id: string, status: 'approved' | 'rejected'): Promise<void> {
+  async updateRoleRequestStatus(id: string, status: 'approved' | 'rejected'): Promise<RoleRequest> {
     const request = roleRequests.find(r => r.id === id);
     if (!request) {
       throw new Error('Role request not found');
     }
-    
+
     if (status === 'approved') {
       // Use the role service to grant the actual role
       try {
-        // Use the role mapper to get role hash
-        const roleHash = await roleMapperInstance.getRoleHash(request.role);
-        
-        // Grant role through the contract
-        const result = await roleService.grantRole(roleHash as unknown as Role, request.userAddress as `0x${string}`);
-        
+        // ✓ CORRECCIÓN: Obtener la cuenta del administrador conectado
+        const adminAccount = await getConnectedAccount();
+
+        if (!adminAccount) {
+          throw new Error('No hay cuenta de administrador conectada. Por favor conecta tu wallet.');
+        }
+
+        console.log('[RoleRequestService] Granting role with admin account:', {
+          adminAccount,
+          targetUser: request.userAddress,
+          requestedRole: request.role
+        });
+
+        if (!NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS) {
+          throw new Error('La dirección del contrato no está configurada (NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS)');
+        }
+
+        // ✓ Crear RoleService con la cuenta del ADMIN, no del usuario
+        const adminRoleService = new RoleService(
+          NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS as `0x${string}`,
+          SupplyChainTrackerABI,
+          config,
+          adminAccount as `0x${string}`  // ✓ Cuenta del admin que ejecuta la transacción
+        );
+
+        // Normalizar el nombre del rol
+        const normalizedRoleName = roleMapperInstance.normalizeRoleName(request.role);
+        console.log('[RoleRequestService] Normalized role name:', normalizedRoleName, 'from request role:', request.role);
+
+        // Convertir a la clave del rol
+        // Usar el tipo Role del servicio de roles que es compatible con ROLE_HASHES
+        const roleKeyMap: Record<string, Role> = {
+          'FABRICANTE_ROLE': 'FABRICANTE',
+          'AUDITOR_HW_ROLE': 'AUDITOR_HW',
+          'TECNICO_SW_ROLE': 'TECNICO_SW',
+          'ESCUELA_ROLE': 'ESCUELA',
+          'DEFAULT_ADMIN_ROLE': 'ADMIN'
+        };
+
+        // Get the role key that corresponds to the normalized role name
+        const roleKey = roleKeyMap[normalizedRoleName];
+
+        // If we found a valid role key, use it; otherwise use ADMIN as fallback
+        const role: Role = roleKey || 'ADMIN';
+        console.log('[RoleRequestService] Mapped role key:', role, 'for normalized name:', normalizedRoleName);
+
+        // ✓ Otorgar rol al usuario solicitante usando el servicio del admin
+        console.log('[RoleRequestService] Attempting to grant role:', {
+          role,
+          roleHash: ROLE_HASHES[role as keyof typeof ROLE_HASHES],
+          targetUser: request.userAddress,
+          executingAs: adminAccount
+        });
+
+        const result = await adminRoleService.grantRole(
+          role,
+          request.userAddress as `0x${string}`  // ✓ Usuario que recibe el rol
+        );
+
+        console.log('[RoleRequestService] Role grant result:', result);
+
         if (result.success && result.txHash) {
           // Update request with transaction hash
           request.transactionHash = result.txHash;
-          
-          console.log(`Rol ${request.role} otorgado exitosamente a ${request.userAddress}. Tx hash: ${result.txHash}`);
+
+          console.log(`[RoleRequestService] ✓ Rol ${request.role} otorgado exitosamente a ${request.userAddress}. Tx hash: ${result.txHash}`);
         } else {
-          console.error('Error otorgando rol:', result.message || 'No se pudo otorgar el rol');
-          return; // Don't update status if grant failed
+          const errorMsg = result.message || 'No se pudo otorgar el rol';
+          console.error('[RoleRequestService] Error otorgando rol:', errorMsg);
+          throw new Error(errorMsg);
         }
       } catch (error) {
-        console.error('Error granting role:', error);
-        console.error('Error otorgando rol:', error instanceof Error ? error.message : 'Error al otorgar el rol');
-        return; // Don't update status if grant failed
+        // Log the full error for debugging
+        console.error('[RoleRequestService] CRITICAL ERROR during role grant:', error);
+
+        const errorDetails = {
+          message: error instanceof Error ? error.message : String(error),
+          request,
+          adminAccount: await getConnectedAccount().catch(() => 'error getting account'),
+          contractAddress: NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS
+        };
+
+        console.error('[RoleRequestService] Error details:', errorDetails);
+
+        // Re-lanzar el error para que el hook lo maneje
+        throw error;
       }
     }
-    
+
     request.status = status;
     request.updatedAt = new Date().toISOString();
-    
+
     localStorage.setItem('role_requests', JSON.stringify(roleRequests));
+
+    return request;
   },
-  
+
   /**
    * Delete a role request
    * @param id Request ID to delete

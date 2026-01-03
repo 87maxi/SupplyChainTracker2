@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useWeb3 } from '@/hooks/useWeb3';
-import { useSupplyChainService } from '@/hooks/useRoleCallsManager';
+import { useSupplyChainService } from '@/hooks/useSupplyChainService';
 import { useState } from 'react';
 import { eventBus, EVENTS } from '@/lib/events';
 import { ToastAction } from '@/components/ui/toast';
@@ -26,7 +26,7 @@ const availableRoles = [
 type RoleValue = typeof availableRoles[number]['value'];
 
 export const RoleManagementSection = () => {
-  const { handleGrantRole } = useSupplyChainService();
+  const { grantRole } = useSupplyChainService();
   const { toast } = useToast();
 
   const [selectedRole, setSelectedRole] = useState<RoleValue>('FABRICANTE_ROLE');
@@ -48,8 +48,8 @@ export const RoleManagementSection = () => {
     try {
       // Use roleMapper to convert role name to hash
       const roleHash = await roleMapper.getRoleHash(selectedRole);
-      const result = await handleGrantRole(newMemberAddress as `0x${string}`, selectedRole as RoleName);
-      
+      const result = await grantRole(selectedRole as RoleName, newMemberAddress as `0x${string}`);
+
       if (result.success) {
         toast({
           title: "Éxito",

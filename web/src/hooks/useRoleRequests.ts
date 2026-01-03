@@ -62,22 +62,22 @@ export function useRoleRequests() {
       status: 'pending',
       timestamp: Date.now()
     };
-    
+
     setPendingRequests(prev => [...prev, newRequest]);
-    
+
     toast({
       title: "Solicitud enviada",
       description: `Tu solicitud para el rol ${request.role} ha sido registrada.`,
     });
-    
+
     return newRequest;
   };
 
   // Update request status
   const updateRequestStatus = (requestId: string, status: RoleRequest['status'], transactionHash?: string) => {
-    setPendingRequests(prev => 
-      prev.map(req => 
-        req.id === requestId 
+    setPendingRequests(prev =>
+      prev.map(req =>
+        req.id === requestId
           ? { ...req, status, transactionHash }
           : req
       )
@@ -96,7 +96,7 @@ export function useRoleRequests() {
       if (!window.ethereum) {
         throw new Error('No se encontró una wallet conectada. Por favor conecta MetaMask u otra wallet compatible.');
       }
-      
+
       try {
         // Request account access if needed
         await window.ethereum.request({ method: 'eth_requestAccounts' });
@@ -106,31 +106,34 @@ export function useRoleRequests() {
 
       // Use the actual RoleRequestService to handle the blockchain interaction
       try {
-        await RoleRequestService.updateRoleRequestStatus(requestId, 'approved');
+        const result = await RoleRequestService.updateRoleRequestStatus(requestId, 'approved');
+        console.log('[useRoleRequests] Approval result:', result);
+
+        toast({
+          title: 'Confirmado en Blockchain',
+          description: `La asignación de rol ha sido confirmada. Tx: ${result.transactionHash?.slice(0, 10)}...`,
+          variant: 'default'
+        });
+
+        // Update request status to approved (removed from pending)
+        setPendingRequests(prev => prev.filter(req => req.id !== requestId));
+
+        // Small delay to ensure RPC consistency
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Invalidate cached role data to force refresh
+        queryClient.invalidateQueries({ queryKey: ['roles'] });
+        queryClient.invalidateQueries({ queryKey: ['userRoles'] });
+        queryClient.invalidateQueries({ queryKey: ['roleMembers'] });
+
+        // Emit event through event bus to notify all components about role update
+        eventBus.emit(EVENTS.ROLE_UPDATED, { address: userAddress, role });
+
+        return result;
       } catch (error) {
         console.error('[useRoleRequests] Failed to update role request status:', error);
         throw error;
       }
-      
-      toast({
-        title: 'Confirmado en Blockchain',
-        description: 'La asignación de rol ha sido confirmada.',
-        variant: 'default'
-      });
-
-      // Update request status to approved (removed from pending)
-      // This will trigger the useEffect that saves to localStorage
-      setPendingRequests(prev => prev.filter(req => req.id !== requestId));
-
-      // Invalidate cached role data to force refresh
-      queryClient.invalidateQueries({ queryKey: ['roles'] });
-      queryClient.invalidateQueries({ queryKey: ['userRoles'] });
-      queryClient.invalidateQueries({ queryKey: ['roleMembers'] });
-
-      // Emit event through event bus to notify all components about role update
-      eventBus.emit(EVENTS.ROLE_UPDATED, { address: userAddress, role });
-
-      return hash;
     },
     onMutate: async ({ requestId, role, userAddress }) => {
       // Cancel any outgoing refetches
@@ -162,7 +165,7 @@ export function useRoleRequests() {
     },
     onError: (err, variables, context) => {
       console.error('[useRoleRequests] Approval failed:', err);
-      
+
       // Rollback to previous state if mutation fails
       if (context?.previousRequests) {
         setPendingRequests(context.previousRequests);
@@ -204,7 +207,7 @@ export function useRoleRequests() {
     mutationFn: async (requestId: string) => {
       // Update request status to rejected
       setPendingRequests(prev => prev.filter(req => req.id !== requestId));
-      
+
       toast({
         title: 'Solicitud rechazada',
         description: 'La solicitud ha sido eliminada de la lista.',
@@ -234,7 +237,7 @@ export function useRoleRequests() {
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       setPendingRequests(prev => prev.filter(req => req.id !== id));
-      
+
       toast({
         title: 'Éxito',
         description: 'Solicitud eliminada correctamente',

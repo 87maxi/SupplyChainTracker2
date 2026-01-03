@@ -28,51 +28,47 @@ export class ErrorHandler {
    * @returns AppError con mensaje y código adecuado
    */
   static handleWeb3Error(error: any): AppError {
-    // Códigos de error comunes de Web3
-    if (error?.code === 4001) {
-      return new AppError('Transacción rechazada por el usuario', 'USER_REJECTED');
-    }
-    
-    if (error?.code === -32603) {
-      return new AppError('Error interno de la red', 'INTERNAL_ERROR');
-    }
-    
-    if (error?.code === 4100) {
-      return new AppError('Permiso no concedido', 'PERMISSION_DENIED');
-    }
-    
-    if (typeof error?.message === 'string' && error.message.includes('user rejected transaction')) {
-      return new AppError('Transacción rechazada por el usuario', 'USER_REJECTED');
-    }
-    
-    if (typeof error?.message === 'string' && error.message.includes('insufficient funds')) {
-      return new AppError('Fondos insuficientes para la transacción', 'INSUFFICIENT_FUNDS');
-    }
-    
-    if (typeof error?.message === 'string' && error.message.includes('gas required exceeds allowance')) {
-      return new AppError('El gas requerido excede el límite disponible', 'GAS_LIMIT_EXCEEDED');
-    }
-    
-    // Errores de validación
-    if (typeof error?.message === 'string' &&
-        (error.message.includes('reverted with reason string') ||
-         error.message.includes('VM execution error'))) {
-      const reason = this.extractRevertReason(error.message);
-      return new AppError(`Transacción revertida: ${reason}`, 'TRANSACTION_REVERTED', error);
-    }
-    
-    // Error genérico
+    console.error('ErrorHandler: Handling Web3 Error:', error);
+
+    // Si el error ya es un AppError, devolverlo
     if (error instanceof AppError) {
       return error;
     }
-    
-    const errorMessage = error?.message && typeof error.message === 'string' 
-      ? error.message 
-      : 'Ocurrió un error desconocido';
-    
+
+    // Extraer mensaje de error de diferentes formatos posibles
+    const message = error?.message || error?.details || (typeof error === 'string' ? error : 'Error desconocido');
+    const code = error?.code || 'UNKNOWN_ERROR';
+
+    // Códigos de error comunes de Web3
+    if (code === 4001 || message.includes('user rejected transaction')) {
+      return new AppError('Transacción rechazada por el usuario', 'USER_REJECTED', error);
+    }
+
+    if (code === -32603) {
+      return new AppError('Error interno de la red (posible revert)', 'INTERNAL_ERROR', error);
+    }
+
+    if (code === 4100 || message.includes('PERMISSION_DENIED')) {
+      return new AppError('Permiso no concedido', 'PERMISSION_DENIED', error);
+    }
+
+    if (message.includes('insufficient funds')) {
+      return new AppError('Fondos insuficientes para la transacción', 'INSUFFICIENT_FUNDS', error);
+    }
+
+    if (message.includes('gas required exceeds allowance')) {
+      return new AppError('El gas requerido excede el límite disponible', 'GAS_LIMIT_EXCEEDED', error);
+    }
+
+    // Errores de validación / Revert
+    if (message.includes('reverted') || message.includes('VM execution error')) {
+      const reason = this.extractRevertReason(message);
+      return new AppError(`Transacción revertida: ${reason}`, 'TRANSACTION_REVERTED', error);
+    }
+
     return new AppError(
-      errorMessage, 
-      'UNKNOWN_ERROR', 
+      message,
+      code.toString(),
       error
     );
   }
@@ -88,12 +84,12 @@ export class ErrorHandler {
     if (reasonMatch && reasonMatch[1]) {
       return reasonMatch[1];
     }
-    
+
     const revertMatch = message.match(/reverted: (.+?)(?:,|$)/);
     if (revertMatch && revertMatch[1]) {
       return revertMatch[1];
     }
-    
+
     return 'Error desconocido';
   }
 
@@ -104,7 +100,7 @@ export class ErrorHandler {
    */
   static logError(error: unknown, context?: Record<string, unknown>): void {
     console.error('Error registrado:', { error, context });
-    
+
     // Aquí se podría integrar con servicios de monitoreo como Sentry, Rollbar, etc.
     // if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
     //   Sentry.captureException(error, { contexts: { additional: context } });

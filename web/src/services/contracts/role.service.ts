@@ -2,21 +2,16 @@
 // Servicio para manejar operaciones de roles de acceso en SupplyChainTracker
 
 import { BaseContractService } from './base-contract.service';
-import { ROLE_HASHES } from '@/lib/constants/roles';
 import { PublicClient, WalletClient, formatEther, parseEther } from 'viem';
-import { Config } from 'wagmi';
+import { Config, useAccount } from 'wagmi';
 import { CacheService } from '@/lib/cache/cache-service';
 import { ErrorHandler } from '@/lib/errors/error-handler';
-import { ActivityLogger } from '@/lib/activity-logger';
-import { serverRpc } from '@/lib/api/serverRpc';
+import { ActivityLogger, logActivity } from '@/lib/activity-logger';
+import { publicClient, getWalletClient } from '@/lib/blockchain/client';
+import { anvil } from 'viem/chains';
+import { ROLE_HASHES, RoleName } from '@/lib/constants/roles';
 
-// Tipos para los roles
-export type Role = 
-  | 'FABRICANTE'
-  | 'AUDITOR_HW'
-  | 'TECNICO_SW'
-  | 'ESCUELA'
-  | 'ADMIN';
+export type Role = RoleName;
 
 // Enumeración para los estados de procesamiento
 export enum ProcessingState {
@@ -40,6 +35,7 @@ export class RoleService extends BaseContractService {
   private config: Config;
   private publicClient: PublicClient | null = null;
   private walletClient: WalletClient | null = null;
+  private account: `0x${string}` | null = null;
   private readonly ROLE_NAMES = [
     'FABRICANTE',
     'AUDITOR_HW',
@@ -54,10 +50,12 @@ export class RoleService extends BaseContractService {
   constructor(
     contractAddress: `0x${string}`,
     abi: any,
-    config: Config
+    config: Config,
+    account?: `0x${string}`
   ) {
     super(contractAddress, abi);
     this.config = config;
+    this.account = account ?? null;
     // Client initialization is handled by the base contract service
     // through the virtual readContract/writeContract methods
   }
@@ -123,10 +121,23 @@ export class RoleService extends BaseContractService {
    */
   async grantRole(role: Role, account: `0x${string}`): Promise<ProcessingResult> {
     try {
+      // ✓ Validar que tenemos una cuenta de admin configurada
+      if (!this.account) {
+        throw new Error('No hay cuenta configurada para ejecutar grantRole. Se requiere una cuenta con permisos de administrador.');
+      }
+
+      console.log('=== grantRole Debug ===', {
+        executingAccount: this.account,  // Quien ejecuta (debe ser admin)
+        targetAccount: account,           // Quien recibe el rol
+        role,
+        roleHash: ROLE_HASHES[role],
+        contractAddress: this.contractAddress
+      });
+
       this.setProcessingState(ProcessingState.PROCESSING, `Asignando rol ${role}...`);
 
       const roleHash = ROLE_HASHES[role] as `0x${string}`;
-      
+
       const { hash } = await this.write(
         'grantRole',
         [roleHash, account],
@@ -137,15 +148,24 @@ export class RoleService extends BaseContractService {
         }
       );
 
+      console.log('Transacción de asignación de rol enviada:', { hash });
+
+      this.setProcessingState(ProcessingState.PROCESSING, `Esperando confirmación de red para ${role}...`);
+
+      // Esperar confirmación de la transacción
+      const receipt = await this.waitForTransaction(hash);
+      console.log('Transacción confirmada:', receipt);
+
       this.setProcessingState(ProcessingState.SUCCESS, `Rol ${role} asignado exitosamente`);
-      
+
       // Registrar actividad
-      await ActivityLogger.logActivity({
-        type: 'role_grant',
-        details: {
-          role,
-          account
-        }
+      logActivity({
+        type: 'role_change',
+        action: 'grant_role',
+        description: `Asignado rol ${role} a ${account}`,
+        address: account,
+        status: 'success',
+        metadata: { role }
       });
 
       return {
@@ -154,12 +174,21 @@ export class RoleService extends BaseContractService {
         txHash: hash
       };
     } catch (error) {
-      const errorMessage = ErrorHandler.handleWeb3Error(error);
-      this.setProcessingState(ProcessingState.ERROR, `Error: ${errorMessage}`);
-      
+      const errorObj = ErrorHandler.handleWeb3Error(error);
+      this.setProcessingState(ProcessingState.ERROR, `Error: ${errorObj.message}`);
+
+      console.error('Error detallado en grantRole:', error);
+      console.error('Contexto de la falla:', {
+        functionName: 'grantRole',
+        role,
+        account,
+        roleHash: ROLE_HASHES[role],
+        errorObj
+      });
+
       return {
         success: false,
-        message: errorMessage
+        message: errorObj.message
       };
     }
   }
@@ -169,10 +198,17 @@ export class RoleService extends BaseContractService {
    */
   async revokeRole(role: Role, account: `0x${string}`): Promise<ProcessingResult> {
     try {
+      console.log('Intentando revocar rol:', {
+        role,
+        account,
+        roleHash: ROLE_HASHES[role],
+        contractAddress: this.contractAddress
+      });
+
       this.setProcessingState(ProcessingState.PROCESSING, `Revocando rol ${role}...`);
 
       const roleHash = ROLE_HASHES[role] as `0x${string}`;
-      
+
       const { hash } = await this.write(
         'revokeRole',
         [roleHash, account],
@@ -183,15 +219,24 @@ export class RoleService extends BaseContractService {
         }
       );
 
+      console.log('Transacción de revocación de rol enviada:', { hash });
+
+      this.setProcessingState(ProcessingState.PROCESSING, `Esperando confirmación de red para revocar ${role}...`);
+
+      // Esperar confirmación de la transacción
+      const receipt = await this.waitForTransaction(hash);
+      console.log('Transacción de revocación confirmada:', receipt);
+
       this.setProcessingState(ProcessingState.SUCCESS, `Rol ${role} revocado exitosamente`);
-      
+
       // Registrar actividad
-      await ActivityLogger.logActivity({
-        type: 'role_revoke',
-        details: {
-          role,
-          account
-        }
+      logActivity({
+        type: 'role_change',
+        action: 'revoke_role',
+        description: `Revocado rol ${role} de ${account}`,
+        address: account,
+        status: 'success',
+        metadata: { role }
       });
 
       return {
@@ -200,13 +245,45 @@ export class RoleService extends BaseContractService {
         txHash: hash
       };
     } catch (error) {
-      const errorMessage = ErrorHandler.handleWeb3Error(error);
-      this.setProcessingState(ProcessingState.ERROR, `Error: ${errorMessage}`);
-      
+      const errorObj = ErrorHandler.handleWeb3Error(error);
+      this.setProcessingState(ProcessingState.ERROR, `Error: ${errorObj.message}`);
+
+      console.error('Error detallado en revokeRole:', error);
+      console.error('Contexto de la falla:', {
+        functionName: 'revokeRole',
+        role,
+        account,
+        roleHash: ROLE_HASHES[role],
+        errorObj
+      });
+
       return {
         success: false,
-        message: errorMessage
+        message: errorObj.message
       };
+    }
+  }
+
+  /**
+   * Obtiene información del cliente de wallet para debugging
+   */
+  async getWalletClientDebugInfo(account?: `0x${string}`) {
+    try {
+      const walletClient = account
+        ? await getWalletClient(account)
+        : await getWalletClient();
+
+      return {
+        hasClient: !!walletClient,
+        hasWriteContract: !!walletClient?.writeContract,
+        hasAccount: !!walletClient?.account,
+        accountAddress: walletClient?.account?.address,
+        chainId: walletClient?.chain?.id,
+        transport: walletClient?.transport?.name
+      };
+    } catch (error) {
+      console.error('Error getting wallet client debug info:', error);
+      return null;
     }
   }
 
@@ -236,7 +313,7 @@ export class RoleService extends BaseContractService {
   }
 
   // Implementaciones necesarias de BaseContractService
-  
+
   protected async readContract({
     address,
     abi,
@@ -248,11 +325,8 @@ export class RoleService extends BaseContractService {
     functionName: string;
     args: any[];
   }) {
-    if (!this.publicClient) {
-      throw new Error('Public client no disponible');
-    }
-    
-    return await this.publicClient.readContract({
+    // Usamos el cliente público del contexto global
+    return await publicClient.readContract({
       address,
       abi,
       functionName,
@@ -270,20 +344,121 @@ export class RoleService extends BaseContractService {
     abi: any;
     functionName: string;
     args: any[];
-  }) {
-    if (!this.walletClient) {
-      throw new Error('Wallet client no disponible');
+  }): Promise<`0x${string}`> {
+    // Validamos que todos los parámetros requeridos estén presentes
+    if (!this.account) {
+      throw new Error('Cuenta no disponible. Debe proporcionar una cuenta para operaciones de escritura');
     }
-    
-    const { hash } = await this.walletClient.writeContract({
-      address,
-      abi,
+
+    if (!address) {
+      throw new Error('Dirección del contrato no disponible');
+    }
+
+    if (!abi) {
+      throw new Error('ABI no disponible');
+    }
+
+    if (!functionName) {
+      throw new Error('Nombre de función no disponible');
+    }
+
+    // Creamos el cliente de wallet con la cuenta
+    const walletClient = await getWalletClient(this.account);
+
+    if (!walletClient) {
+      throw new Error('No se pudo crear el cliente de wallet');
+    }
+
+    // Validamos que el walletClient tenga la capacidad de writeContract
+    if (!walletClient.writeContract) {
+      throw new Error('El cliente de wallet no tiene el método writeContract');
+    }
+
+    // Log para debugging del estado del cliente
+    // Log detallado para debugging del estado del cliente
+    console.log('=== Wallet Client Debug Info ===', {
+      walletClientType: typeof walletClient,
+      hasWriteContract: !!walletClient.writeContract,
+      writeContractType: typeof walletClient.writeContract,
+      hasAccount: !!walletClient.account,
+      accountAddress: walletClient.account?.address,
+      accountType: typeof walletClient.account,
+      chainId: walletClient.chain?.id,
+      transport: walletClient.transport?.name,
       functionName,
-      args
+      argsLength: args?.length ?? 0,
+      argsType: typeof args,
+      args: args ?? []
     });
-    
-    return hash;
+
+    // Validación adicional de parámetros
+    if (!args || !Array.isArray(args)) {
+      console.error('Parámetros de contrato no válidos:', args);
+      throw new Error('Parámetros de contrato deben ser un array válido');
+    }
+
+    // Validación específica por función
+    if (functionName === 'grantRole' || functionName === 'revokeRole') {
+      if (args.length !== 2) {
+        console.error(`Número incorrecto de parámetros para ${functionName}:`, args);
+        throw new Error(`Se requieren exactamente 2 parámetros para ${functionName}`);
+      }
+
+      // Validamos que los hashes de roles sean válidos
+      if (!args[0] || typeof args[0] !== 'string' || !args[0].startsWith('0x')) {
+        throw new Error('Hash de rol inválido');
+      }
+
+      // Validamos que la dirección sea válida
+      if (!args[1] || typeof args[1] !== 'string' || !args[1].startsWith('0x') || args[1].length !== 42) {
+        throw new Error('Dirección inválida');
+      }
+    }
+
+    // Validación adicional de que el cliente de wallet está completamente inicializado
+    if (!walletClient || !walletClient.writeContract) {
+      throw new Error('Cliente de wallet no disponible o sin método writeContract');
+    }
+
+    try {
+      console.log('=== writeContract params ===', {
+        address,
+        functionName,
+        args: args ?? [],
+        walletClientExists: !!walletClient,
+        writeContractExists: !!walletClient.writeContract,
+        accountAddress: walletClient.account?.address
+      });
+
+      const hash = await walletClient.writeContract({
+        address,
+        abi,
+        functionName,
+        args: args || [],
+        chain: anvil,
+        account: this.account as `0x${string}`
+      });
+
+      console.log('Transacción exitosa:', {
+        transactionHash: hash,
+        functionName,
+        args
+      });
+
+      return hash;
+    } catch (error) {
+      console.error('Error en writeContract:', {
+        error,
+        functionName,
+        args,
+        address,
+        hasWalletClient: !!walletClient,
+        hasWriteContract: !!walletClient?.writeContract
+      });
+      throw error;
+    }
   }
+
 
   protected async waitForTransactionReceipt({
     hash,
@@ -292,22 +467,15 @@ export class RoleService extends BaseContractService {
     hash: `0x${string}`;
     timeout: number;
   }) {
-    if (!this.publicClient) {
-      throw new Error('Public client no disponible');
-    }
-    
-    return await this.publicClient.waitForTransactionReceipt({
+    // Usamos el cliente público del contexto global
+    return await publicClient.waitForTransactionReceipt({
       hash,
       timeout
     });
   }
 
   protected async getAddress(): Promise<string> {
-    const { address } = useAccount({ config: this.config });
-    if (!address) {
-      throw new Error('No hay cuenta conectada');
-    }
-    return address;
+    return this.account || '0x0000000000000000000000000000000000000000';
   }
 
   // Métodos adicionales específicos del servicio de roles

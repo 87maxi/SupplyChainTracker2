@@ -3,6 +3,7 @@
 import { BaseContractService } from './contracts/base-contract.service';
 import SupplyChainTrackerABI from '@/lib/contracts/abi/SupplyChainTracker.json';
 import { NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS } from '@/lib/env';
+import { anvil } from 'viem/chains';
 import { contractRegistry, ContractConfig } from './contract-registry.service';
 
 // Tipos de retorno
@@ -41,13 +42,13 @@ export class SupplyChainService extends BaseContractService {
     }
     return SupplyChainService.instance;
   }
-  
+
   // Servicio singleton - now using a getter to ensure proper initialization
   static get supplyChainService(): SupplyChainService {
     return SupplyChainService.getInstance();
   }
-  
-    constructor() {
+
+  constructor() {
     // Validar que la dirección del contrato esté disponible
     if (!NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS) {
       console.error('❌ NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS no está configurado');
@@ -56,15 +57,15 @@ export class SupplyChainService extends BaseContractService {
 
     // Aseguramos que el ABI esté en formato de array
     const abi = Array.isArray(SupplyChainTrackerABI) ? SupplyChainTrackerABI : Object.values(SupplyChainTrackerABI).flat();
-    
+
     super(
       NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS as `0x${string}`,
       abi,
       'supply-chain'
     );
 
-    console.log('✅ SupplyChainService inicializado con dirección:', this.contractAddress);    
-    
+    console.log('✅ SupplyChainService inicializado con dirección:', this.contractAddress);
+
     // Registrar este contrato en el registro
     const config: ContractConfig = {
       address: this.contractAddress,
@@ -73,7 +74,7 @@ export class SupplyChainService extends BaseContractService {
     };
     contractRegistry.register('SupplyChainTracker', this, config);
   }
-  
+
   // Reemplazo de métodos abstractos de BaseContractService
   protected async readContract({
     address,
@@ -99,7 +100,7 @@ export class SupplyChainService extends BaseContractService {
       throw error;
     }
   }
-  
+
   protected async writeContract({
     address,
     abi,
@@ -118,7 +119,9 @@ export class SupplyChainService extends BaseContractService {
         address,
         abi,
         functionName,
-        args
+        args,
+        chain: anvil,
+        account: (await this.getAddress()) as `0x${string}`
       });
       return hash;
     } catch (error) {
@@ -126,7 +129,7 @@ export class SupplyChainService extends BaseContractService {
       throw error;
     }
   }
-  
+
   protected async waitForTransactionReceipt({
     hash,
     timeout
@@ -145,7 +148,7 @@ export class SupplyChainService extends BaseContractService {
       throw error;
     }
   }
-  
+
   protected async getAddress(): Promise<string> {
     // En desarrollo, podríamos usar una cuenta predeterminada
     // En producción, esto vendría de la wallet conectada
@@ -153,7 +156,7 @@ export class SupplyChainService extends BaseContractService {
   }
 
   // Operaciones de netbooks
-  
+
   /**
    * Registra una o múltiples netbooks
    * @param serials Números de serie
@@ -164,14 +167,14 @@ export class SupplyChainService extends BaseContractService {
   registerNetbooks = async (serials: string[], batches: string[], specs: string[], metadata: string[]): Promise<TransactionResult> => {
     try {
       const { hash } = await this.write('registerNetbooks', [serials, batches, specs, metadata]);
-      
+
       // Esperar confirmación
       const receipt = await this.waitForTransaction(hash);
-      
+
       // Invalidar caché
       this.invalidateCache('getAllSerialNumbers');
       this.invalidateCache('getNetbookState');
-      
+
       return {
         success: true,
         hash
@@ -194,14 +197,14 @@ export class SupplyChainService extends BaseContractService {
   auditHardware = async (serial: string, passed: boolean, reportHash: string, metadata: string): Promise<TransactionResult> => {
     try {
       const { hash } = await this.write('auditHardware', [serial, passed, reportHash, metadata]);
-      
+
       // Esperar confirmación
       const receipt = await this.waitForTransaction(hash);
-      
+
       // Invalidar caché
       this.invalidateCache(`getNetbookState:${serial}`);
       this.invalidateCache(`getNetbookReport:${serial}`);
-      
+
       return {
         success: true,
         hash
@@ -224,14 +227,14 @@ export class SupplyChainService extends BaseContractService {
   validateSoftware = async (serial: string, osVersion: string, passed: boolean, metadata: string): Promise<TransactionResult> => {
     try {
       const { hash } = await this.write('validateSoftware', [serial, osVersion, passed, metadata]);
-      
+
       // Esperar confirmación
       const receipt = await this.waitForTransaction(hash);
-      
+
       // Invalidar caché
       this.invalidateCache(`getNetbookState:${serial}`);
       this.invalidateCache(`getNetbookReport:${serial}`);
-      
+
       return {
         success: true,
         hash
@@ -254,14 +257,14 @@ export class SupplyChainService extends BaseContractService {
   assignToStudent = async (serial: string, schoolHash: string, studentHash: string, metadata: string): Promise<TransactionResult> => {
     try {
       const { hash } = await this.write('assignToStudent', [serial, schoolHash, studentHash, metadata]);
-      
+
       // Esperar confirmación
       const receipt = await this.waitForTransaction(hash);
-      
+
       // Invalidar caché
       this.invalidateCache(`getNetbookState:${serial}`);
       this.invalidateCache(`getNetbookReport:${serial}`);
-      
+
       return {
         success: true,
         hash
@@ -275,7 +278,7 @@ export class SupplyChainService extends BaseContractService {
   };
 
   // Operaciones de roles
-  
+
   /**
    * Otorga un rol a una dirección
    * @param roleHash Hash del rol
@@ -285,14 +288,14 @@ export class SupplyChainService extends BaseContractService {
   grantRole = async (roleHash: `0x${string}`, userAddress: `0x${string}`): Promise<TransactionResult> => {
     try {
       const { hash } = await this.write('grantRole', [roleHash, userAddress]);
-      
+
       // Esperar confirmación
       const receipt = await this.waitForTransaction(hash);
-      
+
       // Invalidar caché
       this.invalidateCache(`hasRole:${roleHash}:${userAddress}`);
       this.invalidateCache('getAllRolesSummary');
-      
+
       return {
         success: true,
         hash
@@ -314,14 +317,14 @@ export class SupplyChainService extends BaseContractService {
   revokeRole = async (roleHash: `0x${string}`, userAddress: `0x${string}`): Promise<TransactionResult> => {
     try {
       const { hash } = await this.write('revokeRole', [roleHash, userAddress]);
-      
+
       // Esperar confirmación
       const receipt = await this.waitForTransaction(hash);
-      
+
       // Invalidar caché
       this.invalidateCache(`hasRole:${roleHash}:${userAddress}`);
       this.invalidateCache('getAllRolesSummary');
-      
+
       return {
         success: true,
         hash
@@ -335,7 +338,7 @@ export class SupplyChainService extends BaseContractService {
   };
 
   // Operaciones de lectura
-  
+
   /**
    * Verifica si una cuenta tiene un rol específico
    * @param roleHash Hash del rol
@@ -357,7 +360,7 @@ export class SupplyChainService extends BaseContractService {
         * @returns Estado de la netbook
    */
   getNetbookReport = async (serial: string): Promise<Netbook> => {
-    return await this.readCacheable(`getNetbookReport:${serial}`, () => 
+    return await this.readCacheable(`getNetbookReport:${serial}`, () =>
       this.read('getNetbookReport', [serial])
     );
   };
@@ -371,7 +374,7 @@ export class SupplyChainService extends BaseContractService {
     try {
       // En lugar de consultar al contrato, usamos las constantes predefinidas
       const roleTypeUpper = roleType.toUpperCase();
-      
+
       // Mapeo de nombres de roles comunes a sus hashes, incluyendo variantes con y sin _ROLE
       const roleMap: Record<string, `0x${string}`> = {
         // Formas completas con _ROLE
@@ -380,19 +383,19 @@ export class SupplyChainService extends BaseContractService {
         'TECNICO_SW_ROLE': '0x2ed8949af5557e2edaec784b826d9da85a22565588342ae7b736d3e8ebd76bfe',
         'ESCUELA_ROLE': '0x88a49b04486bc479c925034ad3947fb7a1dc63c11a4fc29c186b7efde141b141',
         'ADMIN': '0x0000000000000000000000000000000000000000000000000000000000000000',
-        
+
         // Formas abreviadas sin _ROLE (para compatibilidad)
         'FABRICANTE': '0xdf8b4c520affe6d5bd668f8a16ff439b2b3fe20527c8a5d5d7cd0f17c3aa9c5d',
         'AUDITOR_HW': '0xed8e002819d8cf1a851ca1db7d19c6848d2559e61bf51cf90a464bd116556c00',
         'TECNICO_SW': '0x2ed8949af5557e2edaec784b826d9da85a22565588342ae7b736d3e8ebd76bfe',
         'ESCUELA': '0x88a49b04486bc479c925034ad3947fb7a1dc63c11a4fc29c186b7efde141b141'
       };
-      
+
       const hash = roleMap[roleTypeUpper];
       if (!hash) {
         throw new Error(`Role type not found: ${roleType}`);
       }
-      
+
       return hash;
     } catch (error) {
       console.error('Error getting role by name:', error);

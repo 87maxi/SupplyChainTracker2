@@ -24,7 +24,7 @@ export class BaseContractService {
     this.abi = abi;
     this.cachePrefix = cachePrefix;
   }
-  
+
   /**
    * Same initialization method as in the old version
    */
@@ -42,7 +42,7 @@ export class BaseContractService {
    */
   read = async <T>(functionName: string, args: any[] = [], useCache = true): Promise<T> => {
     const cacheKey = `${this.cachePrefix}:${functionName}:${JSON.stringify(args)}`;
-    
+
     // Intentar obtener de caché si está habilitado
     if (useCache) {
       const cached = CacheService.get<T>(cacheKey);
@@ -50,7 +50,7 @@ export class BaseContractService {
         return cached;
       }
     }
-    
+
     try {
       // Usar wagmi para lectura
       const result = await this.readContract({
@@ -59,18 +59,34 @@ export class BaseContractService {
         functionName,
         args
       });
-      
+
       // Almacenar en caché si está habilitado
       if (useCache) {
         CacheService.set(cacheKey, result);
       }
-      
+
       return result as T;
     } catch (error) {
       throw ErrorHandler.handleWeb3Error(error);
     }
   }
-  
+
+  /**
+   * Lee del contrato usando caché si está disponible
+   * @param cacheKey Clave de caché
+   * @param fetcher Función para obtener datos si no hay caché
+   * @returns Datos obtenidos
+   */
+  protected async readCacheable<T>(cacheKey: string, fetcher: () => Promise<T>): Promise<T> {
+    const fullKey = `${this.cachePrefix}:${cacheKey}`;
+    const cached = CacheService.get<T>(fullKey);
+    if (cached !== null) return cached;
+
+    const result = await fetcher();
+    CacheService.set(fullKey, result);
+    return result;
+  }
+
   /**
    * Realiza una llamada de escritura al contrato
    * @param functionName Nombre de la función del contrato
@@ -86,7 +102,7 @@ export class BaseContractService {
         functionName,
         args
       });
-      
+
       // Log transaction
       this.logTransactionToAPI(Object.assign({
         transactionHash: hash,
@@ -96,13 +112,13 @@ export class BaseContractService {
       }, metadata)).catch(error => {
         console.error('Error logging transaction via API:', error);
       });
-      
+
       return { hash };
     } catch (error) {
       throw ErrorHandler.handleWeb3Error(error);
     }
   }
-  
+
   /**
    * Espera a que una transacción sea confirmada
    * @param hash Hash de la transacción
@@ -110,7 +126,7 @@ export class BaseContractService {
    * @returns Recibo de la transacción
    */
   waitForTransaction = async (
-    hash: `0x${string}`, 
+    hash: `0x${string}`,
     timeout = 60
   ) => {
     try {
@@ -118,7 +134,7 @@ export class BaseContractService {
         hash,
         timeout: timeout * 1000
       });
-      
+
       // Update transaction status
       this.updateTransactionInAPI({
         transactionHash: hash,
@@ -128,7 +144,7 @@ export class BaseContractService {
       }).catch(error => {
         console.error('Error updating transaction via API:', error);
       });
-      
+
       return receipt;
     } catch (error) {
       this.updateTransactionInAPI({
@@ -137,11 +153,11 @@ export class BaseContractService {
       }).catch(error => {
         console.error('Error updating transaction status to failed:', error);
       });
-      
+
       throw ErrorHandler.handleWeb3Error(error);
     }
   }
-  
+
   /**
    * Invalida la caché para una clave específica
    * @param keyPart Parte de la clave a invalidar
@@ -155,7 +171,7 @@ export class BaseContractService {
       console.warn('Error al invalidar caché:', error);
     }
   }
-  
+
   /**
    * Invalida toda la caché relacionada con este servicio
    */
@@ -168,7 +184,7 @@ export class BaseContractService {
       console.warn('Error al invalidar caché completa:', error);
     }
   }
-  
+
   // Wagmi hook wrappers - these will be overridden by specific service implementations
   protected async readContract({
     address,
@@ -180,10 +196,10 @@ export class BaseContractService {
     abi: any;
     functionName: string;
     args: any[];
-  }) {
+  }): Promise<any> {
     throw new Error('readContract must be implemented by specific service');
   }
-  
+
   protected async writeContract({
     address,
     abi,
@@ -194,30 +210,30 @@ export class BaseContractService {
     abi: any;
     functionName: string;
     args: any[];
-  }) {
+  }): Promise<`0x${string}`> {
     throw new Error('writeContract must be implemented by specific service');
   }
-  
+
   protected async waitForTransactionReceipt({
     hash,
     timeout
   }: {
     hash: `0x${string}`;
     timeout: number;
-  }) {
+  }): Promise<any> {
     throw new Error('waitForTransactionReceipt must be implemented by specific service');
   }
-  
+
   protected async getAddress(): Promise<string> {
     throw new Error('getAddress must be implemented by specific service');
   }
-  
+
   // Optional background operations that can be overridden
   protected logTransactionToAPI = async (data: any): Promise<void> => {
     // Default implementation - override in specific services if needed
     console.log('Transaction logged:', data);
   }
-  
+
   protected updateTransactionInAPI = async (data: any): Promise<void> => {
     // Default implementation - override in specific services if needed
     console.log('Transaction updated:', data);
