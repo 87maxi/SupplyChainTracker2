@@ -1,19 +1,6 @@
 import type { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
-
-export type Netbook = {
-  id: string
-  serialNumber: string
-  manufacturer: string
-  model: string
-  productionDate: string
-  status: string
-  ownerAddress: string
-  processor: string
-  ram: string
-  storage: string
-  display: string
-}
+import { Netbook } from "@/types/supply-chain-types"
 
 export const netbookColumns: ColumnDef<Netbook>[] = [
   {
@@ -21,68 +8,59 @@ export const netbookColumns: ColumnDef<Netbook>[] = [
     header: "S/N",
     cell: ({ row }) => {
       const serial = row.getValue("serialNumber") as string
-      return <div className='font-mono text-sm'>{serial}</div>;
+      return <div className='font-mono text-sm font-medium'>{serial}</div>;
     },
   },
   {
-    accessorKey: "manufacturer",
-    header: "Fabricante",
+    accessorKey: "batchId",
+    header: "Lote",
     cell: ({ row }) => {
-      return <div>{row.getValue("manufacturer")}</div>;
+      return <div className="text-sm text-muted-foreground">{row.getValue("batchId")}</div>;
     },
   },
   {
-    accessorKey: "model",
-    header: "Modelo",
+    accessorKey: "initialModelSpecs",
+    header: "Especificaciones",
     cell: ({ row }) => {
-      return <div>{row.getValue("model")}</div>;
+      const specs = row.getValue("initialModelSpecs") as string
+      return <div className="text-xs max-w-[200px] truncate" title={specs}>{specs}</div>;
     },
   },
   {
-    accessorKey: "productionDate",
-    header: "Producción",
+    accessorKey: "distributionTimestamp",
+    header: "Última Act.",
     cell: ({ row }) => {
-      const date = new Date(row.getValue("productionDate"))
-      return <div>{date.toLocaleDateString()}</div>;
+      const timestamp = row.getValue("distributionTimestamp") as string
+      // Handle timestamp if it's a unix timestamp or ISO string
+      const date = !isNaN(Number(timestamp))
+        ? new Date(Number(timestamp) * 1000)
+        : new Date(timestamp);
+
+      return <div className="text-xs text-muted-foreground">{date.toLocaleDateString()}</div>;
     },
   },
   {
-    accessorKey: "status",
+    accessorKey: "currentState",
     header: "Estado",
     cell: ({ row }) => {
-      const status = row.getValue("status") as string
-      const variantColors = {
-        production: "secondary",
-        distribution: "outline-glow",
-        retail: "outline",
-        sold: "success"
-      }
-      
-      return (
-        <Badge variant={variantColors[status as keyof typeof variantColors]}>
-          {status === 'production' ? 'Producción' :
-           status === 'distribution' ? 'Distribución' :
-           status === 'retail' ? 'Venta' : 'Vendido'}
-        </Badge>
-      );
+      const status = row.getValue("currentState") as string
+
+      const getStatusBadge = (status: string) => {
+        switch (status) {
+          case 'FABRICADA':
+            return <Badge variant="secondary">Fabricada</Badge>;
+          case 'HW_APROBADO':
+            return <Badge variant="success">HW Aprobado</Badge>;
+          case 'SW_VALIDADO':
+            return <Badge variant="warning">SW Validado</Badge>;
+          case 'DISTRIBUIDA':
+            return <Badge variant="outline">Distribuida</Badge>;
+          default:
+            return <Badge variant="outline">{status}</Badge>;
+        }
+      };
+
+      return getStatusBadge(status);
     },
   },
-  {
-    accessorKey: "ownerAddress",
-    header: "Propietario",
-    cell: ({ row }) => {
-      const address = row.getValue("ownerAddress") as string
-      if (!address) return <div className='font-mono text-xs'>N/A</div>;
-      return (
-        <div className='font-mono text-xs'>{address.slice(0, 6)}...{address.slice(-4)}</div>
-      );
-    },
-  },
-  {
-    accessorKey: "processor",
-    header: "Procesador",
-    cell: ({ row }) => {
-      return <div className='text-xs'>{row.getValue("processor")}</div>;
-    },
-  }
 ]

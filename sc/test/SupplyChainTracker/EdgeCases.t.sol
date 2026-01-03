@@ -19,9 +19,9 @@ contract EdgeCasesTest is Test {
     string constant BATCH = "LOT-2025-01";
     string constant SPECS = "Modelo X-256 RAM 4GB SSD 32GB";
     string constant OS_VERSION = "Linux Edu 5.1";
-    bytes32 constant SCHOOL_HASH = 0x1234000000000000000000000000000000000000000000000000000000000000;
-    bytes32 constant STUDENT_HASH = 0x5678000000000000000000000000000000000000000000000000000000000000;
-    bytes32 constant REPORT_HASH = 0x9abc000000000000000000000000000000000000000000000000000000000000;
+    bytes32 constant SCHOOL_HASH = keccak256("school");
+    bytes32 constant STUDENT_HASH = keccak256("student");
+    bytes32 constant REPORT_HASH = keccak256("report");
     string constant REGISTER_METADATA = "{\"deviceType\":\"netbook\",\"manufacturer\":\"TechCorp\",\"warrantyPeriod\":\"2 years\"}";
     string constant HARDWARE_METADATA = "{\"cpu\":\"Intel i3\",\"ram\":\"4GB\",\"ssd\":\"128GB\",\"batteryHealth\":\"98%\",\"externalDevices\": [\"mouse\",\"keyboard\"]}";
     string constant SOFTWARE_METADATA = "{\"os\":\"Linux Edu\",\"kernel\":\"5.10\",\"installedApps\": [\"LibreOffice\",\"Firefox\",\"GIMP\"],\"securityPatchLevel\":\"2025-01-01\"}";
@@ -112,8 +112,8 @@ contract EdgeCasesTest is Test {
         vm.prank(fabricante);
         tracker.registerNetbooks(serials, batches, specs, metadata);
 
-        assertEq(tracker.getNetbookState(SERIAL_01), SupplyChainTracker.State.FABRICADA);
-        assertEq(tracker.getNetbookState(SERIAL_02), SupplyChainTracker.State.FABRICADA);
+        assertEq(uint(tracker.getNetbookState(SERIAL_01)), uint(SupplyChainTracker.State.FABRICADA));
+        assertEq(uint(tracker.getNetbookState(SERIAL_02)), uint(SupplyChainTracker.State.FABRICADA));
         assertEq(tracker.totalNetbooks(), 2);
     }
 
@@ -160,4 +160,10 @@ contract EdgeCasesTest is Test {
         metadata[0] = REGISTER_METADATA;
 
         vm.prank(fabricante);
-        tracker.registerNetbooks
+        tracker.registerNetbooks(serials, batches, specs, metadata);
+
+        vm.prank(tecnico);
+        vm.expectRevert("Invalid state for software validation");
+        tracker.validateSoftware(SERIAL_01, OS_VERSION, true, SOFTWARE_METADATA);
+    }
+}

@@ -57,7 +57,6 @@ export function HardwareAuditForm({
 }: HardwareAuditFormProps) {
   const [serial, setSerial] = useState(initialSerial || "");
   const [passed, setPassed] = useState(true);
-  const [auditData, setAuditData] = useState<AuditFormData | null>(null);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { auditHardware } = useSupplyChainService();
@@ -71,10 +70,10 @@ export function HardwareAuditForm({
   }, [initialSerial]);
 
   const handleAudit = async () => {
-    if (!serial || !auditData) {
+    if (!serial) {
       toast({
         title: "Error",
-        description: "Primero debe completar todos los campos",
+        description: "El número de serie es obligatorio",
         variant: "destructive",
       });
       return;
@@ -83,9 +82,28 @@ export function HardwareAuditForm({
     try {
       setLoading(true);
 
+      // Collect form data directly
+      const currentAuditData: AuditFormData = {
+        serial,
+        deviceModel: (document.getElementById('deviceModel') as HTMLInputElement)?.value || '',
+        auditDate: (document.getElementById('auditDate') as HTMLInputElement)?.value || '',
+        auditorName: (document.getElementById('auditorName') as HTMLInputElement)?.value || '',
+        components: {
+          cpu: (document.getElementById('cpu') as HTMLInputElement)?.checked || false,
+          ram: (document.getElementById('ram') as HTMLInputElement)?.checked || false,
+          storage: (document.getElementById('storage') as HTMLInputElement)?.checked || false,
+          display: (document.getElementById('display') as HTMLInputElement)?.checked || false,
+          keyboard: (document.getElementById('keyboard') as HTMLInputElement)?.checked || false,
+          ports: (document.getElementById('ports') as HTMLInputElement)?.checked || false,
+          battery: (document.getElementById('battery') as HTMLInputElement)?.checked || false,
+        },
+        observations: (document.getElementById('observations') as HTMLTextAreaElement)?.value || '',
+        timestamp: new Date().toISOString()
+      };
+
       // Create a hash from the audit data for blockchain storage
       const encoder = new TextEncoder();
-      const data = encoder.encode(JSON.stringify(auditData));
+      const data = encoder.encode(JSON.stringify(currentAuditData));
       const hashBuffer = await crypto.subtle.digest('SHA-256', data);
       const hashArray = Array.from(new Uint8Array(hashBuffer));
       const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
@@ -102,7 +120,7 @@ export function HardwareAuditForm({
 
       // Create metadata object including the hash and full audit details
       const metadata = {
-        ...auditData,
+        ...currentAuditData,
         reportHash,
         auditor: address,
         type: 'hardware_audit'
@@ -123,7 +141,6 @@ export function HardwareAuditForm({
       // Reset form
       if (!initialSerial) setSerial("");
       setPassed(true);
-      setAuditData(null);
 
       onComplete();
       onOpenChange(false);
@@ -155,31 +172,6 @@ export function HardwareAuditForm({
     return "sm:max-w-[900px] h-[90vh] max-h-[90vh] flex flex-col"; // Default
   };
 
-  const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Collect form data from the form
-    const formData = {
-      serial,
-      deviceModel: (document.getElementById('deviceModel') as HTMLInputElement)?.value,
-      auditDate: (document.getElementById('auditDate') as HTMLInputElement)?.value,
-      auditorName: (document.getElementById('auditorName') as HTMLInputElement)?.value,
-      components: {
-        cpu: (document.getElementById('cpu') as HTMLInputElement)?.checked,
-        ram: (document.getElementById('ram') as HTMLInputElement)?.checked,
-        storage: (document.getElementById('storage') as HTMLInputElement)?.checked,
-        display: (document.getElementById('display') as HTMLInputElement)?.checked,
-        keyboard: (document.getElementById('keyboard') as HTMLInputElement)?.checked,
-        ports: (document.getElementById('ports') as HTMLInputElement)?.checked,
-        battery: (document.getElementById('battery') as HTMLInputElement)?.checked,
-      },
-      observations: (document.getElementById('observations') as HTMLTextAreaElement)?.value,
-      timestamp: new Date().toISOString()
-    };
-
-    setAuditData(formData);
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className={getDialogContentClass()}>
@@ -200,7 +192,7 @@ export function HardwareAuditForm({
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <form id="auditForm" onSubmit={handleFormSubmit} className="grid gap-4 md:grid-cols-2">
+                  <form id="auditForm" className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="auditSerial">Serial</Label>
                       <Input
@@ -217,13 +209,12 @@ export function HardwareAuditForm({
                       <Input
                         id="deviceModel"
                         placeholder="Intel N100, 8GB RAM, 256GB SSD"
-                        required
                       />
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="auditDate">Fecha</Label>
-                      <Input id="auditDate" type="date" required />
+                      <Input id="auditDate" type="date" />
                     </div>
 
                     <div className="space-y-2">
@@ -231,7 +222,6 @@ export function HardwareAuditForm({
                       <Input
                         id="auditorName"
                         placeholder="Nombre del auditor"
-                        required
                       />
                     </div>
 
@@ -330,7 +320,7 @@ export function HardwareAuditForm({
                 </label>
               </div>
 
-              <Button type="button" onClick={handleAudit} className="mt-4" disabled={loading || !auditData}>
+              <Button type="button" onClick={handleAudit} className="mt-4" disabled={loading}>
                 {loading ? "Registrando..." : "Registrar Auditoría"}
               </Button>
             </div>

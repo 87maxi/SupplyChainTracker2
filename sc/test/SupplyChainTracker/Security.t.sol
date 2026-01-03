@@ -18,9 +18,9 @@ contract SecurityTest is Test {
     string constant BATCH = "LOT-2025-01";
     string constant SPECS = "Modelo X-256 RAM 4GB SSD 32GB";
     string constant OS_VERSION = "Linux Edu 5.1";
-    bytes32 constant SCHOOL_HASH = 0x1234000000000000000000000000000000000000000000000000000000000000;
-    bytes32 constant STUDENT_HASH = 0x5678000000000000000000000000000000000000000000000000000000000000;
-    bytes32 constant REPORT_HASH = 0x9abc000000000000000000000000000000000000000000000000000000000000;
+    bytes32 constant SCHOOL_HASH = keccak256("school");
+    bytes32 constant STUDENT_HASH = keccak256("student");
+    bytes32 constant REPORT_HASH = keccak256("report");
     string constant REGISTER_METADATA = "{}";
     string constant HARDWARE_METADATA = "{}";
     string constant SOFTWARE_METADATA = "{}";
@@ -94,4 +94,15 @@ contract SecurityTest is Test {
         string[] memory metadata = new string[](1);
         
         serials[0] = SERIAL_01;
-        batches[0]
+        batches[0] = BATCH;
+        specs[0] = SPECS;
+        metadata[0] = REGISTER_METADATA;
+
+        vm.prank(fabricante);
+        tracker.registerNetbooks(serials, batches, specs, metadata);
+
+        vm.prank(unauthorized);
+        vm.expectRevert("Access denied: AUDITOR_HW_ROLE required");
+        tracker.auditHardware(SERIAL_01, true, REPORT_HASH, HARDWARE_METADATA);
+    }
+}

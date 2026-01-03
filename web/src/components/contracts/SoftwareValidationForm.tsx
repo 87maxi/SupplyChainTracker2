@@ -38,10 +38,10 @@ export function SoftwareValidationForm({ isOpen, onOpenChange, onComplete, initi
   }, [initialSerial]);
 
   const handleValidate = async () => {
-    if (!serial || !version) {
+    if (!serial) {
       toast({
         title: "Error",
-        description: "Por favor complete todos los campos",
+        description: "El número de serie es obligatorio",
         variant: "destructive",
       });
       return;
