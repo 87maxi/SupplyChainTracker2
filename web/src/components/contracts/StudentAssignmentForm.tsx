@@ -36,11 +36,33 @@ export function StudentAssignmentForm({ isOpen, onOpenChange, onComplete, initia
     }
   }, [initialSerial]);
 
+  const isValidBytes32 = (value: string) => {
+    return /^0x[0-9a-fA-F]{64}$/.test(value);
+  };
+
   const handleAssign = async () => {
     if (!serial || !schoolHash || !studentHash) {
       toast({
         title: "Error",
         description: "Por favor complete todos los campos",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!isValidBytes32(schoolHash)) {
+      toast({
+        title: "Error",
+        description: "El hash de la escuela debe ser un formato bytes32 válido (0x + 64 caracteres hex)",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!isValidBytes32(studentHash)) {
+      toast({
+        title: "Error",
+        description: "El hash del estudiante debe ser un formato bytes32 válido (0x + 64 caracteres hex)",
         variant: "destructive",
       });
       return;
@@ -58,8 +80,17 @@ export function StudentAssignmentForm({ isOpen, onOpenChange, onComplete, initia
         return;
       }
 
-      const result = await assignToStudent(serial, schoolHash, studentHash, address);
-      
+      const metadata = {
+        serial,
+        schoolHash,
+        studentHash,
+        assignedBy: address,
+        timestamp: new Date().toISOString(),
+        type: 'student_assignment'
+      };
+
+      const result = await assignToStudent(serial, schoolHash, studentHash, JSON.stringify(metadata));
+
       if (result.success) {
         toast({
           title: "Éxito",

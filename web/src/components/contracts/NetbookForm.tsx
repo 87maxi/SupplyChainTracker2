@@ -52,8 +52,18 @@ export function NetbookForm({ isOpen, onOpenChange, onComplete }: NetbookFormPro
         return;
       }
 
-      const result = await registerNetbooks([serial], [batch], [specs], address);
-      
+      const metadata = {
+        serial,
+        batch,
+        specs,
+        manufacturer: address,
+        timestamp: new Date().toISOString(),
+        type: 'registration'
+      };
+
+      // The contract expects string[] for metadata, one per netbook
+      const result = await registerNetbooks([serial], [batch], [specs], [JSON.stringify(metadata)]);
+
       if (result.success) {
         toast({
           title: "Éxito",

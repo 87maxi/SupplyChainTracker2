@@ -59,8 +59,17 @@ export function SoftwareValidationForm({ isOpen, onOpenChange, onComplete, initi
         return;
       }
 
-      const result = await validateSoftware(serial, version, passed, address);
-      
+      const metadata = {
+        serial,
+        osVersion: version,
+        passed,
+        technician: address,
+        timestamp: new Date().toISOString(),
+        type: 'software_validation'
+      };
+
+      const result = await validateSoftware(serial, version, passed, JSON.stringify(metadata));
+
       if (result.success) {
         toast({
           title: "Éxito",

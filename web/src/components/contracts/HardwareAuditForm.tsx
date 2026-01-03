@@ -100,8 +100,16 @@ export function HardwareAuditForm({
         return;
       }
 
-      const result = await auditHardware(serial, passed, reportHash, address);
-      
+      // Create metadata object including the hash and full audit details
+      const metadata = {
+        ...auditData,
+        reportHash,
+        auditor: address,
+        type: 'hardware_audit'
+      };
+
+      const result = await auditHardware(serial, passed, reportHash, JSON.stringify(metadata));
+
       if (result.success) {
         toast({
           title: "Registro completado",
@@ -149,7 +157,7 @@ export function HardwareAuditForm({
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Collect form data from the form
     const formData = {
       serial,
@@ -168,7 +176,7 @@ export function HardwareAuditForm({
       observations: (document.getElementById('observations') as HTMLTextAreaElement)?.value,
       timestamp: new Date().toISOString()
     };
-    
+
     setAuditData(formData);
   };
 

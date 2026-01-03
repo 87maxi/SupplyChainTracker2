@@ -3,7 +3,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, RefreshCw, Settings2 ,
+import {
+  AlertTriangle, RefreshCw, Settings2,
   Building,
   Shield,
   Users,
@@ -16,7 +17,7 @@ import { AlertTriangle, RefreshCw, Settings2 ,
   TrendingUp
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import RoleManager from '@/components/contracts/RoleManager';
+import { RoleManager } from '@/components/contracts/RoleManager';
 import { Button } from '@/components/ui/button';
 import { NetbookStatusChart } from '@/components/charts/NetbookStatusChart';
 import { UserRolesChart } from '@/components/charts/UserRolesChart';
@@ -31,7 +32,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TransactionConfirmation } from '@/components/contracts/TransactionConfirmation';
-import { truncateAddress , cn } from '@/lib/utils';
+import { truncateAddress, cn } from '@/lib/utils';
 import { getRoleHashes } from '@/lib/roleUtils';
 import { getRoleRequests, updateRoleRequestStatus, deleteRoleRequest } from '@/services/RoleRequestService';
 import { RoleRequest } from '@/types/role-request';
@@ -186,7 +187,7 @@ export function DashboardOverview({ stats: initialStats }: { stats: DashboardSta
     try {
       // Get role hashes from the contract
       const roleHashes = await getRoleHashes();
-      
+
       const [
         fabricanteCount, auditorHwCount, tecnicoSwCount, escuelaCount,
         fabricadas, hwAprobadas, swValidadas, distribuidas
@@ -274,60 +275,13 @@ export function DashboardOverview({ stats: initialStats }: { stats: DashboardSta
         throw new Error("No hay una billetera conectada");
       }
 
-      // Verify if current user is admin
-      const adminRoleHashes = await getRoleHashes();
-      const isAdmin = await SupplyChainContract.hasRole(adminRoleHashes.ADMIN, address);
-
-      if (!isAdmin) {
-        throw new Error("No tienes permisos de administrador (AccessControl)");
-      }
-
-      // Get role hashes from the contract
-      const roleHashes = await getRoleHashes();
-      
-      let roleBytes32: string;
-              // Map the role to its hash (this part remains unchanged)
-        switch (request.role) {
-        case 'fabricante': roleBytes32 = roleHashes.FABRICANTE; break;
-        case 'auditor_hw': roleBytes32 = roleHashes.AUDITOR_HW; break;
-        case 'tecnico_sw': roleBytes32 = roleHashes.TECNICO_SW; break;
-        case 'escuela': roleBytes32 = roleHashes.ESCUELA; break;
-        default: throw new Error('Rol inválido');
-      }
-
-      // Now call grantRole with the string-based function that expects the base role name without _ROLE suffix
-      // The role name we have in `request.role` is already in the correct format (e.g., 'fabricante')
-      const result = await SupplyChainContract.grantRole(request.role, request.address);
-      
-      // Wait for transaction receipt
-      if (result) {
-        const { config } = await import('@/lib/wagmi/config');
-        const { waitForTransactionReceipt } = await import('@wagmi/core');
-        const receipt = await waitForTransactionReceipt(config, { 
-          hash: result as `0x${string}`
-        });
-        
-        if (receipt.status !== 'success') {
-          throw new Error(`Transacción fallida: ${receipt.transactionHash}`);
-        }
-      }
-      
-      // El resultado ya es un hash de transacción (string)
-      // No es necesario verificar 'hash' en el objeto
-      
-      // Verificar transacción on-chain con retiro de caches
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Pequeño delay para asegurar confirmación
-      const hasRole = await SupplyChainContract.hasRole(roleBytes32, request.address);
-      if (!hasRole) {
-        throw new Error("La transacción se confirmó pero el rol no fue asignado. Verifica los logs del contrato.");
-      }
+      // Call the service to update status AND grant role on-chain
+      await updateRoleRequestStatus(request.id, 'approved');
 
       // Optimistic update: Remove request from list immediately
       setPendingRequests(prev => prev.filter(req => req.id !== request.id));
 
-      await updateRoleRequestStatus(request.id, 'approved');
-
-      // Refresh stats and roles, but NOT requests to avoid race condition with optimistic update
+      // Refresh stats and roles
       fetchDashboardData(true);
       fetchUserRoles();
 

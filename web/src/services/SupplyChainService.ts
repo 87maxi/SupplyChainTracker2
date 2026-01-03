@@ -150,9 +150,17 @@ export class SupplyChainService extends BaseContractService {
   }
 
   protected async getAddress(): Promise<string> {
-    // En desarrollo, podríamos usar una cuenta predeterminada
-    // En producción, esto vendría de la wallet conectada
-    return '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'; // Cuenta 0 de Anvil
+    if (typeof window !== 'undefined' && window.ethereum) {
+      try {
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        if (accounts && Array.isArray(accounts) && accounts.length > 0) {
+          return accounts[0];
+        }
+      } catch (error) {
+        console.error('Error requesting accounts:', error);
+      }
+    }
+    throw new Error('No se encontró una cuenta conectada. Por favor conecta tu wallet.');
   }
 
   // Operaciones de netbooks
@@ -378,17 +386,17 @@ export class SupplyChainService extends BaseContractService {
       // Mapeo de nombres de roles comunes a sus hashes, incluyendo variantes con y sin _ROLE
       const roleMap: Record<string, `0x${string}`> = {
         // Formas completas con _ROLE
-        'FABRICANTE_ROLE': '0xdf8b4c520affe6d5bd668f8a16ff439b2b3fe20527c8a5d5d7cd0f17c3aa9c5d',
-        'AUDITOR_HW_ROLE': '0xed8e002819d8cf1a851ca1db7d19c6848d2559e61bf51cf90a464bd116556c00',
-        'TECNICO_SW_ROLE': '0x2ed8949af5557e2edaec784b826d9da85a22565588342ae7b736d3e8ebd76bfe',
-        'ESCUELA_ROLE': '0x88a49b04486bc479c925034ad3947fb7a1dc63c11a4fc29c186b7efde141b141',
+        'FABRICANTE_ROLE': '0xbe0c84bfff967b2deb88bd0540d4a796d0ebfdcb72262ced26f1892b419e6457',
+        'AUDITOR_HW_ROLE': '0xce753e7c853089350e34b8434ff812f399831b374f4519b7b881d82a3cf1b057',
+        'TECNICO_SW_ROLE': '0xeeb4ddf6a0e2f06cb86713282a0b88ee789709e92a08b9e9b4ce816bbb13fcaf',
+        'ESCUELA_ROLE': '0xa8f5858ea94a9ede7bc5dd04119dcc24b3b02a20be15d673993d8b6c2a901ef9',
         'ADMIN': '0x0000000000000000000000000000000000000000000000000000000000000000',
 
         // Formas abreviadas sin _ROLE (para compatibilidad)
-        'FABRICANTE': '0xdf8b4c520affe6d5bd668f8a16ff439b2b3fe20527c8a5d5d7cd0f17c3aa9c5d',
-        'AUDITOR_HW': '0xed8e002819d8cf1a851ca1db7d19c6848d2559e61bf51cf90a464bd116556c00',
-        'TECNICO_SW': '0x2ed8949af5557e2edaec784b826d9da85a22565588342ae7b736d3e8ebd76bfe',
-        'ESCUELA': '0x88a49b04486bc479c925034ad3947fb7a1dc63c11a4fc29c186b7efde141b141'
+        'FABRICANTE': '0xbe0c84bfff967b2deb88bd0540d4a796d0ebfdcb72262ced26f1892b419e6457',
+        'AUDITOR_HW': '0xce753e7c853089350e34b8434ff812f399831b374f4519b7b881d82a3cf1b057',
+        'TECNICO_SW': '0xeeb4ddf6a0e2f06cb86713282a0b88ee789709e92a08b9e9b4ce816bbb13fcaf',
+        'ESCUELA': '0xa8f5858ea94a9ede7bc5dd04119dcc24b3b02a20be15d673993d8b6c2a901ef9'
       };
 
       const hash = roleMap[roleTypeUpper];

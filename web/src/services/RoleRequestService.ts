@@ -45,30 +45,27 @@ async function getConnectedAccount(): Promise<`0x${string}` | null> {
   }
 }
 
-// Mock data structure for role requests (would come from database in original implementation)
-export interface RoleRequest {
+import { RoleRequest } from '@/types/role-request';
+
+// ... imports ...
+
+// Internal storage interface to match what's in localStorage
+interface StoredRoleRequest {
   id: string;
   userAddress: string;
   role: string;
   signature: string;
   status: 'pending' | 'approved' | 'rejected';
   createdAt: string;
-  updatedAt?: string;  // Added to fix TypeScript error
+  updatedAt?: string;
   transactionHash?: string;
 }
 
 // Mock role requests for backward compatibility
 // Use an in-memory store for requests
-let roleRequests: RoleRequest[] = [];
+let roleRequests: StoredRoleRequest[] = [];
 
-// Create an instance of the RoleService
-// We need to create it with the proper contract address and ABI
-const roleService = new RoleService(
-  NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS as `0x${string}`,
-  SupplyChainTrackerABI,
-  config,
-  undefined  // La cuenta se proporcionará en tiempo de ejecución
-);
+// ... RoleService creation ...
 
 // Use the role mapper for consistent role name handling
 // Use the singleton instance from roleMapping
@@ -96,7 +93,7 @@ export const RoleRequestService = {
     role: string;
     signature: string;
   }): Promise<void> {
-    const newRequest: RoleRequest = {
+    const newRequest: StoredRoleRequest = {
       id: Date.now().toString(),
       userAddress: request.userAddress,
       role: request.role,
@@ -111,7 +108,7 @@ export const RoleRequestService = {
 
   /**
    * Get all role requests
-   * @returns All role requests
+   * @returns All role requests mapped to the shared type
    */
   async getRoleRequests(): Promise<RoleRequest[]> {
     // Refresh from storage
@@ -119,7 +116,18 @@ export const RoleRequestService = {
     if (stored) {
       roleRequests = JSON.parse(stored);
     }
-    return [...roleRequests];
+
+    // Map stored requests to the shared RoleRequest type
+    return roleRequests.map(req => ({
+      id: req.id,
+      address: req.userAddress, // Map userAddress to address
+      role: req.role,
+      status: req.status,
+      timestamp: new Date(req.createdAt), // Map createdAt string to timestamp Date
+      updatedAt: req.updatedAt ? new Date(req.updatedAt) : undefined,
+      signature: req.signature,
+      transactionHash: req.transactionHash
+    }));
   },
 
   /**
@@ -231,7 +239,16 @@ export const RoleRequestService = {
 
     localStorage.setItem('role_requests', JSON.stringify(roleRequests));
 
-    return request;
+    return {
+      id: request.id,
+      address: request.userAddress,
+      role: request.role,
+      status: request.status,
+      timestamp: new Date(request.createdAt),
+      updatedAt: request.updatedAt ? new Date(request.updatedAt) : undefined,
+      signature: request.signature,
+      transactionHash: request.transactionHash
+    };
   },
 
   /**
