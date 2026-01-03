@@ -326,4 +326,96 @@ contract ExhaustiveTest is Test {
 
         assertEq(tracker.totalNetbooks(), 1);
     }
+    // --- Security Tests ---
+
+    function test_Security_UnauthorizedAudit() public {
+        // Register
+        vm.startPrank(fabricante);
+        string[] memory serials = new string[](1);
+        serials[0] = SERIAL_1;
+        string[] memory batches = new string[](1);
+        batches[0] = BATCH;
+        string[] memory specs = new string[](1);
+        specs[0] = SPECS;
+        string[] memory metadata = new string[](1);
+        metadata[0] = METADATA;
+        tracker.registerNetbooks(serials, batches, specs, metadata);
+        vm.stopPrank();
+
+        // Try audit with unauthorized user
+        vm.startPrank(unauthorized);
+        vm.expectRevert("Access denied: AUDITOR_HW_ROLE required");
+        tracker.auditHardware(SERIAL_1, true, REPORT_HASH, METADATA);
+        vm.stopPrank();
+    }
+
+    function test_Security_UnauthorizedValidation() public {
+        // Register & Audit
+        vm.startPrank(fabricante);
+        string[] memory serials = new string[](1);
+        serials[0] = SERIAL_1;
+        string[] memory batches = new string[](1);
+        batches[0] = BATCH;
+        string[] memory specs = new string[](1);
+        specs[0] = SPECS;
+        string[] memory metadata = new string[](1);
+        metadata[0] = METADATA;
+        tracker.registerNetbooks(serials, batches, specs, metadata);
+        vm.stopPrank();
+
+        vm.prank(auditor);
+        tracker.auditHardware(SERIAL_1, true, REPORT_HASH, METADATA);
+
+        // Try validate with unauthorized user
+        vm.startPrank(unauthorized);
+        vm.expectRevert("Access denied: TECNICO_SW_ROLE required");
+        tracker.validateSoftware(SERIAL_1, OS_VERSION, true, METADATA);
+        vm.stopPrank();
+    }
+
+    function test_Security_UnauthorizedAssignment() public {
+        // Register, Audit & Validate
+        vm.startPrank(fabricante);
+        string[] memory serials = new string[](1);
+        serials[0] = SERIAL_1;
+        string[] memory batches = new string[](1);
+        batches[0] = BATCH;
+        string[] memory specs = new string[](1);
+        specs[0] = SPECS;
+        string[] memory metadata = new string[](1);
+        metadata[0] = METADATA;
+        tracker.registerNetbooks(serials, batches, specs, metadata);
+        vm.stopPrank();
+
+        vm.prank(auditor);
+        tracker.auditHardware(SERIAL_1, true, REPORT_HASH, METADATA);
+
+        vm.prank(tecnico);
+        tracker.validateSoftware(SERIAL_1, OS_VERSION, true, METADATA);
+
+        // Try assign with unauthorized user
+        vm.startPrank(unauthorized);
+        vm.expectRevert("Access denied: ESCUELA_ROLE required");
+        tracker.assignToStudent(SERIAL_1, SCHOOL_HASH, STUDENT_HASH, METADATA);
+        vm.stopPrank();
+    }
+
+    function test_Security_RoleSeparation() public {
+        // Register
+        vm.startPrank(fabricante);
+        string[] memory serials = new string[](1);
+        serials[0] = SERIAL_1;
+        string[] memory batches = new string[](1);
+        batches[0] = BATCH;
+        string[] memory specs = new string[](1);
+        specs[0] = SPECS;
+        string[] memory metadata = new string[](1);
+        metadata[0] = METADATA;
+        tracker.registerNetbooks(serials, batches, specs, metadata);
+        
+        // Manufacturer tries to Audit (should fail)
+        vm.expectRevert("Access denied: AUDITOR_HW_ROLE required");
+        tracker.auditHardware(SERIAL_1, true, REPORT_HASH, METADATA);
+        vm.stopPrank();
+    }
 }

@@ -48,8 +48,8 @@ contract FunctionalTests is Test {
         vm.deal(admin, 1 ether);
         vm.deal(unauthorized, 1 ether);
         
-        // Grant roles (from admin)
-        vm.startPrank(admin);
+        // Grant roles (from contract deployer, which has DEFAULT_ADMIN_ROLE)
+        vm.startPrank(address(this));
         tracker.grantRole(tracker.DEFAULT_ADMIN_ROLE(), admin);
         tracker.grantRole(tracker.FABRICANTE_ROLE(), fabricante);
         tracker.grantRole(tracker.AUDITOR_HW_ROLE(), auditor);
