@@ -19,19 +19,42 @@ contract ExhaustiveTest is Test {
     string constant SERIAL_2 = "NB-002";
     string constant BATCH = "BATCH-2025";
     string constant SPECS = "Intel i5, 8GB RAM";
-    string constant METADATA = "{\"color\":\"black\"}";
-    
+    string constant METADATA = '{"color":"black"}';
+
     bytes32 constant REPORT_HASH = keccak256("report");
     bytes32 constant SCHOOL_HASH = keccak256("school");
     bytes32 constant STUDENT_HASH = keccak256("student");
     string constant OS_VERSION = "v1.0";
 
-    event NetbookRegistered(string indexed serialNumber, string batchId, address indexed manufacturer);
-    event HardwareAudited(string indexed serialNumber, address indexed auditor, bool passed);
-    event SoftwareValidated(string indexed serialNumber, address indexed technician, string osVersion);
-    event NetbookAssigned(string indexed serialNumber, bytes32 schoolHash, bytes32 studentHash);
-    event RoleRequested(uint256 indexed requestId, address indexed user, bytes32 indexed role);
-    event RoleRequestUpdated(uint256 indexed requestId, SupplyChainTracker.RequestStatus status);
+    event NetbookRegistered(
+        string indexed serialNumber,
+        string batchId,
+        address indexed manufacturer
+    );
+    event HardwareAudited(
+        string indexed serialNumber,
+        address indexed auditor,
+        bool passed
+    );
+    event SoftwareValidated(
+        string indexed serialNumber,
+        address indexed technician,
+        string osVersion
+    );
+    event NetbookAssigned(
+        string indexed serialNumber,
+        bytes32 schoolHash,
+        bytes32 studentHash
+    );
+    event RoleRequested(
+        uint256 indexed requestId,
+        address indexed user,
+        bytes32 indexed role
+    );
+    event RoleRequestUpdated(
+        uint256 indexed requestId,
+        SupplyChainTracker.RequestStatus status
+    );
 
     function setUp() public {
         admin = makeAddr("admin");
@@ -43,7 +66,7 @@ contract ExhaustiveTest is Test {
 
         vm.startPrank(admin);
         tracker = new SupplyChainTracker();
-        
+
         tracker.grantRole(tracker.FABRICANTE_ROLE(), fabricante);
         tracker.grantRole(tracker.AUDITOR_HW_ROLE(), auditor);
         tracker.grantRole(tracker.TECNICO_SW_ROLE(), tecnico);
@@ -55,7 +78,7 @@ contract ExhaustiveTest is Test {
 
     function test_Roles_AdminCanGrantAndRevoke() public {
         vm.startPrank(admin);
-        
+
         address newUser = makeAddr("newUser");
         bytes32 role = tracker.FABRICANTE_ROLE();
 
@@ -66,7 +89,7 @@ contract ExhaustiveTest is Test {
         // Revoke
         tracker.revokeRole(role, newUser);
         assertFalse(tracker.hasRole(role, newUser));
-        
+
         vm.stopPrank();
     }
 
@@ -74,12 +97,15 @@ contract ExhaustiveTest is Test {
         address other = makeAddr("other");
         bytes32 role = tracker.FABRICANTE_ROLE();
         vm.startPrank(unauthorized);
-        
+
         vm.expectRevert(); // AccessControl revert
         tracker.grantRole(role, other);
         vm.stopPrank();
-        
-        assertFalse(tracker.hasRole(role, other), "Role was granted by unauthorized user!");
+
+        assertFalse(
+            tracker.hasRole(role, other),
+            "Role was granted by unauthorized user!"
+        );
     }
 
     // --- Role Request Tests ---
@@ -97,9 +123,16 @@ contract ExhaustiveTest is Test {
         vm.stopPrank();
 
         assertEq(tracker.getRoleRequestsCount(), 1);
-        
+
         // Verify request data
-        (uint256 id, address user, bytes32 reqRole, SupplyChainTracker.RequestStatus status, uint256 timestamp, string memory sig) = tracker.roleRequests(0);
+        (
+            uint256 id,
+            address user,
+            bytes32 reqRole,
+            SupplyChainTracker.RequestStatus status,
+            ,
+            string memory sig
+        ) = tracker.roleRequests(0);
         assertEq(id, 0);
         assertEq(user, requester);
         assertEq(reqRole, role);
@@ -115,7 +148,7 @@ contract ExhaustiveTest is Test {
 
         // Verify role granted
         assertTrue(tracker.hasRole(role, requester));
-        (,,, status,,) = tracker.roleRequests(0);
+        (, , , status, , ) = tracker.roleRequests(0);
         assertEq(uint(status), uint(SupplyChainTracker.RequestStatus.APPROVED));
     }
 
@@ -133,7 +166,8 @@ contract ExhaustiveTest is Test {
         vm.stopPrank();
 
         assertFalse(tracker.hasRole(role, requester));
-        (,,, SupplyChainTracker.RequestStatus status,,) = tracker.roleRequests(0);
+        (, , , SupplyChainTracker.RequestStatus status, , ) = tracker
+            .roleRequests(0);
         assertEq(uint(status), uint(SupplyChainTracker.RequestStatus.REJECTED));
     }
 
@@ -145,7 +179,7 @@ contract ExhaustiveTest is Test {
         vm.startPrank(unauthorized);
         vm.expectRevert(); // AccessControl revert
         tracker.approveRoleRequest(0);
-        
+
         vm.expectRevert(); // AccessControl revert
         tracker.rejectRoleRequest(0);
         vm.stopPrank();
@@ -165,7 +199,7 @@ contract ExhaustiveTest is Test {
 
         vm.startPrank(admin);
         tracker.approveRoleRequest(0);
-        
+
         vm.expectRevert(SupplyChainTracker.RequestNotPending.selector);
         tracker.approveRoleRequest(0);
         vm.stopPrank();
@@ -187,10 +221,13 @@ contract ExhaustiveTest is Test {
 
         vm.expectEmit(true, false, true, true);
         emit NetbookRegistered(SERIAL_1, BATCH, fabricante);
-        
+
         tracker.registerNetbooks(serials, batches, specs, metadata);
 
-        assertEq(uint(tracker.getNetbookState(SERIAL_1)), uint(SupplyChainTracker.State.FABRICADA));
+        assertEq(
+            uint(tracker.getNetbookState(SERIAL_1)),
+            uint(SupplyChainTracker.State.FABRICADA)
+        );
         vm.stopPrank();
     }
 
@@ -209,7 +246,7 @@ contract ExhaustiveTest is Test {
 
     function test_Registration_RevertIfDuplicate() public {
         vm.startPrank(fabricante);
-        
+
         string[] memory serials = new string[](1);
         serials[0] = SERIAL_1;
         string[] memory batches = new string[](1);
@@ -228,13 +265,18 @@ contract ExhaustiveTest is Test {
 
     function test_Registration_RevertIfUnauthorized() public {
         vm.startPrank(unauthorized);
-        
+
         string[] memory serials = new string[](1);
         string[] memory batches = new string[](1);
         string[] memory specs = new string[](1);
         string[] memory metadata = new string[](1);
 
-        vm.expectRevert(abi.encodeWithSelector(SupplyChainTracker.Unauthorized.selector, tracker.FABRICANTE_ROLE()));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                SupplyChainTracker.Unauthorized.selector,
+                tracker.FABRICANTE_ROLE()
+            )
+        );
         tracker.registerNetbooks(serials, batches, specs, metadata);
         vm.stopPrank();
     }
@@ -260,7 +302,10 @@ contract ExhaustiveTest is Test {
         vm.expectEmit(true, true, false, true);
         emit HardwareAudited(SERIAL_1, auditor, true);
         tracker.auditHardware(SERIAL_1, true, REPORT_HASH, METADATA);
-        assertEq(uint(tracker.getNetbookState(SERIAL_1)), uint(SupplyChainTracker.State.HW_APROBADO));
+        assertEq(
+            uint(tracker.getNetbookState(SERIAL_1)),
+            uint(SupplyChainTracker.State.HW_APROBADO)
+        );
         vm.stopPrank();
 
         // 3. Validate
@@ -268,7 +313,10 @@ contract ExhaustiveTest is Test {
         vm.expectEmit(true, true, false, true);
         emit SoftwareValidated(SERIAL_1, tecnico, OS_VERSION);
         tracker.validateSoftware(SERIAL_1, OS_VERSION, true, METADATA);
-        assertEq(uint(tracker.getNetbookState(SERIAL_1)), uint(SupplyChainTracker.State.SW_VALIDADO));
+        assertEq(
+            uint(tracker.getNetbookState(SERIAL_1)),
+            uint(SupplyChainTracker.State.SW_VALIDADO)
+        );
         vm.stopPrank();
 
         // 4. Assign
@@ -276,7 +324,10 @@ contract ExhaustiveTest is Test {
         vm.expectEmit(true, false, false, true);
         emit NetbookAssigned(SERIAL_1, SCHOOL_HASH, STUDENT_HASH);
         tracker.assignToStudent(SERIAL_1, SCHOOL_HASH, STUDENT_HASH, METADATA);
-        assertEq(uint(tracker.getNetbookState(SERIAL_1)), uint(SupplyChainTracker.State.DISTRIBUIDA));
+        assertEq(
+            uint(tracker.getNetbookState(SERIAL_1)),
+            uint(SupplyChainTracker.State.DISTRIBUIDA)
+        );
         vm.stopPrank();
     }
 
@@ -298,7 +349,13 @@ contract ExhaustiveTest is Test {
 
         // Try Validate (Skip Audit)
         vm.startPrank(tecnico);
-        vm.expectRevert(abi.encodeWithSelector(SupplyChainTracker.InvalidState.selector, SupplyChainTracker.State.FABRICADA, SupplyChainTracker.State.HW_APROBADO));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                SupplyChainTracker.InvalidState.selector,
+                SupplyChainTracker.State.FABRICADA,
+                SupplyChainTracker.State.HW_APROBADO
+            )
+        );
         tracker.validateSoftware(SERIAL_1, OS_VERSION, true, METADATA);
         vm.stopPrank();
     }
@@ -322,7 +379,13 @@ contract ExhaustiveTest is Test {
 
         // Try Assign (Skip Validation)
         vm.startPrank(escuela);
-        vm.expectRevert(abi.encodeWithSelector(SupplyChainTracker.InvalidState.selector, SupplyChainTracker.State.HW_APROBADO, SupplyChainTracker.State.SW_VALIDADO));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                SupplyChainTracker.InvalidState.selector,
+                SupplyChainTracker.State.HW_APROBADO,
+                SupplyChainTracker.State.SW_VALIDADO
+            )
+        );
         tracker.assignToStudent(SERIAL_1, SCHOOL_HASH, STUDENT_HASH, METADATA);
         vm.stopPrank();
     }
@@ -352,12 +415,16 @@ contract ExhaustiveTest is Test {
         tracker.auditHardware(SERIAL_1, true, REPORT_HASH, METADATA);
 
         // Check FABRICADA (should contain SERIAL_2)
-        string[] memory fabricada = tracker.getNetbooksByState(SupplyChainTracker.State.FABRICADA);
+        string[] memory fabricada = tracker.getNetbooksByState(
+            SupplyChainTracker.State.FABRICADA
+        );
         assertEq(fabricada.length, 1);
         assertEq(fabricada[0], SERIAL_2);
 
         // Check HW_APROBADO (should contain SERIAL_1)
-        string[] memory aprobados = tracker.getNetbooksByState(SupplyChainTracker.State.HW_APROBADO);
+        string[] memory aprobados = tracker.getNetbooksByState(
+            SupplyChainTracker.State.HW_APROBADO
+        );
         assertEq(aprobados.length, 1);
         assertEq(aprobados[0], SERIAL_1);
     }
@@ -378,7 +445,12 @@ contract ExhaustiveTest is Test {
 
         // Try audit with unauthorized user
         vm.startPrank(unauthorized);
-        vm.expectRevert(abi.encodeWithSelector(SupplyChainTracker.Unauthorized.selector, tracker.AUDITOR_HW_ROLE()));
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                SupplyChainTracker.Unauthorized.selector,
+                tracker.AUDITOR_HW_ROLE()
+            )
+        );
         tracker.auditHardware(SERIAL_1, true, REPORT_HASH, METADATA);
         vm.stopPrank();
     }
