@@ -345,6 +345,51 @@ export class SupplyChainService extends BaseContractService {
     }
   };
 
+  /**
+   * Obtiene todos los miembros de un rol
+   * @param roleHash Hash del rol
+   * @returns Array de direcciones
+   */
+  getAllMembers = async (roleHash: `0x${string}`): Promise<`0x${string}`[]> => {
+    return await this.readCacheable(`getAllMembers:${roleHash}`, () =>
+      this.read<`0x${string}`[]>('getAllMembers', [roleHash])
+    );
+  };
+
+  /**
+   * Revoca todos los roles de un usuario (excepto ADMIN si es el último)
+   * @param userAddress Dirección del usuario
+   * @returns Resultado de la transacción
+   */
+  revokeAllRoles = async (userAddress: `0x${string}`): Promise<TransactionResult> => {
+    try {
+      const roles = ['FABRICANTE_ROLE', 'AUDITOR_HW_ROLE', 'TECNICO_SW_ROLE', 'ESCUELA_ROLE', 'ADMIN'];
+      const results: TransactionResult[] = [];
+
+      for (const roleName of roles) {
+        const roleHash = await this.getRoleByName(roleName);
+        const hasRole = await this.hasRole(roleHash, userAddress);
+
+        if (hasRole) {
+          // Si es ADMIN, podríamos querer una confirmación extra o evitar que se auto-elimine el último
+          const result = await this.revokeRole(roleHash, userAddress);
+          results.push(result);
+        }
+      }
+
+      const allSuccess = results.every(r => r.success);
+      return {
+        success: allSuccess,
+        error: allSuccess ? undefined : 'Algunos roles no pudieron ser revocados'
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Error desconocido'
+      };
+    }
+  };
+
   // Operaciones de lectura
 
   /**

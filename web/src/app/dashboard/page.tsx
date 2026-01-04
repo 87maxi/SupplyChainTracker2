@@ -4,6 +4,7 @@
 // Importaciones actualizadas
 import { useWeb3 } from '@/hooks/useWeb3'; // Usar el contexto correcto
 import { useSupplyChainService } from '@/hooks/useSupplyChainService'; // Usar el hook del servicio
+import { SupplyChainService } from '@/services/SupplyChainService';
 import { Netbook, NetbookState } from '@/types/supply-chain-types'; // Usar el tipo correcto
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -143,6 +144,27 @@ export default function ManagerDashboard() {
   const [showValidationForm, setShowValidationForm] = useState(false);
   const [showAssignmentForm, setShowAssignmentForm] = useState(false);
 
+  const handleDeleteUser = async (address: string) => {
+    if (!window.confirm(`¿Estás seguro de que deseas eliminar todos los roles de la cuenta ${address}?`)) {
+      return;
+    }
+
+    try {
+      const service = SupplyChainService.getInstance();
+      const result = await service.revokeAllRoles(address as `0x${string}`);
+
+      if (result.success) {
+        console.log('User roles revoked successfully');
+        fetchDashboardData();
+      } else {
+        alert(`Error al eliminar roles: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      alert('Error inesperado al eliminar el usuario');
+    }
+  };
+
   // Enhanced action handler with debugging
   const handleAction = useCallback((action: string, serial: string) => {
     console.log('Handling action:', { action, serial });
@@ -254,6 +276,7 @@ export default function ManagerDashboard() {
             <UserDataTable
               data={users as any}
               onFilterChange={handleUserFilterChange}
+              onDelete={handleDeleteUser}
             />
             <NetbookDataTable
               data={netbooksForTable}

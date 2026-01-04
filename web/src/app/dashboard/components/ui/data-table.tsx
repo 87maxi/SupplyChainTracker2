@@ -31,12 +31,14 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
   onFilterChange: (filter: { key: string; value: string }) => void
+  meta?: any
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
-  onFilterChange
+  onFilterChange,
+  meta
 }: DataTableProps<TData, TValue>) {
   const [filterValue, setFilterValue] = useState('')
   const [filterKey, setFilterKey] = useState('')
@@ -46,9 +48,10 @@ export function DataTable<TData, TValue>({
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    meta,
   })
 
-  
+
   const handleFilterChange = () => {
     onFilterChange({ key: filterKey, value: filterValue })
   }
@@ -97,9 +100,9 @@ export function DataTable<TData, TValue>({
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                     </TableHead>
                   ))}
                 </TableRow>

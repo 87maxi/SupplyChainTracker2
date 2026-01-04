@@ -89,8 +89,39 @@ export const useProcessedUserAndNetbookData = (): ProcessedData => {
 
       setNetbooks(fetchedNetbooks);
 
-      // Por ahora mantenemos usuarios vacíos o podríamos obtenerlos de los eventos de roles si fuera necesario
-      setUsers([]);
+      // 3. Obtener todos los usuarios por rol
+      const roleNames = ['ADMIN', 'FABRICANTE_ROLE', 'AUDITOR_HW_ROLE', 'TECNICO_SW_ROLE', 'ESCUELA_ROLE'];
+      const userMap = new Map<string, any>();
+
+      await Promise.all(roleNames.map(async (roleName) => {
+        try {
+          const roleHash = await service.getRoleByName(roleName);
+          const members = await service.getAllMembers(roleHash);
+
+          members.forEach(address => {
+            const existing = userMap.get(address);
+            const roleLabel = roleName.replace('_ROLE', '');
+
+            if (existing) {
+              if (!existing.role.includes(roleLabel)) {
+                existing.role = `${existing.role}, ${roleLabel}`;
+              }
+            } else {
+              userMap.set(address, {
+                _id: address,
+                address: address,
+                role: roleLabel,
+                status: 'active',
+                requestedOn: new Date().toISOString(), // Fallback ya que no tenemos el evento exacto aquí
+              });
+            }
+          });
+        } catch (e) {
+          console.error(`Error fetching members for role ${roleName}:`, e);
+        }
+      }));
+
+      setUsers(Array.from(userMap.values()));
 
     } catch (err) {
       console.error('Error fetching blockchain data:', err);
