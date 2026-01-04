@@ -84,7 +84,7 @@ const supplyChainService = SupplyChainService.getInstance();
 
 export const RoleRequestService = {
   /**
-   * Create a new role request
+   * Create a new role request on the blockchain
    * @param request Role request details
    * @returns Promise that resolves when the request is created
    */
@@ -93,172 +93,134 @@ export const RoleRequestService = {
     role: string;
     signature: string;
   }): Promise<void> {
-    const newRequest: StoredRoleRequest = {
-      id: Date.now().toString(),
-      userAddress: request.userAddress,
-      role: request.role,
-      signature: request.signature,
-      status: 'pending',
-      createdAt: new Date().toISOString()
+    console.log('[RoleRequestService] Creating blockchain request for role:', request.role);
+
+    // Normalize role name to get the hash
+    const normalizedRoleName = roleMapper.normalizeRoleName(request.role);
+
+    // Map normalized role name to the key used in ROLE_HASHES
+    const roleKeyMap: Record<string, keyof typeof ROLE_HASHES> = {
+      'FABRICANTE_ROLE': 'FABRICANTE',
+      'AUDITOR_HW_ROLE': 'AUDITOR_HW',
+      'TECNICO_SW_ROLE': 'TECNICO_SW',
+      'ESCUELA_ROLE': 'ESCUELA',
+      'DEFAULT_ADMIN_ROLE': 'ADMIN'
     };
 
-    roleRequests.push(newRequest);
-    localStorage.setItem('role_requests', JSON.stringify(roleRequests));
+    const roleKey = roleKeyMap[normalizedRoleName] || 'ADMIN';
+    const roleHash = ROLE_HASHES[roleKey];
+
+    const result = await supplyChainService.requestRole(roleHash, request.signature);
+
+    if (!result.success) {
+      throw new Error(result.error || 'Error al crear la solicitud en blockchain');
+    }
+
+    console.log('[RoleRequestService] Blockchain request created:', result.hash);
   },
 
   /**
-   * Get all role requests
+   * Get all role requests from the blockchain
    * @returns All role requests mapped to the shared type
    */
   async getRoleRequests(): Promise<RoleRequest[]> {
-    // Refresh from storage
-    const stored = localStorage.getItem('role_requests');
-    if (stored) {
-      roleRequests = JSON.parse(stored);
-    }
+    try {
+      const count = await supplyChainService.getRoleRequestsCount();
+      const requests: RoleRequest[] = [];
 
-    // Map stored requests to the shared RoleRequest type
-    return roleRequests.map(req => ({
-      id: req.id,
-      address: req.userAddress, // Map userAddress to address
-      role: req.role,
-      status: req.status,
-      timestamp: new Date(req.createdAt), // Map createdAt string to timestamp Date
-      updatedAt: req.updatedAt ? new Date(req.updatedAt) : undefined,
-      signature: req.signature,
-      transactionHash: req.transactionHash
-    }));
+      for (let i = 0; i < count; i++) {
+        const rawRequest = await supplyChainService.getRoleRequest(i);
+        // rawRequest is [id, user, role, status, timestamp, signature]
+
+        const statusMap: Record<number, 'pending' | 'approved' | 'rejected'> = {
+          0: 'pending',
+          1: 'approved',
+          2: 'rejected'
+        };
+
+        // Find role name from hash
+        const roleHash = rawRequest[2];
+        let roleName = 'Unknown';
+        for (const [name, hash] of Object.entries(ROLE_HASHES)) {
+          if (hash.toLowerCase() === roleHash.toLowerCase()) {
+            roleName = name + '_ROLE';
+            break;
+          }
+        }
+
+        requests.push({
+          id: rawRequest[0].toString(),
+          address: rawRequest[1],
+          role: roleName,
+          status: statusMap[rawRequest[3]] || 'pending',
+          timestamp: new Date(Number(rawRequest[4]) * 1000),
+          signature: rawRequest[5]
+        });
+      }
+
+      return requests;
+    } catch (error) {
+      console.error('[RoleRequestService] Error fetching role requests:', error);
+      return [];
+    }
   },
 
   /**
-   * Update status of a role request
-   * @param id Request ID
+   * Update status of a role request on the blockchain
+   * @param id Request ID (index in the array)
    * @param status New status
    * @returns Promise that resolves when the status is updated
    */
   async updateRoleRequestStatus(id: string, status: 'approved' | 'rejected'): Promise<RoleRequest> {
-    const request = roleRequests.find(r => r.id === id);
-    if (!request) {
-      throw new Error('Role request not found');
-    }
+    const requestId = parseInt(id);
+    let result;
 
     if (status === 'approved') {
-      // Use the role service to grant the actual role
-      try {
-        // ✓ CORRECCIÓN: Obtener la cuenta del administrador conectado
-        const adminAccount = await getConnectedAccount();
+      result = await supplyChainService.approveRoleRequest(requestId);
+    } else {
+      result = await supplyChainService.rejectRoleRequest(requestId);
+    }
 
-        if (!adminAccount) {
-          throw new Error('No hay cuenta de administrador conectada. Por favor conecta tu wallet.');
-        }
+    if (!result.success) {
+      throw new Error(result.error || `Error al ${status === 'approved' ? 'aprobar' : 'rechazar'} la solicitud`);
+    }
 
-        console.log('[RoleRequestService] Granting role with admin account:', {
-          adminAccount,
-          targetUser: request.userAddress,
-          requestedRole: request.role
-        });
+    // Fetch the updated request to return it
+    const rawRequest = await supplyChainService.getRoleRequest(requestId);
 
-        if (!NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS) {
-          throw new Error('La dirección del contrato no está configurada (NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS)');
-        }
+    const statusMap: Record<number, 'pending' | 'approved' | 'rejected'> = {
+      0: 'pending',
+      1: 'approved',
+      2: 'rejected'
+    };
 
-        // ✓ Crear RoleService con la cuenta del ADMIN, no del usuario
-        const adminRoleService = new RoleService(
-          NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS as `0x${string}`,
-          SupplyChainTrackerABI,
-          config,
-          adminAccount as `0x${string}`  // ✓ Cuenta del admin que ejecuta la transacción
-        );
-
-        // Normalizar el nombre del rol
-        const normalizedRoleName = roleMapperInstance.normalizeRoleName(request.role);
-        console.log('[RoleRequestService] Normalized role name:', normalizedRoleName, 'from request role:', request.role);
-
-        // Convertir a la clave del rol
-        // Usar el tipo Role del servicio de roles que es compatible con ROLE_HASHES
-        const roleKeyMap: Record<string, Role> = {
-          'FABRICANTE_ROLE': 'FABRICANTE',
-          'AUDITOR_HW_ROLE': 'AUDITOR_HW',
-          'TECNICO_SW_ROLE': 'TECNICO_SW',
-          'ESCUELA_ROLE': 'ESCUELA',
-          'DEFAULT_ADMIN_ROLE': 'ADMIN'
-        };
-
-        // Get the role key that corresponds to the normalized role name
-        const roleKey = roleKeyMap[normalizedRoleName];
-
-        // If we found a valid role key, use it; otherwise use ADMIN as fallback
-        const role: Role = roleKey || 'ADMIN';
-        console.log('[RoleRequestService] Mapped role key:', role, 'for normalized name:', normalizedRoleName);
-
-        // ✓ Otorgar rol al usuario solicitante usando el servicio del admin
-        console.log('[RoleRequestService] Attempting to grant role:', {
-          role,
-          roleHash: ROLE_HASHES[role as keyof typeof ROLE_HASHES],
-          targetUser: request.userAddress,
-          executingAs: adminAccount
-        });
-
-        const result = await adminRoleService.grantRole(
-          role,
-          request.userAddress as `0x${string}`  // ✓ Usuario que recibe el rol
-        );
-
-        console.log('[RoleRequestService] Role grant result:', result);
-
-        if (result.success && result.txHash) {
-          // Update request with transaction hash
-          request.transactionHash = result.txHash;
-
-          console.log(`[RoleRequestService] ✓ Rol ${request.role} otorgado exitosamente a ${request.userAddress}. Tx hash: ${result.txHash}`);
-        } else {
-          const errorMsg = result.message || 'No se pudo otorgar el rol';
-          console.error('[RoleRequestService] Error otorgando rol:', errorMsg);
-          throw new Error(errorMsg);
-        }
-      } catch (error) {
-        // Log the full error for debugging
-        console.error('[RoleRequestService] CRITICAL ERROR during role grant:', error);
-
-        const errorDetails = {
-          message: error instanceof Error ? error.message : String(error),
-          request,
-          adminAccount: await getConnectedAccount().catch(() => 'error getting account'),
-          contractAddress: NEXT_PUBLIC_SUPPLY_CHAIN_TRACKER_ADDRESS
-        };
-
-        console.error('[RoleRequestService] Error details:', errorDetails);
-
-        // Re-lanzar el error para que el hook lo maneje
-        throw error;
+    // Find role name from hash
+    const roleHash = rawRequest[2];
+    let roleName = 'Unknown';
+    for (const [name, hash] of Object.entries(ROLE_HASHES)) {
+      if (hash.toLowerCase() === roleHash.toLowerCase()) {
+        roleName = name + '_ROLE';
+        break;
       }
     }
 
-    request.status = status;
-    request.updatedAt = new Date().toISOString();
-
-    localStorage.setItem('role_requests', JSON.stringify(roleRequests));
-
     return {
-      id: request.id,
-      address: request.userAddress,
-      role: request.role,
-      status: request.status,
-      timestamp: new Date(request.createdAt),
-      updatedAt: request.updatedAt ? new Date(request.updatedAt) : undefined,
-      signature: request.signature,
-      transactionHash: request.transactionHash
+      id: rawRequest[0].toString(),
+      address: rawRequest[1],
+      role: roleName,
+      status: statusMap[rawRequest[3]] || 'pending',
+      timestamp: new Date(Number(rawRequest[4]) * 1000),
+      signature: rawRequest[5],
+      transactionHash: result.hash
     };
   },
 
   /**
-   * Delete a role request
-   * @param id Request ID to delete
-   * @returns Promise that resolves when the request is deleted
+   * Delete a role request (Not supported on blockchain, so we just log it)
+   * @param id Request ID
    */
   async deleteRoleRequest(id: string): Promise<void> {
-    roleRequests = roleRequests.filter(r => r.id !== id);
-    localStorage.setItem('role_requests', JSON.stringify(roleRequests));
+    console.warn('[RoleRequestService] Delete request not supported on blockchain. Use reject instead.');
   }
 };
 

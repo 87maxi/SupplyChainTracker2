@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { getProvider } from '@/lib/web3';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,32 +24,47 @@ export default function AuditPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [eventService, setEventService] = useState<any>(null);
+  const [mounted, setMounted] = useState(false);
 
   // Inicializar el servicio de eventos
-  useMemo(() => {
+  useEffect(() => {
+    let isMounted = true;
+    setMounted(true);
+
     const initEventService = async () => {
       try {
         const service = await getEventService();
+        if (!isMounted) return;
+
         setEventService(service);
-        
+
         // Escuchar eventos cuando el servicio esté listo
         if (service) {
           const allLogs = await service.getAuditLogs();
+          if (!isMounted) return;
           setLogs(Array.isArray(allLogs) ? allLogs : []);
         }
       } catch (error) {
         console.error('Error initializing event service:', error);
-        toast({
-          title: 'Error',
-          description: 'No se pudo conectar al servicio de eventos',
-          variant: 'destructive',
-        });
+        if (isMounted) {
+          toast({
+            title: 'Error',
+            description: 'No se pudo conectar al servicio de eventos',
+            variant: 'destructive',
+          });
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     initEventService();
+
+    return () => {
+      isMounted = false;
+    };
   }, [toast]);
 
   const handleSearch = useCallback((term: string) => {
@@ -65,13 +80,13 @@ export default function AuditPage() {
         log.actor.toLowerCase().includes(searchTerm.toLowerCase());
       return matchesSearch;
     });
-    
+
     return filtered;
   }, [logs, searchTerm]);
 
   const filteredLogs = useMemo(() => applyFilters(), [applyFilters]);
   const totalPages = Math.ceil(filteredLogs.length / ITEMS_PER_PAGE);
-  
+
   const paginatedLogs = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     return filteredLogs.slice(startIndex, startIndex + ITEMS_PER_PAGE);

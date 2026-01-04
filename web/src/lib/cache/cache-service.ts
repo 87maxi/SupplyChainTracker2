@@ -1,4 +1,4 @@
-// web/src/lib/cache/cache-service.ts
+import { safeJsonStringify } from '../utils';
 
 /**
  * Servicio de Caché para almacenamiento en memoria y localStorage
@@ -16,13 +16,13 @@ export class CacheService {
    */
   static set<T>(key: string, data: T, ttl?: number): void {
     if (typeof window === 'undefined') return; // SSR safety
-    
+
     try {
       const item = {
         data,
         expiry: Date.now() + (ttl || this.DEFAULT_TTL)
       };
-      localStorage.setItem(this.PREFIX + key, JSON.stringify(item));
+      localStorage.setItem(this.PREFIX + key, safeJsonStringify(item));
     } catch (error) {
       console.warn('Cache set failed:', error);
     }
@@ -72,18 +72,18 @@ export class CacheService {
    */
   static get<T>(key: string): T | null {
     if (typeof window === 'undefined') return null;
-    
+
     try {
       const itemStr = localStorage.getItem(this.PREFIX + key);
       if (!itemStr) return null;
-      
+
       const item = JSON.parse(itemStr);
-      
+
       if (Date.now() > item.expiry) {
         localStorage.removeItem(this.PREFIX + key);
         return null;
       }
-      
+
       return item.data;
     } catch (error) {
       console.warn('Cache get failed:', error);
@@ -97,7 +97,7 @@ export class CacheService {
    */
   static remove(key: string): void {
     if (typeof window === 'undefined') return;
-    
+
     try {
       localStorage.removeItem(this.PREFIX + key);
     } catch (error) {
@@ -110,7 +110,7 @@ export class CacheService {
    */
   static clear(): void {
     if (typeof window === 'undefined') return;
-    
+
     try {
       Object.keys(localStorage)
         .filter(key => key.startsWith(this.PREFIX))

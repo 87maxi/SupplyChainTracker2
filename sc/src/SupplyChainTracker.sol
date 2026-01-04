@@ -11,6 +11,17 @@ import "../lib/openzeppelin-contracts/contracts/access/extensions/AccessControlE
 /// @dev This contract uses AccessControlEnumerable to enable role enumeration
 /// @dev Each netbook is associated with a token ID for tracking its lifecycle
 contract SupplyChainTracker is AccessControl, AccessControlEnumerable {
+    // --- Custom Errors ---
+    error Unauthorized(bytes32 role);
+    error ArrayLengthMismatch();
+    error InvalidSerialNumber();
+    error NetbookAlreadyRegistered();
+    error InvalidState(State current, State expected);
+    error NetbookNotFound();
+    error InvalidRequestID();
+    error RequestNotPending();
+    error InvalidRoleType();
+
     /// @dev Overrides _grantRole to satisfy multiple inheritance
     function _grantRole(bytes32 role, address account) internal virtual override(AccessControl, AccessControlEnumerable) returns (bool) {
         return super._grantRole(role, account);
@@ -49,6 +60,13 @@ contract SupplyChainTracker is AccessControl, AccessControlEnumerable {
         HW_APROBADO,
         SW_VALIDADO,
         DISTRIBUIDA
+    }
+
+    /// @notice Status for role requests
+    enum RequestStatus {
+        PENDING,
+        APPROVED,
+        REJECTED
     }
 
     // --- Data Structures ---
@@ -92,6 +110,16 @@ contract SupplyChainTracker is AccessControl, AccessControlEnumerable {
         uint256 tokenId;
     }
 
+    /// @notice Structure for role requests
+    struct RoleRequest {
+        uint256 id;
+        address user;
+        bytes32 role;
+        RequestStatus status;
+        uint256 timestamp;
+        string signature; // Optional: to store the signature if needed
+    }
+
     // --- Storage ---
     /// @notice Mapping of serial numbers to netbook records
     // Almacén principal de netbooks por número de serie
@@ -103,8 +131,21 @@ contract SupplyChainTracker is AccessControl, AccessControlEnumerable {
     // Estructura para almacenar datos de trazabilidad por hash de transacción
     mapping(bytes32 => string) public transactionToSerial;
     
+    // Almacén de solicitudes de roles
+    RoleRequest[] public roleRequests;
+    
+    // Contador para IDs de solicitudes
+    uint256 private _roleRequestIdCounter;
+
     // Evento para rastrear cambios en los datos de trazabilidad
     event TraceabilityDataUpdated(bytes32 indexed transactionHash, string serialNumber, string dataType, string dataValue);
+
+    // --- Events ---
+    /// @notice Emitted when a role is requested
+    event RoleRequested(uint256 indexed requestId, address indexed user, bytes32 indexed role);
+    
+    /// @notice Emitted when a role request status is updated
+    event RoleRequestUpdated(uint256 indexed requestId, RequestStatus status);
 
     // --- Events ---
     /// @notice Emitted when a new netbook is registered by a manufacturer
@@ -205,13 +246,70 @@ contract SupplyChainTracker is AccessControl, AccessControlEnumerable {
             keccak256(abi.encodePacked(roleType)) == keccak256(abi.encodePacked("OWNER"))) {
             return DEFAULT_ADMIN_ROLE;
         }
-        revert("Invalid role type");
+        revert InvalidRoleType();
     }
 
 
 
     function hasRole(bytes32 role, address account) public view override(AccessControl, IAccessControl) returns (bool) {
         return super.hasRole(role, account);
+    }
+
+    // --- Role Request Functions ---
+
+    /**
+     * @notice Solicita un rol en el sistema
+     * @param role El hash del rol solicitado
+     * @param signature Firma opcional del mensaje de solicitud
+     */
+    function requestRole(bytes32 role, string calldata signature) external {
+        uint256 requestId = _roleRequestIdCounter++;
+        roleRequests.push(RoleRequest({
+            id: requestId,
+            user: msg.sender,
+            role: role,
+            status: RequestStatus.PENDING,
+            timestamp: block.timestamp,
+            signature: signature
+        }));
+
+        emit RoleRequested(requestId, msg.sender, role);
+    }
+
+    /**
+     * @notice Aprueba una solicitud de rol
+     * @param requestId ID de la solicitud a aprobar
+     */
+    function approveRoleRequest(uint256 requestId) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (requestId >= roleRequests.length) revert InvalidRequestID();
+        RoleRequest storage request = roleRequests[requestId];
+        if (request.status != RequestStatus.PENDING) revert RequestNotPending();
+
+        request.status = RequestStatus.APPROVED;
+        _grantRole(request.role, request.user);
+
+        emit RoleRequestUpdated(requestId, RequestStatus.APPROVED);
+    }
+
+    /**
+     * @notice Rechaza una solicitud de rol
+     * @param requestId ID de la solicitud a rechazar
+     */
+    function rejectRoleRequest(uint256 requestId) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (requestId >= roleRequests.length) revert InvalidRequestID();
+        RoleRequest storage request = roleRequests[requestId];
+        if (request.status != RequestStatus.PENDING) revert RequestNotPending();
+
+        request.status = RequestStatus.REJECTED;
+
+        emit RoleRequestUpdated(requestId, RequestStatus.REJECTED);
+    }
+
+    /**
+     * @notice Obtiene el número total de solicitudes de roles
+     */
+    function getRoleRequestsCount() external view returns (uint256) {
+        return roleRequests.length;
     }
 
     // --- Funciones de Escritura ---
@@ -238,15 +336,14 @@ contract SupplyChainTracker is AccessControl, AccessControlEnumerable {
         string[] calldata specs,
         string[] memory metadata
     ) external {
-        require(hasRole(FABRICANTE_ROLE, msg.sender), "Access denied: FABRICANTE_ROLE required");
-        require(
-            serials.length == batches.length && serials.length == specs.length && serials.length == metadata.length,
-            "Array length mismatch"
-        );
+        if (!hasRole(FABRICANTE_ROLE, msg.sender)) revert Unauthorized(FABRICANTE_ROLE);
+        if (serials.length != batches.length || serials.length != specs.length || serials.length != metadata.length) {
+            revert ArrayLengthMismatch();
+        }
 
         for (uint i = 0; i < serials.length; i++) {
-            require(bytes(serials[i]).length > 0, "Invalid serial number");
-            require(!netbooks[serials[i]].exists, "Netbook already registered");
+            if (bytes(serials[i]).length == 0) revert InvalidSerialNumber();
+            if (netbooks[serials[i]].exists) revert NetbookAlreadyRegistered();
 
             // Incrementar y obtener el nuevo ID de token
             uint256 newTokenId = _tokenIdCounter;
@@ -304,10 +401,10 @@ contract SupplyChainTracker is AccessControl, AccessControlEnumerable {
     /// @custom:emits HardwareAudited event with audit details
     /// @custom:emits TraceabilityDataUpdated event with audit metadata
     function auditHardware(string calldata serial, bool passed, bytes32 reportHash, string memory metadata) external {
-        require(hasRole(AUDITOR_HW_ROLE, msg.sender), "Access denied: AUDITOR_HW_ROLE required");
+        if (!hasRole(AUDITOR_HW_ROLE, msg.sender)) revert Unauthorized(AUDITOR_HW_ROLE);
         Netbook storage nb = netbooks[serial];
-        require(nb.exists, "Netbook not found");
-        require(nb.currentState == State.FABRICADA, "Invalid state for hardware audit");
+        if (!nb.exists) revert NetbookNotFound();
+        if (nb.currentState != State.FABRICADA) revert InvalidState(nb.currentState, State.FABRICADA);
 
         nb.hwAuditor = msg.sender;
         nb.hwIntegrityPassed = passed;
@@ -342,10 +439,10 @@ contract SupplyChainTracker is AccessControl, AccessControlEnumerable {
     function validateSoftware(string calldata serial, string calldata osVersion, bool passed, string memory metadata)
         external
     {
-        require(hasRole(TECNICO_SW_ROLE, msg.sender), "Access denied: TECNICO_SW_ROLE required");
+        if (!hasRole(TECNICO_SW_ROLE, msg.sender)) revert Unauthorized(TECNICO_SW_ROLE);
         Netbook storage nb = netbooks[serial];
-        require(nb.exists, "Netbook not found");
-        require(nb.currentState == State.HW_APROBADO, "Invalid state for software validation");
+        if (!nb.exists) revert NetbookNotFound();
+        if (nb.currentState != State.HW_APROBADO) revert InvalidState(nb.currentState, State.HW_APROBADO);
 
         nb.swTechnician = msg.sender;
         nb.osVersion = osVersion;
@@ -380,10 +477,10 @@ contract SupplyChainTracker is AccessControl, AccessControlEnumerable {
     function assignToStudent(string calldata serial, bytes32 schoolHash, bytes32 studentHash, string memory metadata)
         external
     {
-        require(hasRole(ESCUELA_ROLE, msg.sender), "Access denied: ESCUELA_ROLE required");
+        if (!hasRole(ESCUELA_ROLE, msg.sender)) revert Unauthorized(ESCUELA_ROLE);
         Netbook storage nb = netbooks[serial];
-        require(nb.exists, "Netbook not found");
-        require(nb.currentState == State.SW_VALIDADO, "Invalid state for student assignment");
+        if (!nb.exists) revert NetbookNotFound();
+        if (nb.currentState != State.SW_VALIDADO) revert InvalidState(nb.currentState, State.SW_VALIDADO);
 
         nb.destinationSchoolHash = schoolHash;
         nb.studentIdHash = studentHash;
@@ -410,7 +507,7 @@ contract SupplyChainTracker is AccessControl, AccessControlEnumerable {
     /// @return currentState The current state in the supply chain lifecycle
     /// @custom:requirements Netbook must exist in the system
     function getNetbookState(string calldata serial) external view returns (State) {
-        require(netbooks[serial].exists, "Netbook not found");
+        if (!netbooks[serial].exists) revert NetbookNotFound();
         return netbooks[serial].currentState;
     }
 
@@ -420,7 +517,7 @@ contract SupplyChainTracker is AccessControl, AccessControlEnumerable {
     /// @custom:requirements Netbook must exist in the system
     /// @custom:security All PII is stored as cryptographic hashes for privacy
     function getNetbookReport(string calldata serial) external view returns (Netbook memory) {
-        require(netbooks[serial].exists, "Netbook not found");
+        if (!netbooks[serial].exists) revert NetbookNotFound();
         return netbooks[serial];
     }
 

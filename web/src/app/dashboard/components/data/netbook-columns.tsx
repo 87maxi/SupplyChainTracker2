@@ -1,6 +1,6 @@
 import type { ColumnDef } from "@tanstack/react-table"
-import { Badge } from "@/components/ui/badge"
 import { Netbook } from "@/types/supply-chain-types"
+import { StatusBadge } from "../StatusBadge"
 
 export const netbookColumns: ColumnDef<Netbook>[] = [
   {
@@ -44,23 +44,27 @@ export const netbookColumns: ColumnDef<Netbook>[] = [
     header: "Estado",
     cell: ({ row }) => {
       const status = row.getValue("currentState") as string
+      return <StatusBadge status={status} />;
+    },
+  },
+  {
+    id: "actions",
+    header: "Acciones",
+    cell: ({ row, table }) => {
+      const netbook = row.original;
+      // @ts-ignore - We'll pass this through table meta
+      const onViewDetails = (table.options.meta as any)?.onViewDetails;
 
-      const getStatusBadge = (status: string) => {
-        switch (status) {
-          case 'FABRICADA':
-            return <Badge variant="secondary">Fabricada</Badge>;
-          case 'HW_APROBADO':
-            return <Badge variant="success">HW Aprobado</Badge>;
-          case 'SW_VALIDADO':
-            return <Badge variant="warning">SW Validado</Badge>;
-          case 'DISTRIBUIDA':
-            return <Badge variant="outline">Distribuida</Badge>;
-          default:
-            return <Badge variant="outline">{status}</Badge>;
-        }
-      };
-
-      return getStatusBadge(status);
+      return (
+        <button
+          onClick={() => onViewDetails?.(netbook)}
+          className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+        >
+          Ver más
+        </button>
+      );
     },
   },
 ]
+
+export type { Netbook };
