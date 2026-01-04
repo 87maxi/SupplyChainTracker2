@@ -11,12 +11,12 @@ export function validateAndNormalizeAddress(address: string): string {
   if (!address) {
     throw new Error('Address is required');
   }
-  
+
   try {
     // Use viem's getAddress to validate and normalize the address
     // This will throw if the address is invalid and return the checksummed version
     return getAddress(address);
-  } catch (error) {
+  } catch (error: any) {
     throw new Error(`Invalid Ethereum address: ${address}. ${error.message}`);
   }
 }
@@ -45,9 +45,9 @@ export function formatCurrency(amount: number, decimals = 2): string {
 
 // Helper function to get Etherscan URL for a transaction hash
 export function getEtherscanUrl(hash: string, network: string = 'ethereum'): string {
-  const baseUrl = network === 'ethereum' ? 'https://etherscan.io' : 
-                    network === 'polygon' ? 'https://polygonscan.com' :
-                    network === 'sepolia' ? 'https://sepolianscan.io' : 'https://etherscan.io';
+  const baseUrl = network === 'ethereum' ? 'https://etherscan.io' :
+    network === 'polygon' ? 'https://polygonscan.com' :
+      network === 'sepolia' ? 'https://sepolianscan.io' : 'https://etherscan.io';
   return `${baseUrl}/tx/${hash}`;
 }
 
@@ -55,9 +55,9 @@ export function getEtherscanUrl(hash: string, network: string = 'ethereum'): str
 export function getAddressExplorerUrl(address: string, network: string = 'ethereum'): string {
   try {
     const normalizedAddress = validateAndNormalizeAddress(address);
-    const baseUrl = network === 'ethereum' ? 'https://etherscan.io' : 
-                      network === 'polygon' ? 'https://polygonscan.com' :
-                      network === 'sepolia' ? 'https://sepolianscan.io' : 'https://etherscan.io';
+    const baseUrl = network === 'ethereum' ? 'https://etherscan.io' :
+      network === 'polygon' ? 'https://polygonscan.com' :
+        network === 'sepolia' ? 'https://sepolianscan.io' : 'https://etherscan.io';
     return `${baseUrl}/address/${normalizedAddress}`;
   } catch (error) {
     console.warn('Invalid address provided to getAddressExplorerUrl:', address);
@@ -79,4 +79,15 @@ export function formatDate(date: string | number | Date): string {
     hour: '2-digit',
     minute: '2-digit'
   });
+}
+
+/**
+ * Serialización segura para JSON que maneja BigInt
+ * @param obj Objeto a serializar
+ * @returns String JSON
+ */
+export function safeJsonStringify(obj: any): string {
+  return JSON.stringify(obj, (key, value) =>
+    typeof value === 'bigint' ? value.toString() : value
+  );
 }

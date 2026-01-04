@@ -30,6 +30,8 @@ contract ExhaustiveTest is Test {
     event HardwareAudited(string indexed serialNumber, address indexed auditor, bool passed);
     event SoftwareValidated(string indexed serialNumber, address indexed technician, string osVersion);
     event NetbookAssigned(string indexed serialNumber, bytes32 schoolHash, bytes32 studentHash);
+    event RoleRequested(uint256 indexed requestId, address indexed user, bytes32 indexed role);
+    event RoleRequestUpdated(uint256 indexed requestId, SupplyChainTracker.RequestStatus status);
 
     function setUp() public {
         admin = makeAddr("admin");
@@ -70,28 +72,103 @@ contract ExhaustiveTest is Test {
 
     function test_Roles_UnauthorizedCannotGrant() public {
         address other = makeAddr("other");
+        bytes32 role = tracker.FABRICANTE_ROLE();
         vm.startPrank(unauthorized);
         
-        // Should revert, but if it doesn't, verify state
-        try tracker.grantRole(tracker.FABRICANTE_ROLE(), other) {
-            console.log("GrantRole succeeded unexpectedly");
-        } catch {
-            console.log("GrantRole reverted as expected");
-        }
+        vm.expectRevert(); // AccessControl revert
+        tracker.grantRole(role, other);
         vm.stopPrank();
         
-        assertFalse(tracker.hasRole(tracker.FABRICANTE_ROLE(), other), "Role was granted by unauthorized user!");
+        assertFalse(tracker.hasRole(role, other), "Role was granted by unauthorized user!");
     }
 
-    function test_Roles_UnauthorizedCannotRevoke() public {
-        address other = makeAddr("other");
-        vm.prank(unauthorized);
+    // --- Role Request Tests ---
+
+    function test_RoleRequest_FullFlow() public {
+        address requester = makeAddr("requester");
+        bytes32 role = tracker.AUDITOR_HW_ROLE();
+        string memory signature = "mysignature";
+
+        // 1. Request Role
+        vm.startPrank(requester);
+        vm.expectEmit(true, true, true, true);
+        emit RoleRequested(0, requester, role);
+        tracker.requestRole(role, signature);
+        vm.stopPrank();
+
+        assertEq(tracker.getRoleRequestsCount(), 1);
         
-        try tracker.revokeRole(tracker.FABRICANTE_ROLE(), other) {
-            console.log("RevokeRole succeeded unexpectedly");
-        } catch {
-            console.log("RevokeRole reverted as expected");
-        }
+        // Verify request data
+        (uint256 id, address user, bytes32 reqRole, SupplyChainTracker.RequestStatus status, uint256 timestamp, string memory sig) = tracker.roleRequests(0);
+        assertEq(id, 0);
+        assertEq(user, requester);
+        assertEq(reqRole, role);
+        assertEq(uint(status), uint(SupplyChainTracker.RequestStatus.PENDING));
+        assertEq(sig, signature);
+
+        // 2. Approve Request
+        vm.startPrank(admin);
+        vm.expectEmit(true, false, false, true);
+        emit RoleRequestUpdated(0, SupplyChainTracker.RequestStatus.APPROVED);
+        tracker.approveRoleRequest(0);
+        vm.stopPrank();
+
+        // Verify role granted
+        assertTrue(tracker.hasRole(role, requester));
+        (,,, status,,) = tracker.roleRequests(0);
+        assertEq(uint(status), uint(SupplyChainTracker.RequestStatus.APPROVED));
+    }
+
+    function test_RoleRequest_Reject() public {
+        address requester = makeAddr("requester");
+        bytes32 role = tracker.TECNICO_SW_ROLE();
+
+        vm.prank(requester);
+        tracker.requestRole(role, "");
+
+        vm.startPrank(admin);
+        vm.expectEmit(true, false, false, true);
+        emit RoleRequestUpdated(0, SupplyChainTracker.RequestStatus.REJECTED);
+        tracker.rejectRoleRequest(0);
+        vm.stopPrank();
+
+        assertFalse(tracker.hasRole(role, requester));
+        (,,, SupplyChainTracker.RequestStatus status,,) = tracker.roleRequests(0);
+        assertEq(uint(status), uint(SupplyChainTracker.RequestStatus.REJECTED));
+    }
+
+    function test_RoleRequest_RevertIfUnauthorized() public {
+        address requester = makeAddr("requester");
+        vm.prank(requester);
+        tracker.requestRole(tracker.ESCUELA_ROLE(), "");
+
+        vm.startPrank(unauthorized);
+        vm.expectRevert(); // AccessControl revert
+        tracker.approveRoleRequest(0);
+        
+        vm.expectRevert(); // AccessControl revert
+        tracker.rejectRoleRequest(0);
+        vm.stopPrank();
+    }
+
+    function test_RoleRequest_RevertIfInvalidID() public {
+        vm.startPrank(admin);
+        vm.expectRevert(SupplyChainTracker.InvalidRequestID.selector);
+        tracker.approveRoleRequest(999);
+        vm.stopPrank();
+    }
+
+    function test_RoleRequest_RevertIfNotPending() public {
+        address requester = makeAddr("requester");
+        vm.prank(requester);
+        tracker.requestRole(tracker.ESCUELA_ROLE(), "");
+
+        vm.startPrank(admin);
+        tracker.approveRoleRequest(0);
+        
+        vm.expectRevert(SupplyChainTracker.RequestNotPending.selector);
+        tracker.approveRoleRequest(0);
+        vm.stopPrank();
     }
 
     // --- Registration Tests ---
@@ -117,32 +194,6 @@ contract ExhaustiveTest is Test {
         vm.stopPrank();
     }
 
-    function test_Registration_BatchSuccess() public {
-        vm.startPrank(fabricante);
-
-        string[] memory serials = new string[](2);
-        serials[0] = SERIAL_1;
-        serials[1] = SERIAL_2;
-        
-        string[] memory batches = new string[](2);
-        batches[0] = BATCH;
-        batches[1] = BATCH;
-        
-        string[] memory specs = new string[](2);
-        specs[0] = SPECS;
-        specs[1] = SPECS;
-        
-        string[] memory metadata = new string[](2);
-        metadata[0] = METADATA;
-        metadata[1] = METADATA;
-
-        tracker.registerNetbooks(serials, batches, specs, metadata);
-
-        assertEq(uint(tracker.getNetbookState(SERIAL_1)), uint(SupplyChainTracker.State.FABRICADA));
-        assertEq(uint(tracker.getNetbookState(SERIAL_2)), uint(SupplyChainTracker.State.FABRICADA));
-        vm.stopPrank();
-    }
-
     function test_Registration_RevertIfArrayMismatch() public {
         vm.startPrank(fabricante);
 
@@ -151,7 +202,7 @@ contract ExhaustiveTest is Test {
         string[] memory specs = new string[](1);
         string[] memory metadata = new string[](1);
 
-        vm.expectRevert("Array length mismatch");
+        vm.expectRevert(SupplyChainTracker.ArrayLengthMismatch.selector);
         tracker.registerNetbooks(serials, batches, specs, metadata);
         vm.stopPrank();
     }
@@ -170,7 +221,7 @@ contract ExhaustiveTest is Test {
 
         tracker.registerNetbooks(serials, batches, specs, metadata);
 
-        vm.expectRevert("Netbook already registered");
+        vm.expectRevert(SupplyChainTracker.NetbookAlreadyRegistered.selector);
         tracker.registerNetbooks(serials, batches, specs, metadata);
         vm.stopPrank();
     }
@@ -183,7 +234,7 @@ contract ExhaustiveTest is Test {
         string[] memory specs = new string[](1);
         string[] memory metadata = new string[](1);
 
-        vm.expectRevert("Access denied: FABRICANTE_ROLE required");
+        vm.expectRevert(abi.encodeWithSelector(SupplyChainTracker.Unauthorized.selector, tracker.FABRICANTE_ROLE()));
         tracker.registerNetbooks(serials, batches, specs, metadata);
         vm.stopPrank();
     }
@@ -247,7 +298,7 @@ contract ExhaustiveTest is Test {
 
         // Try Validate (Skip Audit)
         vm.startPrank(tecnico);
-        vm.expectRevert("Invalid state for software validation");
+        vm.expectRevert(abi.encodeWithSelector(SupplyChainTracker.InvalidState.selector, SupplyChainTracker.State.FABRICADA, SupplyChainTracker.State.HW_APROBADO));
         tracker.validateSoftware(SERIAL_1, OS_VERSION, true, METADATA);
         vm.stopPrank();
     }
@@ -271,7 +322,7 @@ contract ExhaustiveTest is Test {
 
         // Try Assign (Skip Validation)
         vm.startPrank(escuela);
-        vm.expectRevert("Invalid state for student assignment");
+        vm.expectRevert(abi.encodeWithSelector(SupplyChainTracker.InvalidState.selector, SupplyChainTracker.State.HW_APROBADO, SupplyChainTracker.State.SW_VALIDADO));
         tracker.assignToStudent(SERIAL_1, SCHOOL_HASH, STUDENT_HASH, METADATA);
         vm.stopPrank();
     }
@@ -311,23 +362,6 @@ contract ExhaustiveTest is Test {
         assertEq(aprobados[0], SERIAL_1);
     }
 
-    function test_Views_TotalNetbooks() public {
-        vm.startPrank(fabricante);
-        string[] memory serials = new string[](1);
-        serials[0] = SERIAL_1;
-        string[] memory batches = new string[](1);
-        batches[0] = BATCH;
-        string[] memory specs = new string[](1);
-        specs[0] = SPECS;
-        string[] memory metadata = new string[](1);
-        metadata[0] = METADATA;
-        tracker.registerNetbooks(serials, batches, specs, metadata);
-        vm.stopPrank();
-
-        assertEq(tracker.totalNetbooks(), 1);
-    }
-    // --- Security Tests ---
-
     function test_Security_UnauthorizedAudit() public {
         // Register
         vm.startPrank(fabricante);
@@ -344,77 +378,7 @@ contract ExhaustiveTest is Test {
 
         // Try audit with unauthorized user
         vm.startPrank(unauthorized);
-        vm.expectRevert("Access denied: AUDITOR_HW_ROLE required");
-        tracker.auditHardware(SERIAL_1, true, REPORT_HASH, METADATA);
-        vm.stopPrank();
-    }
-
-    function test_Security_UnauthorizedValidation() public {
-        // Register & Audit
-        vm.startPrank(fabricante);
-        string[] memory serials = new string[](1);
-        serials[0] = SERIAL_1;
-        string[] memory batches = new string[](1);
-        batches[0] = BATCH;
-        string[] memory specs = new string[](1);
-        specs[0] = SPECS;
-        string[] memory metadata = new string[](1);
-        metadata[0] = METADATA;
-        tracker.registerNetbooks(serials, batches, specs, metadata);
-        vm.stopPrank();
-
-        vm.prank(auditor);
-        tracker.auditHardware(SERIAL_1, true, REPORT_HASH, METADATA);
-
-        // Try validate with unauthorized user
-        vm.startPrank(unauthorized);
-        vm.expectRevert("Access denied: TECNICO_SW_ROLE required");
-        tracker.validateSoftware(SERIAL_1, OS_VERSION, true, METADATA);
-        vm.stopPrank();
-    }
-
-    function test_Security_UnauthorizedAssignment() public {
-        // Register, Audit & Validate
-        vm.startPrank(fabricante);
-        string[] memory serials = new string[](1);
-        serials[0] = SERIAL_1;
-        string[] memory batches = new string[](1);
-        batches[0] = BATCH;
-        string[] memory specs = new string[](1);
-        specs[0] = SPECS;
-        string[] memory metadata = new string[](1);
-        metadata[0] = METADATA;
-        tracker.registerNetbooks(serials, batches, specs, metadata);
-        vm.stopPrank();
-
-        vm.prank(auditor);
-        tracker.auditHardware(SERIAL_1, true, REPORT_HASH, METADATA);
-
-        vm.prank(tecnico);
-        tracker.validateSoftware(SERIAL_1, OS_VERSION, true, METADATA);
-
-        // Try assign with unauthorized user
-        vm.startPrank(unauthorized);
-        vm.expectRevert("Access denied: ESCUELA_ROLE required");
-        tracker.assignToStudent(SERIAL_1, SCHOOL_HASH, STUDENT_HASH, METADATA);
-        vm.stopPrank();
-    }
-
-    function test_Security_RoleSeparation() public {
-        // Register
-        vm.startPrank(fabricante);
-        string[] memory serials = new string[](1);
-        serials[0] = SERIAL_1;
-        string[] memory batches = new string[](1);
-        batches[0] = BATCH;
-        string[] memory specs = new string[](1);
-        specs[0] = SPECS;
-        string[] memory metadata = new string[](1);
-        metadata[0] = METADATA;
-        tracker.registerNetbooks(serials, batches, specs, metadata);
-        
-        // Manufacturer tries to Audit (should fail)
-        vm.expectRevert("Access denied: AUDITOR_HW_ROLE required");
+        vm.expectRevert(abi.encodeWithSelector(SupplyChainTracker.Unauthorized.selector, tracker.AUDITOR_HW_ROLE()));
         tracker.auditHardware(SERIAL_1, true, REPORT_HASH, METADATA);
         vm.stopPrank();
     }

@@ -390,6 +390,79 @@ export class SupplyChainService extends BaseContractService {
     }
   };
 
+  // Operaciones de solicitudes de roles
+
+  /**
+   * Solicita un rol en la blockchain
+   * @param roleHash Hash del rol solicitado
+   * @param signature Firma opcional
+   * @returns Resultado de la transacción
+   */
+  requestRole = async (roleHash: `0x${string}`, signature: string = ''): Promise<TransactionResult> => {
+    try {
+      const { hash } = await this.write('requestRole', [roleHash, signature]);
+      await this.waitForTransaction(hash);
+      return { success: true, hash };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Error desconocido'
+      };
+    }
+  };
+
+  /**
+   * Aprueba una solicitud de rol en la blockchain
+   * @param requestId ID de la solicitud
+   * @returns Resultado de la transacción
+   */
+  approveRoleRequest = async (requestId: number): Promise<TransactionResult> => {
+    try {
+      const { hash } = await this.write('approveRoleRequest', [BigInt(requestId)]);
+      await this.waitForTransaction(hash);
+      return { success: true, hash };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Error desconocido'
+      };
+    }
+  };
+
+  /**
+   * Rechaza una solicitud de rol en la blockchain
+   * @param requestId ID de la solicitud
+   * @returns Resultado de la transacción
+   */
+  rejectRoleRequest = async (requestId: number): Promise<TransactionResult> => {
+    try {
+      const { hash } = await this.write('rejectRoleRequest', [BigInt(requestId)]);
+      await this.waitForTransaction(hash);
+      return { success: true, hash };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Error desconocido'
+      };
+    }
+  };
+
+  /**
+   * Obtiene el número total de solicitudes de roles
+   */
+  getRoleRequestsCount = async (): Promise<number> => {
+    const count = await this.read<bigint>('getRoleRequestsCount', []);
+    return Number(count);
+  };
+
+  /**
+   * Obtiene una solicitud de rol por índice
+   * @param index Índice de la solicitud
+   */
+  getRoleRequest = async (index: number): Promise<any> => {
+    return await this.read('roleRequests', [BigInt(index)]);
+  };
+
   // Operaciones de lectura
 
   /**

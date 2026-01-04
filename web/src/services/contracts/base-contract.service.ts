@@ -8,6 +8,7 @@ import { Config, useAccount, useConnect, useDisconnect } from 'wagmi';
 import { useCallback, useEffect } from 'react';
 import { CacheService } from '@/lib/cache/cache-service';
 import { ErrorHandler } from '@/lib/errors/error-handler';
+import { safeJsonStringify } from '@/lib/utils';
 
 /**
  * Clase base para servicios de contratos inteligentes
@@ -41,7 +42,7 @@ export class BaseContractService {
    * @returns Resultado de la llamada
    */
   read = async <T>(functionName: string, args: any[] = [], useCache = true): Promise<T> => {
-    const cacheKey = `${this.cachePrefix}:${functionName}:${JSON.stringify(args)}`;
+    const cacheKey = `${this.cachePrefix}:${functionName}:${safeJsonStringify(args)}`;
 
     // Intentar obtener de caché si está habilitado
     if (useCache) {
