@@ -1,4 +1,4 @@
-node_modules/
+web/node_modules/
 .env
 .env.local
 .env.development.local
@@ -13,4 +13,4 @@ coverage/
 *.log
 anvil-state.json
 variables.txt
-sc/lib/openzeppelin-contracts 
+sc/lib/*
