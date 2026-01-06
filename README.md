@@ -2,77 +2,119 @@
 
 El proyecto en cuestión es una aplicación web desarrollada en TypeScript y React que se enfoca en la gestión de dispositivos netbooks en una cadena de suministro. La aplicación incluye varias funcionalidades para administrar los dispositivos, como la asignación de dispositivos a estudiantes, la auditoría de hardware y software, y la gestión de solicitudes de roles.
 
-## El sistema se divide en varias partes principales:
-
-1. **Frontend:** La interfaz de usuario de la aplicación, desarrollada en React.
-2. **Backend:** La parte del servidor, desarrollada en Node.js y TypeScript, que proporciona funcionalidades 3. como la gestión de usuarios, la comunicación con la cadena de suministro y la gestión de solicitudes de roles.
-4. **Cadena de suministro:** La cadena de suministro es un contrato inteligente en la blockchain Ethereum que se utiliza para gestionar los dispositivos netbooks.
-5. **Utilidades:** Módulos de utilidades que proporcionan funcionalidades comunes, como la validación de metadatos, la conversión de fechas y la generación de colores para los estados de los dispositivos.
-6. **Servicios:** Módulos de servicios que proporcionan funcionalidades específicas, como el servicio de solicitudes de roles y el servicio de la cadena de suministro.
-A continuación, se detallan las principales funcionalidades del sistema:
-
-7. **Asignación de dispositivos a estudiantes:** La aplicación permite asignar dispositivos netbooks a estudiantes en una escuela específica.
-8. **Auditoría de hardware:** La aplicación permite auditar el hardware de los dispositivos netbooks para verificar que cumplan con los requisitos mínimos.
-9. **Auditoría de software:** La aplicación permite auditar el software de los dispositivos netbooks para verificar que cumplan con las versiones mínimas y que estén libres de virus y malware.
-10. **Gestión de solicitudes de roles:** La aplicación permite a los usuarios solicitar roles específicos en la cadena de suministro, como fabricante, auditor de hardware, técnico de software, etc.
-11. **Registro de dispositivos:** La aplicación permite registrar los dispositivos netbooks en la cadena de suministro.
-12. **Gestión de usuarios:** La aplicación permite gestionar los usuarios y sus roles en la cadena de suministro.
-13. **Gestión de errores:** La aplicación proporciona una interfaz para manejar errores y excepciones en todo el sistema.
-14. **Diagnóstico de servicios:** La aplicación proporciona una interfaz para diagnosticar problemas de inicialización de servicios.
-15. **Registro de auditorías:** La aplicación registra auditorías de los eventos importantes en el sistema.
+## La aplicación web se divide en varias pantallas principales:
 
 
-@startuml
-!define ROLE_COLOR #FF6347
-!define CONTRACT_COLOR #4CAF50
-!define SERVICE_COLOR #2196F3
-!define UTILITY_COLOR #00E676
+1. Pantalla de inicio: La pantalla de inicio muestra una breve descripción del sistema y una lista de las funcionalidades disponibles.
+2. Pantalla de inicio de sesión: La pantalla de inicio de sesión permite a los usuarios iniciar sesión en la aplicación.
+3. Pantalla de registro: La pantalla de registro permite a los usuarios registrarse en la aplicación.
+4. Pantalla de perfil: La pantalla de perfil muestra la información del usuario actual, incluyendo su nombre, correo electrónico, rol y dirección.
+5. Pantalla de asignación de dispositivos: La pantalla de asignación de dispositivos permite a los usuarios asignar dispositivos netbooks a estudiantes.
+6. Pantalla de auditoría de hardware: La pantalla de auditoría de hardware permite a los usuarios auditar el hardware de los dispositivos netbooks y registrar los resultados de la auditoría.
+7. Pantalla de auditoría de software: La pantalla de auditoría de software permite a los usuarios auditar el software de los dispositivos netbooks y registrar los resultados de la auditoría.
+8. Pantalla de gestión de solicitudes de roles: La pantalla de gestión de solicitudes de roles permite a los usuarios crear, eliminar y actualizar solicitudes de roles.
+9. Pantalla de registro de dispositivos: La pantalla de registro de dispositivos permite a los usuarios registrar nuevos dispositivos netbooks en la cadena de suministro.
+10. Pantalla de gestión de usuarios: La pantalla de gestión de usuarios permite a los usuarios gestionar los usuarios de la aplicación, incluyendo la creación, eliminación y actualización de usuarios.
+11. Pantalla de registro de auditorías: La pantalla de registro de auditorías permite a los usuarios registrar auditorías de los eventos importantes en el sistema.
+12. Pantalla de diagnóstico de servicios: La pantalla de diagnóstico de servicios permite a los usuarios diagnosticar problemas de inicialización de servicios y registrar auditorías.
 
-package "Contracts" {
-  class SupplyChainContract {
-    - address: string
-    - abi: any
-    + assignToStudent(serial: string, schoolHash: string, studentHash: string)
-    + auditHardware(serial: string, passed: boolean, reportHash: string)
-    + getAllMembers(roleHash: string)
-    + getAllSerialNumbers()
-    + getNetbookReport(serial: string)
-    + getNetbookState(serial: string)
-    + getNetbooksByState(state: number)
-    + getRoleMemberCount(roleHash: string)
-    + grantRole(role: string, account: string)
-    + hasRole(role: string, account: string)
-    + registerNetbooks(serials: string[], batches: string[], modelSpecs: string[])
-    + revokeRole(role: string, account: string)
-    + validateSoftware(serial: string, version: string, passed: boolean)
-  }
-}
+## Las pantallas se agrupan en las siguientes categorías:
 
-package "Services" {
-  class RoleRequestService {
-    - supplyChainService: SupplyChainContract
-    - roleMapper: RoleMapper
-    + createRequest(request: { userAddress: string; role: string; signature: string })
-    + deleteRoleRequest(id: string)
-    + getRoleRequests()
-    + updateRoleRequestStatus(id: string, status: 'approved' | 'rejected')
-  }
-  class SupplyChainService {
-    - contract: SupplyChainContract
-    + getAddress()
-    + readContract(...args: any[])
-    + writeContract(...args: any[])
-  }
-}
+1. Pantallas de gestión de dispositivos: Pantalla de asignación de dispositivos, pantalla de auditoría de hardware, pantalla de auditoría de software y pantalla de registro de dispositivos.
+2. Pantallas de gestión de roles: Pantalla de gestión de solicitudes de roles y pantalla de gestión de usuarios.
+3. Pantallas de registro: Pantalla de inicio de sesión, pantalla de registro y pantalla de registro de auditorías.
+4. Pantallas de diagnóstico: Pantalla de diagnóstico de servicios.
 
-package "Utilities" {
-  class RoleMapper {
-    + getRoleHash(name: string)
-    + normalizeRoleName(name: string)
-  }
-}
+## Diagrama de Arquitectura Detallado
 
-RoleRequestService --|> SupplyChainService
-RoleRequestService --|> RoleMapper
-SupplyChainService --|> SupplyChainContract
-@enduml
+```mermaid
+classDiagram
+    %% Definición de estilos
+    class SupplyChainContract {
+        <<Contract>>
+        -address: string
+        -abi: any
+        +assignToStudent(serial, schoolHash, studentHash)
+        +auditHardware(serial, passed, reportHash)
+        +getAllMembers(roleHash)
+        +getAllSerialNumbers()
+        +getNetbookReport(serial)
+        +getNetbookState(serial)
+        +getNetbooksByState(state)
+        +getRoleMemberCount(roleHash)
+        +grantRole(role, account)
+        +hasRole(role, account)
+        +registerNetbooks(serials, batches, modelSpecs)
+        +revokeRole(role, account)
+        +validateSoftware(serial, version, passed)
+    }
+
+    class SupplyChainService {
+        <<Service>>
+        -contract: SupplyChainContract
+        +getAddress() string
+        +readContract(...args: any[]) Promise~any~
+        +writeContract(...args: any[]) Promise~any~
+    }
+
+    class RoleRequestService {
+        <<Service>>
+        -supplyChainService: SupplyChainService
+        -roleMapper: RoleMapper
+        +createRequest(request: object) Promise~void~
+        +deleteRoleRequest(id: string) Promise~void~
+        +getRoleRequests() Promise~any[]~
+        +updateRoleRequestStatus(id: string, status: string) Promise~void~
+    }
+
+    class RoleMapper {
+        <<Utility>>
+        +getRoleHash(name: string) string
+        +normalizeRoleName(name: string) string
+    }
+
+    %% Relaciones
+    SupplyChainService "1" --> "1" SupplyChainContract : utiliza
+    RoleRequestService "1" --> "1" SupplyChainService : depende
+    RoleRequestService "1" --> "1" RoleMapper : utiliza
+
+    %% Agrupación visual
+    note for SupplyChainContract "Smart Contract principal\nGestiona toda la lógica de negocio\nen la blockchain"
+    note for SupplyChainService "Servicio de conexión\ncon el contrato inteligente"
+    note for RoleRequestService "Gestiona solicitudes\nde cambio de roles"
+    note for RoleMapper "Utilidad para mapeo\nde nombres de roles a hashes"
+
+    %% Estilos CSS
+    style SupplyChainContract fill:#ff6347,color:white,stroke:#333
+    style SupplyChainService fill:#2196f3,color:white,stroke:#333
+    style RoleRequestService fill:#2196f3,color:white,stroke:#333
+    style RoleMapper fill:#00e676,color:#333,stroke:#333
+```
+
+## Flujo de Datos
+
+```mermaid
+flowchart TD
+    A[Frontend React] --> B[Services Layer]
+    B --> C[SupplyChainService]
+    C --> D[Smart Contract]
+    B --> E[RoleRequestService]
+    E --> F[RoleMapper]
+    E --> C
+    D --> G[Blockchain]
+```
+
+## Capas de la Aplicación
+
+```mermaid
+quadrantChart
+    title "Arquitectura del Sistema"
+    x-axis "Bajo Nivel" --> "Alto Nivel"
+    y-axis "Infraestructura" --> "Aplicación"
+    
+    "SupplyChainContract": [0.2, 0.2]
+    "SupplyChainService": [0.4, 0.4]
+    "RoleRequestService": [0.7, 0.6]
+    "RoleMapper": [0.6, 0.3]
+    "Frontend React": [0.9, 0.8]
+```
