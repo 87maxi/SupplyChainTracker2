@@ -1,5 +1,8 @@
 
 
+![Descripción](img/pfm-trazabilidad-nbk.png)
+
+
 El proyecto en cuestión es una aplicación web desarrollada en TypeScript y React que se enfoca en la gestión de dispositivos netbooks en una cadena de suministro. La aplicación incluye varias funcionalidades para administrar los dispositivos, como la asignación de dispositivos a estudiantes, la auditoría de hardware y software, y la gestión de solicitudes de roles.
 
 ## La aplicación web se divide en varias pantallas principales:
@@ -118,3 +121,7 @@ quadrantChart
     "RoleMapper": [0.6, 0.3]
     "Frontend React": [0.9, 0.8]
 ```
+
+
+
+![Demo](https://asciinema.org/a/VVdAAW6H7GXp9mi1tpZ97Wiar.svg)  
