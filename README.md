@@ -2,6 +2,7 @@
 
 ![Descripción](img/pfm-trazabilidad-nbk.png)
 
+![Description](https://github.com/user-attachments/assets/56d0d320-230c-4687-ae0c-4801cf86780b)
 
 El proyecto en cuestión es una aplicación web desarrollada en TypeScript y React que se enfoca en la gestión de dispositivos netbooks en una cadena de suministro. La aplicación incluye varias funcionalidades para administrar los dispositivos, como la asignación de dispositivos a estudiantes, la auditoría de hardware y software, y la gestión de solicitudes de roles.
 
