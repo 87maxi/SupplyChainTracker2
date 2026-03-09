@@ -126,7 +126,6 @@ quadrantChart
 
 
 <p align="center">
-  <video src="https://res.cloudinary.com/dyk6opfjt/video/upload/q_auto,f_auto/v1772893158/pfm-trazabilidad-nbk_qrxsnh.webm" width="100%" autoplay loop muted playsinline></video>
+  <video src="https://res.cloudinary.com/dyk6opfjt/video/upload/q_auto,f_auto/v1772893158/pfm-trazabilidad-nbk_qrxsnh.webm" width="100%" controls muted playsinline></video>
 </p>
-
 ![Demo](https://asciinema.org/a/VVdAAW6H7GXp9mi1tpZ97Wiar.svg)  
