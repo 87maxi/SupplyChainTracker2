@@ -2,7 +2,6 @@
 
 ![Descripción](assets/pfm-trazabilidad-nbk.png)
 
-![video demo](https://private-user-images.githubusercontent.com/3537736/559721400-56d0d320-230c-4687-ae0c-4801cf86780b.webm?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NzI4OTA5MTYsIm5iZiI6MTc3Mjg5MDYxNiwicGF0aCI6Ii8zNTM3NzM2LzU1OTcyMTQwMC01NmQwZDMyMC0yMzBjLTQ2ODctYWUwYy00ODAxY2Y4Njc4MGIud2VibT9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNjAzMDclMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjYwMzA3VDEzMzY1NlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTIzODRjZDIwOTQyMzAwZThjYjZmZWNlNzM1NzNhZWY3YmY2MjAxNjE2NDUwOTBmZGM4NGYwNGNiNjU0NmIwYzImWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.IgRbmSt4H4cTxJChAyVTcDo7Oij1xKEWdnCMgQ0EZ0E)
 
 El proyecto en cuestión es una aplicación web desarrollada en TypeScript y React que se enfoca en la gestión de dispositivos netbooks en una cadena de suministro. La aplicación incluye varias funcionalidades para administrar los dispositivos, como la asignación de dispositivos a estudiantes, la auditoría de hardware y software, y la gestión de solicitudes de roles.
 
@@ -122,6 +121,10 @@ quadrantChart
     "RoleMapper": [0.6, 0.3]
     "Frontend React": [0.9, 0.8]
 ```
+
+
+
+![video demo](https://res.cloudinary.com/dyk6opfjt/video/upload/v1772893158/pfm-trazabilidad-nbk_qrxsnh.webm)
 
 
 
